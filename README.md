@@ -48,6 +48,20 @@ DATABASE_URL=postgres://<macos-username>@localhost:5432/exercise_partner_dev
 Stop the service with `brew services stop postgresql@16` when not developing.
 Production uses Neon (via the Vercel Marketplace) — see `TECHNICAL_SPEC.docx`.
 
+Apply the schema and seed data:
+
+```bash
+npm run db:generate       # regenerate SQL migrations after a schema change
+npm run db:migrate        # apply migrations to DATABASE_URL
+npm run import:exercises  # import data/source/*.xlsx into the source tables
+npm run db:report         # row counts and a sparse-field data-quality audit
+```
+
+`db:migrate` and `import:exercises` are both safe to re-run. Import upserts
+`source_exercises`/`source_equipment`/`source_muscles` by natural key and fully
+rebuilds the derived/relationship tables from the spreadsheet each time; it
+never touches app-owned tables (profiles, workouts, sessions, etc.).
+
 ## Commands
 
 | Command | What it does |

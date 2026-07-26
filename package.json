@@ -10,7 +10,12 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "docs": "tsx scripts/generate-docs.ts"
+    "docs": "tsx scripts/generate-docs.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:studio": "drizzle-kit studio",
+    "import:exercises": "tsx scripts/import-exercises.ts",
+    "db:report": "tsx scripts/db-report.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -20,6 +25,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
+    "exceljs": "^4.4.0",
     "lucide-react": "^1.27.0",
     "next": "16.2.12",
     "postgres": "^3.4.9",

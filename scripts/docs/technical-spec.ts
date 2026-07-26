@@ -84,8 +84,9 @@ export async function generateTechnicalSpec() {
         ["Framework", "Next.js 16 (App Router, TypeScript)", "Server Components suit a read-heavy reference library; Server Actions avoid a bespoke API layer; first-class on Vercel"],
         ["Styling", "Tailwind CSS 4", "Utility-first keeps styling colocated; v4 engine is materially faster"],
         ["Components", "shadcn/ui (Base UI primitives)", "Accessible primitives owned in-repo rather than versioned as a dependency — themeable to the style guide without fighting a vendor theme"],
-        ["Database", "PostgreSQL (Neon)", "Relational model fits taxonomies and history; window functions and CTEs are what the future analytics work will need"],
+        ["Database", "PostgreSQL — local via Homebrew for dev, Neon in production", "Relational model fits taxonomies and history; window functions and CTEs are what the future analytics work will need"],
         ["ORM", "Drizzle", "Typed schema with explicit SQL-shaped queries and reviewable migrations; no hidden query generation"],
+        ["Spreadsheet import", "exceljs", "Reads the source workbook for the import pipeline; see Known Limitations for why it was chosen over xlsx/SheetJS"],
         ["Validation", "Zod 4", "One schema shared by Server Action input validation and TypeScript types"],
         ["Drag & drop", "dnd-kit", "Keyboard-accessible reordering — a hard requirement for the builder"],
         ["Charts", "Recharts", "Composable React charts for history and volume trends"],
@@ -98,16 +99,19 @@ export async function generateTechnicalSpec() {
     ),
 
     h1("4. Data Model"),
-    p("Proposed for Epic B. Column lists are indicative rather than exhaustive.", { muted: true }),
+    p(
+      "Implemented in Epic B — 15 tables, migrated to Postgres via Drizzle and confirmed against real imported data. Column lists are indicative rather than exhaustive; see src/db/schema/*.ts for the full definitions.",
+      { muted: true },
+    ),
 
     h3("Source layer"),
     table(
       ["Table", "Key columns", "Notes"],
       [
-        ["source_exercises", "exercise_id (PK, e.g. EX-0001), name, url, video_url, thumbnail_url, primary_muscle, secondary_muscles, stabilizer_muscles, equipment, exercise_type, mechanics, force, experience_level, instructions, tips, common_mistakes, breathing, movement pattern flags, body_region, laterality, derived_status", "Verbatim mirror of the Source Exercises sheet (52 columns). Rebuilt on import."],
-        ["source_equipment", "equipment_id (PK), canonical_name, source_native, description", "29 rows from Equipment Taxonomy"],
-        ["source_muscles", "muscle_id (PK), canonical_name, source", "23 rows from Muscle Taxonomy"],
-        ["source_relationships", "from_exercise_id, to_exercise_id, relationship_type, similarity_score, evidence_type, evidence_url, review_status, notes", "3,639 pre-computed substitution candidates"],
+        ["source_exercises", "exercise_id (PK, e.g. EX-0001), name, url, video_url, thumbnail_url, primary_muscle, secondary_muscles, stabilizer_muscles, equipment, exercise_type, mechanics, force, experience_level, instructions, tips, common_mistakes, breathing, movement pattern flags, body_region, laterality, derived_status, source_row_hash, imported_at", "Verbatim mirror of the Source Exercises sheet (52 columns), plus two import-pipeline columns (not from the spreadsheet) used for change detection on re-import"],
+        ["source_equipment", "equipment_id (PK), canonical_name, source_native, description", "28 rows from Equipment Taxonomy"],
+        ["source_muscles", "muscle_id (PK), canonical_name, source", "22 rows from Muscle Taxonomy, plus any auto-extension (see section 6)"],
+        ["source_relationships", "from_exercise_id, to_exercise_id, relationship_type, similarity_score, evidence_type, evidence_url, review_status, notes", "3,638 pre-computed substitution candidates"],
       ],
       [20, 50, 30],
     ),
@@ -116,8 +120,9 @@ export async function generateTechnicalSpec() {
     table(
       ["Table", "Key columns", "Purpose"],
       [
-        ["exercise_muscles", "exercise_id, muscle_id, role (primary | secondary | stabilizer)", "Normalises the semicolon-delimited muscle strings into joinable rows so muscle filters are indexable"],
+        ["exercise_muscles", "exercise_id, muscle_id, role (primary | secondary | stabilizer)", "Normalises the comma-delimited muscle strings into joinable rows so muscle filters are indexable"],
         ["exercise_equipment", "exercise_id, equipment_id", "Same, for equipment — and what makes equipment-aware generation possible"],
+        ["exercise_links", "from_exercise_id, relation_type (variation | alternative | progression | regression), label, url, to_exercise_id (nullable)", "Parsed from the Variations/Alternative Exercises/Progression/Regression columns — human-curated links distinct from source_relationships' rule-derived candidates. to_exercise_id is resolved by matching url against another row's url; kept as label + url when no match is found rather than dropped"],
       ],
       [20, 44, 36],
     ),
@@ -163,15 +168,17 @@ export async function generateTechnicalSpec() {
     ),
 
     h1("6. Known Limitations & Open Risks"),
-    h3("Data quality"),
-    bullet("Most derived fields in the spreadsheet carry a 'Rule Derived — Unreviewed' status. They are usable defaults, not verified fact, and are surfaced as such."),
-    bullet("Several fields are sparsely populated or marked 'Not listed' — notably Variations, Alternative Exercises, Progression and Regression. The UI must degrade gracefully rather than showing empty sections."),
-    bullet("Starting Position and Range of Motion frequently contain generic 'Varies / Not specified' text that defers to the source page."),
-    bullet("The 3,639 relationship rows are rule-derived candidates with review status 'Unreviewed'. Substitutions are presented as suggestions, never as equivalences."),
+    h3("Data quality — confirmed by npm run db:report against the imported data"),
+    bullet("All 1,218 exercises carry 'Rule Derived — Unreviewed' derived-status. They are usable defaults, not verified fact, and are surfaced as such."),
+    bullet("Relationship fields are sparse: Variations 42.5% (518), Progression 3.0% (36), Regression 0.7% (8), Alternative Exercises 0.6% (7). The UI must degrade gracefully rather than showing empty sections."),
+    bullet("Stabilizer Muscles is populated for 0 of 1,218 exercises — the column exists in the schema for when a future source populates it, but currently carries no data."),
+    bullet("69.8% of exercises (850) have a generic 'Varies / Not specified' Body Position rather than a specific one."),
+    bullet("One muscle name in the exercise data ('Middle Back') is not in the original 22-row Muscle Taxonomy sheet. The import pipeline auto-extends the taxonomy rather than dropping the muscle link or failing the import."),
+    bullet("The 3,638 relationship rows are rule-derived candidates with review status 'Unreviewed', similarity 55–100 (average 97.3), averaging 3.0 candidates per exercise. Substitutions are presented as suggestions, never as equivalences."),
 
     h3("Media"),
-    bullet("All 1,218 exercises have a video URL and 1,194 have a thumbnail, but no exercise has a GIF or animation — so 'realistic visuals of proper movement' rests on video plus a single still image."),
-    bullet("Embeddability is assumed from the URL shape (YouTube embed links). Any that refuse embedding must fall back to a prominent source link."),
+    bullet("1,218 of 1,218 exercises have a video URL and 1,194 (98.0%) have a thumbnail, but no exercise has a GIF or animation — so 'realistic visuals of proper movement' rests on video plus a single still image."),
+    bullet("Video is not exclusively YouTube: 443 of 1,218 video URLs are Vimeo player embeds. Both are iframe-embeddable, but embeddability logic must handle both shapes, not just youtube.com/embed."),
     bullet("Hotlinked assets can disappear without warning. A link-health check is a candidate enhancement."),
 
     h3("Product"),
@@ -181,6 +188,7 @@ export async function generateTechnicalSpec() {
 
     h3("Technical"),
     bullet("12 npm audit advisories are dev-only transitive dependencies (ESLint toolchain, PostCSS). Not shipped to users; the only fix is a breaking ESLint 10 upgrade that eslint-config-next does not yet support."),
+    bullet("exceljs (used to read the source spreadsheet in the import pipeline) pulls in further advisories via its zip-writer dependency chain, which reading a file never exercises. Chosen over xlsx/SheetJS, whose read-path prototype-pollution and ReDoS CVEs have no fix available."),
     bullet("Workout Mode autosave must survive backgrounded mobile tabs, which browsers may suspend aggressively. This needs real device testing, not just desktop."),
 
     footer("Generated from scripts/docs/technical-spec.ts — regenerate with npm run docs"),
