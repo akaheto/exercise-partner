@@ -116,10 +116,10 @@ export async function generateProjectPlan() {
     table(
       EPIC_COLS,
       [
-        ["C1", "Write VISUAL_STYLE_GUIDE.docx", S.notStarted, "Palette, typography, spacing, components, UI voice — decided once, referenced thereafter"],
-        ["C2", "Build the app shell", S.notStarted, "Responsive nav, light/dark, mobile-first layout"],
-        ["C3", "Password gate and profile switcher", S.notStarted, "Middleware cookie session; profile scopes all app data"],
-        ["C4", "Core component set", S.notStarted, "Buttons, inputs, cards, dialogs, empty/loading/error states"],
+        ["C1", "Write VISUAL_STYLE_GUIDE.docx", S.done, "Written in Epic A5; referenced from here on rather than redone"],
+        ["C2", "Build the app shell", S.done, "Top bar (desktop) + bottom tab bar (mobile), light/dark with no flash, teal palette applied to theme tokens"],
+        ["C3", "Password gate and profile switcher", S.done, "Next.js 16 Proxy (renamed from Middleware); HMAC-signed cookie; profile picker with inline creation"],
+        ["C4", "Core component set", S.done, "shadcn/ui components; fixed 32px default heights to the spec's 44px touch-target minimum"],
       ],
       EPIC_WIDTHS,
     ),
@@ -255,6 +255,8 @@ export async function generateProjectPlan() {
         ["11", "\"Not listed\" — the spreadsheet's own sentinel for an unpopulated field — is normalised to a real SQL NULL at import time, for every field, rather than kept as a magic string. Confined in practice to thumbnail_url, stabilizer_muscles, and the variation/alternative/progression/regression fields; the narrative fields (instructions, tips, etc.) never contain it.", "Decided"],
         ["12", "One muscle name found in Source Exercises (\"Middle Back\") is not in the original 22-row Muscle Taxonomy sheet. The import pipeline auto-extends the taxonomy rather than dropping the data or failing; surfaced in npm run db:report under \"Muscle taxonomy extensions\".", "Resolved"],
         ["13", "exercise_overrides.value is stored as text. Correct for the free-text fields it exists to fix (instructions, tips, etc.); a numeric or boolean override would need type-aware handling not yet built.", "Assumed"],
+        ["14", "Next.js 16 renamed the middleware.ts file convention to proxy.ts (exported function middleware -> proxy) and changed its default runtime to Node.js. The password gate uses the new convention; TECHNICAL_SPEC's Server Action security note is a direct quote from Next's own proxy.ts docs.", "Resolved"],
+        ["15", "Browser password-manager extensions (1Password, confirmed) can inject an overlay into type=\"password\" fields that blocks Claude in Chrome's synthetic click/type actions. Worked around during verification by setting the field value via JS and calling form.requestSubmit() immediately after navigation, before any focus event. Does not affect real users.", "Resolved"],
       ],
       [6, 79, 15],
     ),
@@ -265,6 +267,10 @@ export async function generateProjectPlan() {
       [
         [
           formatDate(),
+          "Epic C complete. App shell built: responsive top bar (desktop) / bottom tab bar (mobile), light/dark theme with no flash of unstyled content, VISUAL_STYLE_GUIDE.docx's teal palette applied to the theme tokens (replacing shadcn's generic grey defaults). Fixed a real bug found along the way: --font-sans was self-referential in globals.css, so the app was silently falling back to system fonts instead of Geist Sans. Password gate built on Next.js 16's Proxy convention (HMAC-signed cookie, constant-time password comparison) with Server Actions independently verifying the session per Next's own security guidance. Profile switcher (dialog + full /profile page) built: create, list, switch, and a per-profile weight-unit preference — verified end-to-end in a real browser, including that switching profiles correctly isolates each profile's data. Fixed shadcn's default button/input heights (32px) up to the style guide's 44px touch-target minimum.",
+        ],
+        [
+          "26 July 2026",
           "Epic B complete. Drizzle schema (15 tables) migrated to local Postgres. Import pipeline built and run: 1,218/1,218 exercises imported, idempotency verified by re-run (0 added/0 changed on the second pass), 4,448 muscle links and 600 related-exercise links derived (596 resolved to an exercise id via URL match), 3,638 substitution candidates imported. Fixed a data-quality bug where the spreadsheet's \"Not listed\" sentinel was being stored as literal text instead of NULL. Merged read model (mergeOverrides) built, unit tested, and verified end-to-end. Local Postgres 16 provisioned via Homebrew; initial git commit made.",
         ],
         [

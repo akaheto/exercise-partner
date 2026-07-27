@@ -67,7 +67,7 @@ export async function generateTechnicalSpec() {
       ["Layer", "Tables", "Import behaviour"],
       [
         ["Source", "source_exercises, source_equipment, source_muscles, source_relationships", "Rebuilt from the spreadsheet on every import"],
-        ["Derived", "exercise_muscles, exercise_equipment", "Regenerated at import from source fields"],
+        ["Derived", "exercise_muscles, exercise_equipment, exercise_links", "Regenerated at import from source fields"],
         ["App", "profiles, exercise_overrides, equipment_inventory, workouts, workout_blocks, workout_items, sessions, session_sets", "Never touched by import"],
       ],
       [14, 46, 40],
@@ -75,6 +75,17 @@ export async function generateTechnicalSpec() {
     spacer(),
     p(
       "Reads go through a merge layer that overlays exercise_overrides on top of source_exercises, so a user correction to a mis-derived field survives every future re-import. Overrides are sparse — only changed fields are stored — so re-imported improvements to untouched fields still flow through.",
+    ),
+
+    h2("Access control"),
+    rich(
+      "A single **Proxy** file (src/proxy.ts — Next.js 16 renamed the middleware.ts convention to proxy.ts, and defaults it to the Node.js runtime) checks every request for an HMAC-signed session cookie and redirects to /login if it's missing or invalid, preserving the originally requested path via a next query param. Login compares the submitted password against SITE_PASSWORD using a constant-time comparison, then signs the session cookie with SESSION_SECRET — both plain env vars, no database involved.",
+    ),
+    p(
+      "Server Actions are reachable directly by request, independent of Proxy's route matching, so a matcher change or route refactor could silently stop protecting one without the other — this is called out in Next's own Proxy docs. Every Server Action that writes app data calls requireSiteSession() (src/lib/require-site-session.ts) itself rather than trusting Proxy alone.",
+    ),
+    p(
+      "A separate httpOnly cookie (active_profile_id) scopes the UI to one profile at a time; switching profiles is a Server Action that overwrites the cookie and revalidates the layout. This is a data-scoping convenience, not a security boundary — see the Key Decisions table below.",
     ),
 
     h1("3. Tech Stack"),

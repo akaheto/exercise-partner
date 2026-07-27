@@ -10,8 +10,14 @@ research spreadsheet as its seed database and builds four capabilities on top:
 
 ## Status
 
-Epic A (foundation) is complete. Feature work begins with Epic B (data foundation
-and import). See `PROJECT_PLAN.docx` for the current deliverable status.
+Epics A–C (foundation, data import, app shell) are complete: the database is
+seeded from the spreadsheet, and the app has a working password gate, profile
+switcher, and navigation shell. Feature work begins with Epic D (exercise
+library). See `PROJECT_PLAN.docx` for the current deliverable status.
+
+The site is protected by a single shared password (`SITE_PASSWORD` in `.env`);
+inside it, a lightweight profile picker (no per-person login) scopes workouts
+and history to each person.
 
 ## Requirements
 
@@ -23,11 +29,13 @@ and import). See `PROJECT_PLAN.docx` for the current deliverable status.
 
 ```bash
 npm install
-cp .env.example .env   # fill in DATABASE_URL
+cp .env.example .env   # fill in DATABASE_URL, SESSION_SECRET, SITE_PASSWORD
 npm run dev
 ```
 
-The app runs at http://localhost:3000.
+The app runs at http://localhost:3000 (or the next free port — Next.js will tell
+you if 3000 is taken by another project). You'll land on `/login`; enter the
+`SITE_PASSWORD` you set in `.env`, then create a profile from the picker.
 
 ### Local database
 
