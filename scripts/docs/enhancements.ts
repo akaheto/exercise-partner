@@ -127,6 +127,7 @@ export async function generateEnhancements() {
         ["Training calendar", "Calendar view of past and planned sessions", "Makes consistency and gaps visible at a glance", "Medium"],
         ["Muscle recovery view", "Heatmap of recent volume per muscle group indicating what is fresh today", "Answers \"what should I train?\" from data already being collected", "Medium"],
         ["Repeat with progression", "Duplicate last session's workout with loads advanced by a chosen rule", "The most common real-world workflow, currently requiring manual re-entry", "Medium"],
+        ["Workout template edit history", "Browse and revert previous versions of a saved workout template itself", "Originally planned as G3 \"versioning\" to protect session history from template edits — turned out not to be needed for that, since Epic H's session snapshot already handles it. Would now only serve editing convenience, not integrity", "Medium"],
       ],
       WIDTHS,
     ),

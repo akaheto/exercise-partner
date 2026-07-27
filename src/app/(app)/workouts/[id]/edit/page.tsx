@@ -1,16 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Clock } from "lucide-react";
+import { ArrowLeft, Clock, Play } from "lucide-react";
 import { AddExerciseButton } from "@/components/workout-builder/add-exercise-button";
 import { BlockList } from "@/components/workout-builder/block-list";
 import { WorkoutMetaForm } from "@/components/workout-builder/workout-meta-form";
 import { WorkoutAssessmentPanel } from "@/components/workout-assessment/workout-assessment-panel";
+import { Button } from "@/components/ui/button";
 import { getWorkoutForEdit } from "@/db/queries/workouts";
 import { getSubstitutionCandidates } from "@/db/queries/exercises";
 import { getActiveProfileId } from "@/lib/active-profile";
 import { estimateWorkoutMinutes } from "@/domain/workout-duration";
 import { assessWorkout } from "@/domain/workout-assessment";
 import { parseMuscleList } from "@/domain/importParsing";
+import { startSession } from "@/app/session/actions";
 import type { PickerExercise } from "./actions";
 
 export default async function WorkoutBuilderPage({ params }: { params: Promise<{ id: string }> }) {
@@ -60,11 +62,20 @@ export default async function WorkoutBuilderPage({ params }: { params: Promise<{
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <WorkoutMetaForm workoutId={workout.id} name={workout.name} description={workout.description} />
-        {minutes > 0 && (
-          <span className="flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground">
-            <Clock className="size-4" aria-hidden="true" /> ~{minutes} min
-          </span>
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          {minutes > 0 && (
+            <span className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground">
+              <Clock className="size-4" aria-hidden="true" /> ~{minutes} min
+            </span>
+          )}
+          {allItems.length > 0 && (
+            <form action={startSession.bind(null, workout.id)}>
+              <Button type="submit" className="gap-1.5">
+                <Play className="size-4" /> Start workout
+              </Button>
+            </form>
+          )}
+        </div>
       </div>
 
       <BlockList workoutId={workout.id} blocks={workout.blocks} substitutionCandidates={substitutionCandidates} />

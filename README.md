@@ -22,7 +22,11 @@ recovery tip. Epic G (workout library) is partially complete: `/workouts`
 lists every saved workout with name search, exercise count and estimated
 duration per card, plus one-click duplicate and archive/restore; versioning
 and tags/folders are deliberately deferred (see `PROJECT_PLAN.docx` section 4).
-See `PROJECT_PLAN.docx` for the current deliverable status.
+Epic H (Workout Mode) is complete: hit "Start" on any workout to run it
+full-screen, one exercise at a time, with fast 56px set logging, a wall-clock
+rest timer, and resume that survives closing the tab — progress is derived
+from the sets you've already logged, not stored client-side. See
+`PROJECT_PLAN.docx` for the current deliverable status.
 
 The site is protected by a single shared password (`SITE_PASSWORD` in `.env`);
 inside it, a lightweight profile picker (no per-person login) scopes workouts
@@ -90,6 +94,7 @@ never touches app-owned tables (profiles, workouts, sessions, etc.).
 | `npm run typecheck` | TypeScript, no emit |
 | `npm test` | Vitest, single run |
 | `npm run test:watch` | Vitest in watch mode |
+| `npm run test:e2e` | Playwright end-to-end tests (starts its own dev server on port 3100) |
 | `npm run docs` | Regenerate the Word deliverables |
 
 Run `lint`, `typecheck` and `test` before considering any change complete.
@@ -145,7 +150,10 @@ See `TECHNICAL_SPEC.docx` for the full picture.
 
 ## Known issues
 
-`npm audit` reports 12 high-severity advisories. All are dev-only transitive
-dependencies (the ESLint toolchain and PostCSS) that are not shipped to users. The
-only available fix is a breaking upgrade to ESLint 10, which `eslint-config-next`
-does not yet support. Revisit when it does.
+`npm audit` reports 27 advisories (19 high, 8 moderate), all in transitive
+dependencies of dev/build tooling — the ESLint toolchain (minimatch/glob chain),
+`drizzle-kit`'s esbuild, `exceljs`'s zip-writer path (`archiver`), and PostCSS/`sharp`
+pulled in by `next`. None are exercised by application code paths (the app only
+reads spreadsheets, never writes zips; PostCSS runs at build time, not on user input).
+Fixing most requires a breaking upgrade (ESLint 10, which `eslint-config-next` does
+not yet support, is the main blocker). Revisit periodically as upstream fixes land.

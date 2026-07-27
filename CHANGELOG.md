@@ -9,6 +9,28 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Workout Mode (`/session/[id]`): a full-screen, nav-free guided runner
+  (`src/app/session/`) that snapshots the workout into `sessions.workoutSnapshot`
+  at start — a one-time jsonb copy, so a later template edit can never change
+  what a session displays. Steps through one exercise at a time, reusing the
+  Exercise Library's video embed, instructions and muscle diagram. Logging a
+  set (56px weight/reps inputs, one tap) writes a `session_sets` row, with an
+  Undo for mis-taps. Session progress (current exercise/set) is derived from
+  the sets already logged rather than a stored cursor
+  (`src/domain/session-flow.ts`, `computeSessionProgress`, 10 unit tests) —
+  verified that reloading mid-session, which discards all client state,
+  resumes at the exact next set. Rest timer between sets is wall-clock based
+  (`Date.now()` diffing, not a decrementing counter) so it stays accurate even
+  if the tab is backgrounded, with a Skip control. Finishing marks the session
+  completed; the exit ("X") control requires an explicit confirm dialog before
+  abandoning. "Start" entry points added to the workout edit page and workout
+  cards.
+- Playwright, installed for the first time (`e2e/`, `playwright.config.ts`):
+  a full Workout Mode run-through (login → build a workout → run it,
+  including a real page reload to prove resume → finish it → abandon a
+  second session) against a dedicated dev server on port 3100 so it never
+  collides with a manually-running one. Cleans up its own test data —
+  `npm run test:e2e`.
 - Workout Library (`/workouts`), replacing the Epic A-era placeholder: every
   saved workout as a card with name search (debounced, URL-driven) and an
   archived/active toggle, exercise count and estimated duration computed the
@@ -142,7 +164,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Drive, so dependency and build output are not continuously synced.
 - Playwright end-to-end testing is deferred to Epic H, when Workout Mode provides a
   flow worth testing end to end.
-- 12 `npm audit` advisories are dev-only transitive dependencies; see README.
+- 27 `npm audit` advisories, all in transitive dependencies of dev/build
+  tooling, none in exercised application code paths; see README.
 - exceljs was chosen over xlsx/SheetJS for reading the spreadsheet: exceljs's
   advisories are in an unused zip-writer path, while xlsx has unpatched CVEs
   directly in its read path.
