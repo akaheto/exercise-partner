@@ -9,6 +9,18 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Intelligence Foundation (Epic J) — substrate for future intelligence
+  features, not the features themselves. `src/domain/training-metrics.ts`:
+  volume per primary muscle group per week per profile, joining
+  `session_sets` through `exercise_muscles` (primary role only, so a
+  compound lift's volume isn't double-counted across every muscle it
+  merely assists). A "Muscle balance" panel on `/history` ranks that volume
+  over the last 4 weeks as a plain bar list — a read of what happened, not
+  a recommendation. `src/domain/progression.ts` defines the contract a
+  future "suggest next weight" feature would need
+  (`ProgressionInput`/`ProgressionSuggestion`/`ProgressionStrategy`) with a
+  `NOT_IMPLEMENTED_PROGRESSION_STRATEGY` that throws rather than
+  fabricating a suggestion — deliberately no algorithm yet.
 - Workout History (`/history`, `/history/[id]`): every session, most recent
   first, with in-progress sessions linking to Resume instead of a static
   detail view. Session detail shows every logged set per exercise, read from

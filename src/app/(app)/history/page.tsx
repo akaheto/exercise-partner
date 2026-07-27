@@ -2,9 +2,14 @@ import Link from "next/link";
 import { CheckCircle2, Clock, Dumbbell, History as HistoryIcon, PlayCircle, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { VolumeChart } from "@/components/history/volume-chart";
+import { MuscleBalancePanel } from "@/components/history/muscle-balance-panel";
 import { listSessionSummaries } from "@/db/queries/history";
+import { getMuscleVolumePoints } from "@/db/queries/metrics";
 import { getActiveProfileId } from "@/lib/active-profile";
 import { groupVolumeByWeek, sessionDurationMinutes } from "@/domain/session-history";
+import { groupMuscleVolumeByWeek, summarizeMuscleBalance } from "@/domain/training-metrics";
+
+const MUSCLE_BALANCE_WEEKS = 4;
 
 function statusBadge(status: string) {
   if (status === "completed") {
@@ -36,6 +41,9 @@ export default async function HistoryPage() {
     sessions.filter((s) => s.status === "completed" && s.volume > 0).map((s) => ({ date: s.startedAt, volume: s.volume })),
   );
 
+  const muscleVolumePoints = profileId ? await getMuscleVolumePoints(profileId) : [];
+  const muscleBalance = summarizeMuscleBalance(groupMuscleVolumeByWeek(muscleVolumePoints), MUSCLE_BALANCE_WEEKS);
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 md:px-6">
       <div className="mb-4 flex items-center justify-between">
@@ -66,6 +74,7 @@ export default async function HistoryPage() {
       ) : (
         <div className="space-y-6">
           {weeklyVolume.length > 1 && <VolumeChart data={weeklyVolume} />}
+          {muscleBalance.length > 0 && <MuscleBalancePanel entries={muscleBalance} weeks={MUSCLE_BALANCE_WEEKS} />}
 
           <div className="space-y-3">
             {sessions.map((s) => {

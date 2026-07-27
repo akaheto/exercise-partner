@@ -126,7 +126,7 @@ export async function generateEnhancements() {
         ["Multi-week programs", "Group workouts into a structured block (e.g. a 4-week progression) with a schedule", "The natural next unit above a single workout; most real training is programmed in blocks", "Large"],
         ["Training calendar", "Calendar view of past and planned sessions", "Makes consistency and gaps visible at a glance", "Medium"],
         ["Muscle recovery view", "Heatmap of recent volume per muscle group indicating what is fresh today", "Answers \"what should I train?\" from data already being collected", "Medium"],
-        ["Repeat with progression", "Duplicate last session's workout with loads advanced by a chosen rule", "The most common real-world workflow, currently requiring manual re-entry", "Medium"],
+        ["Repeat with progression", "Duplicate last session's workout with loads advanced by a chosen rule", "The most common real-world workflow, currently requiring manual re-entry. Epic J2 already defines the contract this would implement (ProgressionStrategy in src/domain/progression.ts) — deliberately left unimplemented pending real usage data to know what rule is actually worth building", "Medium"],
         ["Workout template edit history", "Browse and revert previous versions of a saved workout template itself", "Originally planned as G3 \"versioning\" to protect session history from template edits — turned out not to be needed for that, since Epic H's session snapshot already handles it. Would now only serve editing convenience, not integrity", "Medium"],
       ],
       WIDTHS,

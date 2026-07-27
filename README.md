@@ -29,8 +29,11 @@ from the sets you've already logged, not stored client-side. Epic I (Workout
 History) is complete: `/history` lists every session with a weekly volume
 chart, session detail shows every logged set, exercise and workout pages get
 their own "performance over time" panels, and the complete history is
-downloadable as CSV or JSON. See `PROJECT_PLAN.docx` for the current
-deliverable status.
+downloadable as CSV or JSON. Epic J (Intelligence Foundation) is complete:
+`/history` also shows a "Muscle balance" panel (primary-muscle training
+volume ranked over the last 4 weeks), and the data/contract layer a future
+progression-suggestion feature would need is defined but deliberately left
+unimplemented. See `PROJECT_PLAN.docx` for the current deliverable status.
 
 The site is protected by a single shared password (`SITE_PASSWORD` in `.env`);
 inside it, a lightweight profile picker (no per-person login) scopes workouts

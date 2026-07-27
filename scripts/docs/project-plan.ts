@@ -216,9 +216,9 @@ export async function generateProjectPlan() {
     table(
       EPIC_COLS,
       [
-        ["J1", "Derived training-metrics views", S.notStarted, "Volume per muscle group, per week, per profile"],
-        ["J2", "Progression interfaces", S.notStarted, "Defined contracts, deliberately unimplemented"],
-        ["J3", "Muscle-balance reporting", S.notStarted, "Read-only insight; no recommendations yet"],
+        ["J1", "Derived training-metrics views", S.done, "getMuscleVolumePoints() joins session_sets to each exercise's primary muscle (secondary/stabilizer excluded, so a compound lift isn't double-counted); groupMuscleVolumeByWeek() buckets into one row per (muscle, week) — src/domain/training-metrics.ts, pure and unit-tested"],
+        ["J2", "Progression interfaces", S.done, "src/domain/progression.ts defines ProgressionInput/ProgressionSuggestion/ProgressionStrategy — the contract a future \"suggest next weight\" feature would need — with a NOT_IMPLEMENTED_PROGRESSION_STRATEGY that throws rather than returning a fabricated suggestion. No algorithm; deliberately just the shape"],
+        ["J3", "Muscle-balance reporting", S.done, "\"Muscle balance\" panel on /history: primary-muscle volume ranked over the last 4 weeks, verified against real logged sets (Quads 810 vs Chest 300, matching hand-computed weight x reps). Read-only ranking only — no text interpreting the imbalance or suggesting what to do about it"],
       ],
       EPIC_WIDTHS,
     ),
@@ -275,6 +275,7 @@ export async function generateProjectPlan() {
         ["31", "Workout Mode's rest timer is wall-clock based (current time minus a stored end timestamp) so the displayed countdown stays accurate even if the tab is backgrounded or throttled, but it lives only in client state — a full page reload during rest simply drops the remaining wait and shows the next set's input immediately. Session progress itself (which exercise/set) is unaffected, since that's derived from logged sets, not the timer. Accepted v1 simplification; a sound/notification when rest ends was also scoped out.", "Assumed"],
         ["32", "Workout Mode steps through a superset or circuit block's exercises sequentially (all of exercise A's sets, then all of exercise B's) rather than interleaving rounds (A, B, A, B, ...) the way the block's rest-per-round data model implies. The manual builder (Epic E) and duration estimator (Epic E5) both already model true round-robin rest; only the guided runtime takes the simpler sequential path. Documented simplification, not a data model gap — src/domain/session-flow.ts.", "Assumed"],
         ["33", "Epic I's volume calculations (weight × reps, summed) are unit-naive: they add up the raw weight numbers regardless of the recorded weight_unit, on the assumption a profile logs consistently in one unit. Workout Mode's per-set kg/lb toggle (Epic H3) makes mixed units within one profile's history possible in principle; a chart or session total spanning both would be numerically meaningless without conversion. Not yet a real-world issue (weight_unit defaults to the profile's preference every set), but worth converting to a common unit before trusting a mixed-unit history — src/domain/session-history.ts.", "Assumed"],
+        ["34", "Muscle balance (J3) uses a fixed 4-week window and counts only each exercise's primary muscle (secondary/stabilizer excluded) — both reasonable starting defaults, not derived from any spec requirement. A configurable window and/or secondary-muscle weighting would need real usage to know if they're worth the added complexity.", "Assumed"],
       ],
       [6, 79, 15],
     ),
@@ -285,6 +286,10 @@ export async function generateProjectPlan() {
       [
         [
           formatDate(),
+          "Epic J complete (Intelligence Foundation) — substrate for future intelligence features, not the features themselves. J1: getMuscleVolumePoints() + groupMuscleVolumeByWeek() (src/domain/training-metrics.ts) derive volume per primary muscle group per week per profile, joining session_sets through exercise_muscles (primary role only, so a compound lift's volume isn't double-counted across every muscle it merely assists). J2: src/domain/progression.ts defines the contract a future \"suggest next weight\" feature would need (ProgressionInput/ProgressionSuggestion/ProgressionStrategy) with a NOT_IMPLEMENTED_PROGRESSION_STRATEGY that throws rather than fabricating a suggestion — deliberately no algorithm yet. J3: a \"Muscle balance\" panel on /history ranks primary-muscle volume over the last 4 weeks as a plain read-only bar list — verified against real logged sets (Quads 810 vs Chest 300, matching the hand-computed weight x reps) — with no interpretive text suggesting what, if anything, to do about the ranking. All J1/J3 aggregation is pure and unit-tested (8 tests, src/domain/training-metrics.ts).",
+        ],
+        [
+          "27 July 2026",
           "Epic I complete (Workout History). /history lists every session (most recent first), in-progress ones linking to Resume rather than a static detail view; /history/[id] shows the full immutable snapshot with every logged set per exercise. Exercise detail pages get a \"Your history\" panel (weight/volume per past session plus a top-set-weight trend line, Recharts' first real use); workout edit pages get a \"Past sessions\" panel scoped to that specific template via sessions.workoutId. /history also shows a weekly total-volume bar chart once there's more than one week of data. Both /history/export/csv and /history/export/json stream the complete one-row-per-set history (every session, not a summary) with a real Content-Disposition: attachment download, verified to return 200 and trigger a download rather than a navigation. All of Epic I's aggregation (volume, weekly bucketing, per-session collapsing) is pure and unit-tested (src/domain/session-history.ts, src/domain/export.ts — 21 tests combined) rather than computed inline in a page. Verified end-to-end in a real browser: built and ran two real sessions of the same workout at different weights, confirmed the trend chart, session detail, and both exports all agreed with the underlying session_sets rows inspected directly in the database.",
         ],
         [

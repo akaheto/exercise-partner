@@ -29,7 +29,9 @@ export interface WeeklyVolume {
   volume: number;
 }
 
-function mondayOf(date: Date): string {
+/** Exported for reuse by src/domain/training-metrics.ts, which needs the same
+ * week-bucketing but keyed by muscle as well as date. */
+export function mondayOf(date: Date): string {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const day = d.getUTCDay();
   const diff = (day + 6) % 7; // days since Monday
