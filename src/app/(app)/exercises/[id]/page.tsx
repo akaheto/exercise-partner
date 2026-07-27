@@ -7,10 +7,13 @@ import { Button } from "@/components/ui/button";
 import { MuscleDiagram } from "@/components/exercise/muscle-diagram";
 import { RelatedExercises } from "@/components/exercise/related-exercises";
 import { VideoEmbed } from "@/components/exercise/video-embed";
+import { ExerciseHistorySection } from "@/components/history/exercise-history-section";
 import { getExerciseById, getRelatedLinks, getSubstitutionCandidates } from "@/db/queries/exercises";
+import { getExerciseHistory } from "@/db/queries/history";
 import { getActiveProfileId } from "@/lib/active-profile";
 import { parseMuscleList } from "@/domain/importParsing";
 import { splitIntoSentences } from "@/domain/text";
+import { groupExerciseHistoryBySession } from "@/domain/session-history";
 
 function BulletedText({ text }: { text: string | null }) {
   const sentences = splitIntoSentences(text);
@@ -31,12 +34,14 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
   const exercise = await getExerciseById(id, profileId);
   if (!exercise) notFound();
 
-  const [substitutions, relatedLinks] = await Promise.all([
+  const [substitutions, relatedLinks, rawHistory] = await Promise.all([
     getSubstitutionCandidates(id),
     getRelatedLinks(id),
+    profileId ? getExerciseHistory(id, profileId) : Promise.resolve([]),
   ]);
 
   const secondaryMuscles = parseMuscleList(exercise.secondaryMuscles);
+  const history = groupExerciseHistoryBySession(rawHistory);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 md:px-6">
@@ -133,6 +138,7 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
 
         <div className="space-y-6">
           <MuscleDiagram primaryMuscle={exercise.primaryMuscle} secondaryMuscles={secondaryMuscles} />
+          {profileId && <ExerciseHistorySection points={history} />}
           <RelatedExercises substitutions={substitutions} relatedLinks={relatedLinks} />
         </div>
       </div>

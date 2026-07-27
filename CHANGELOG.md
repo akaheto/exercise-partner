@@ -9,6 +9,23 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Workout History (`/history`, `/history/[id]`): every session, most recent
+  first, with in-progress sessions linking to Resume instead of a static
+  detail view. Session detail shows every logged set per exercise, read from
+  the same immutable snapshot Workout Mode wrote. A weekly total-volume bar
+  chart appears on `/history` once there's more than one week of data
+  (Recharts' first real use in the app). Exercise detail pages get a "Your
+  history" panel — a top-set-weight trend line plus a per-session list; the
+  workout edit page gets a "Past sessions" panel scoped to that specific
+  template. All aggregation (volume, weekly bucketing, per-session
+  collapsing) is pure and unit-tested
+  (`src/domain/session-history.ts`, 15 tests) rather than computed inline in
+  a page.
+- History export (`/history/export/csv`, `/history/export/json`): the
+  complete one-row-per-set history — every session regardless of status, not
+  a summary — as a real file download (`Content-Disposition: attachment`).
+  CSV rendering is pure and unit-tested for quoting/escaping edge cases
+  (`src/domain/export.ts`, 6 tests).
 - Workout Mode (`/session/[id]`): a full-screen, nav-free guided runner
   (`src/app/session/`) that snapshots the workout into `sessions.workoutSnapshot`
   at start — a one-time jsonb copy, so a later template edit can never change

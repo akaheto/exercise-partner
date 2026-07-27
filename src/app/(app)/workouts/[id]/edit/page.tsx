@@ -5,9 +5,11 @@ import { AddExerciseButton } from "@/components/workout-builder/add-exercise-but
 import { BlockList } from "@/components/workout-builder/block-list";
 import { WorkoutMetaForm } from "@/components/workout-builder/workout-meta-form";
 import { WorkoutAssessmentPanel } from "@/components/workout-assessment/workout-assessment-panel";
+import { WorkoutSessionHistoryPanel } from "@/components/history/workout-session-history-panel";
 import { Button } from "@/components/ui/button";
 import { getWorkoutForEdit } from "@/db/queries/workouts";
 import { getSubstitutionCandidates } from "@/db/queries/exercises";
+import { getWorkoutSessionHistory } from "@/db/queries/history";
 import { getActiveProfileId } from "@/lib/active-profile";
 import { estimateWorkoutMinutes } from "@/domain/workout-duration";
 import { assessWorkout } from "@/domain/workout-assessment";
@@ -38,6 +40,7 @@ export default async function WorkoutBuilderPage({ params }: { params: Promise<{
     }),
   );
   const substitutionCandidates = new Map(candidateEntries);
+  const sessionHistory = await getWorkoutSessionHistory(id, profileId);
 
   const minutes = estimateWorkoutMinutes(
     workout.blocks.map((b) => ({ restSeconds: b.restSeconds, items: b.items.map((i) => ({ sets: i.sets })) })),
@@ -85,6 +88,7 @@ export default async function WorkoutBuilderPage({ params }: { params: Promise<{
       </div>
 
       <WorkoutAssessmentPanel assessment={assessment} />
+      <WorkoutSessionHistoryPanel sessions={sessionHistory} />
     </div>
   );
 }

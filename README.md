@@ -25,8 +25,12 @@ and tags/folders are deliberately deferred (see `PROJECT_PLAN.docx` section 4).
 Epic H (Workout Mode) is complete: hit "Start" on any workout to run it
 full-screen, one exercise at a time, with fast 56px set logging, a wall-clock
 rest timer, and resume that survives closing the tab — progress is derived
-from the sets you've already logged, not stored client-side. See
-`PROJECT_PLAN.docx` for the current deliverable status.
+from the sets you've already logged, not stored client-side. Epic I (Workout
+History) is complete: `/history` lists every session with a weekly volume
+chart, session detail shows every logged set, exercise and workout pages get
+their own "performance over time" panels, and the complete history is
+downloadable as CSV or JSON. See `PROJECT_PLAN.docx` for the current
+deliverable status.
 
 The site is protected by a single shared password (`SITE_PASSWORD` in `.env`);
 inside it, a lightweight profile picker (no per-person login) scopes workouts
@@ -104,13 +108,14 @@ Run `lint`, `typecheck` and `test` before considering any change complete.
 ```
 data/source/     The source spreadsheet, vendored so imports are reproducible
 scripts/docs/    Generators for the Word deliverables
-src/app/         Next.js App Router routes
+src/app/         Next.js App Router routes (including src/app/session for Workout Mode)
 src/components/  UI components (shadcn/ui primitives in components/ui)
+src/db/          Drizzle schema (src/db/schema) and query functions (src/db/queries)
+src/domain/      Pure business logic — generator, duration estimation, session progress,
+                 volume/history aggregation — no I/O, testable without a database or browser
 src/lib/         Shared utilities
+e2e/             Playwright end-to-end tests
 ```
-
-Planned as feature work lands: `src/db` (Drizzle schema and queries) and
-`src/domain` (pure business logic — generator, duration estimation, volume math).
 
 ## Documentation
 
