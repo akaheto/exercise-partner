@@ -8,6 +8,9 @@ export interface WorkoutItemForEdit {
   exerciseId: string;
   exerciseName: string;
   exerciseThumbnail: string | null;
+  exercisePrimaryMuscle: string | null;
+  exerciseSecondaryMuscles: string | null;
+  exerciseBodyRegion: string | null;
   sets: number;
   repsMin: number | null;
   repsMax: number | null;
@@ -48,6 +51,9 @@ export async function getWorkoutForEdit(workoutId: string, profileId: string): P
       exerciseId: workoutItems.exerciseId,
       exerciseName: sourceExercises.name,
       exerciseThumbnail: sourceExercises.thumbnailUrl,
+      exercisePrimaryMuscle: sourceExercises.primaryMuscle,
+      exerciseSecondaryMuscles: sourceExercises.secondaryMuscles,
+      exerciseBodyRegion: sourceExercises.bodyRegion,
       sets: workoutItems.sets,
       repsMin: workoutItems.repsMin,
       repsMax: workoutItems.repsMax,
@@ -80,6 +86,9 @@ export async function getWorkoutForEdit(workoutId: string, profileId: string): P
         exerciseId: row.exerciseId!,
         exerciseName: row.exerciseName ?? "(exercise removed)",
         exerciseThumbnail: row.exerciseThumbnail,
+        exercisePrimaryMuscle: row.exercisePrimaryMuscle,
+        exerciseSecondaryMuscles: row.exerciseSecondaryMuscles,
+        exerciseBodyRegion: row.exerciseBodyRegion,
         sets: row.sets!,
         repsMin: row.repsMin,
         repsMax: row.repsMax,

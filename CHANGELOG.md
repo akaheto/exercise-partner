@@ -9,6 +9,22 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Multi-select exercise cards (`/exercises`): a checkbox overlay on every
+  card, a persistent selection tray (survives filter/pagination navigation —
+  the selection provider lives at the (app) layout level, not the page, so
+  Next.js guarantees it isn't remounted) showing a live duration tally, and
+  a one-click "Add to workout" that seeds a new workout in selection order.
+  The tally uses a quick-preview model (`estimateSelectionMinutes`): default
+  3-set prescription with a flat 1-minute transition between exercises
+  instead of a rest-based calculation, since nothing's been configured yet.
+- Deterministic workout assessment (shown on the builder once a workout has
+  exercises): which muscles it trains — primary and secondary, most-frequent
+  first — which of the three body regions it doesn't touch, a weight-
+  selection tip inferred from the rep ranges actually prescribed (not a
+  fixed label — changes if you edit the reps), and a recovery tip based on
+  which muscle groups dominate (`src/domain/workout-assessment.ts`, 16
+  tests). Rule-based, no AI call — see ENHANCEMENTS.docx for an AI-powered
+  version logged as a deferred idea.
 - Intelligent Workout Generator (`/build/generate`): a 5-step questionnaire
   (goal, duration, focus, experience, equipment) feeds a pure, unit-tested
   selection algorithm (`src/domain/generator/`, 15 tests) — one compound

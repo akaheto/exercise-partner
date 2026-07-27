@@ -3,6 +3,7 @@ import {
   DEFAULT_REST_SECONDS,
   TRANSITION_SECONDS_PER_BLOCK,
   WORK_SECONDS_PER_SET,
+  estimateSelectionMinutes,
   estimateWorkoutMinutes,
 } from "./workout-duration";
 
@@ -64,5 +65,33 @@ describe("estimateWorkoutMinutes", () => {
 
   it("rounds up rather than down, so short workouts don't estimate to 0 minutes", () => {
     expect(estimateWorkoutMinutes([{ restSeconds: 0, items: [{ sets: 1 }] }])).toBeGreaterThan(0);
+  });
+});
+
+describe("estimateSelectionMinutes", () => {
+  it("returns 0 for no exercises selected", () => {
+    expect(estimateSelectionMinutes(0)).toBe(0);
+  });
+
+  it("uses a flat per-exercise transition instead of a rest-per-round calculation", () => {
+    // 3 sets * 40s work + 60s flat transition, no rest-per-round added.
+    const seconds = 3 * WORK_SECONDS_PER_SET + TRANSITION_SECONDS_PER_BLOCK;
+    expect(estimateSelectionMinutes(1)).toBe(Math.ceil(seconds / 60));
+  });
+
+  it("scales linearly with exercise count", () => {
+    const one = estimateSelectionMinutes(1);
+    const four = estimateSelectionMinutes(4);
+    expect(four).toBe(one * 4);
+  });
+
+  it("respects a custom sets-per-exercise value", () => {
+    const threeSets = estimateSelectionMinutes(1, 3);
+    const fiveSets = estimateSelectionMinutes(1, 5);
+    expect(fiveSets).toBeGreaterThan(threeSets);
+  });
+
+  it("treats a negative count the same as zero rather than throwing", () => {
+    expect(estimateSelectionMinutes(-1)).toBe(0);
   });
 });

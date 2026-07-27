@@ -14,9 +14,12 @@ Epics A–F (foundation, data import, app shell, exercise library, manual
 workout builder, intelligent generator) are complete. Start at `/build`:
 build a workout by hand, or answer 5 quick questions at `/build/generate`
 and get one assembled for you — balanced across movement patterns, fitted to
-your time budget, fully editable afterwards in the same builder. Feature
-work continues with Epic G (the workout library). See `PROJECT_PLAN.docx`
-for the current deliverable status.
+your time budget, fully editable afterwards in the same builder. You can
+also multi-select exercises straight from `/exercises` (with a live duration
+tally) to build a workout in one action, and every workout gets a
+deterministic assessment — muscles worked, a weight-selection tip, and a
+recovery tip. Feature work continues with Epic G (the workout library). See
+`PROJECT_PLAN.docx` for the current deliverable status.
 
 The site is protected by a single shared password (`SITE_PASSWORD` in `.env`);
 inside it, a lightweight profile picker (no per-person login) scopes workouts

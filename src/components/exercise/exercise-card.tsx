@@ -1,19 +1,30 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { Dumbbell, Video } from "lucide-react";
+import { Check, Dumbbell, Video } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { useExerciseSelection } from "@/components/exercise-selection/selection-context";
 import type { SourceExerciseRow } from "./types";
 
 /**
  * Exercise card per VISUAL_STYLE_GUIDE.docx section 4: thumbnail (16:9), name,
  * primary muscle badge, equipment badge, experience level. Entire card is one
- * click target.
+ * click target for viewing the exercise; the checkbox overlay is a separate
+ * target for multi-select (stops propagation so it never triggers navigation).
  */
 export function ExerciseCard({ exercise }: { exercise: SourceExerciseRow }) {
+  const { isSelected, toggle } = useExerciseSelection();
+  const selected = isSelected(exercise.exerciseId);
+
   return (
     <Link
       href={`/exercises/${exercise.exerciseId}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      className={cn(
+        "group flex flex-col overflow-hidden rounded-2xl border bg-card transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+        selected ? "border-primary" : "border-border",
+      )}
     >
       <div className="relative aspect-video w-full overflow-hidden bg-muted">
         {exercise.thumbnailUrl ? (
@@ -34,6 +45,22 @@ export function ExerciseCard({ exercise }: { exercise: SourceExerciseRow }) {
             <Video className="size-3" aria-hidden="true" /> Video
           </span>
         )}
+        <button
+          type="button"
+          aria-label={selected ? `Remove ${exercise.name} from selection` : `Select ${exercise.name}`}
+          aria-pressed={selected}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggle({ exerciseId: exercise.exerciseId, name: exercise.name });
+          }}
+          className={cn(
+            "absolute top-2 left-2 flex size-7 items-center justify-center rounded-full border-2 transition-colors",
+            selected ? "border-primary bg-primary text-primary-foreground" : "border-background/80 bg-background/60 text-transparent hover:bg-background/90",
+          )}
+        >
+          <Check className="size-4" aria-hidden="true" />
+        </button>
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-3">

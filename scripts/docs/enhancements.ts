@@ -32,9 +32,51 @@ export async function generateEnhancements() {
     ),
 
     h1("Implemented"),
-    p("Nothing yet — v1 is still in Epic A (foundation). This section fills in as enhancements ship.", { muted: true, italics: true }),
+    p("Ideas beyond the core PROJECT_PLAN.docx deliverables that shipped along the way.", { muted: true }),
+    spacer(),
+    table(
+      ["Idea", "What it does", "Shipped"],
+      [
+        [
+          "Multi-select workout building",
+          "Select several exercises directly from the Exercise Library's cards and add them all to a new workout in one action, with a running duration estimate visible while selecting",
+          formatDate(),
+        ],
+        [
+          "Deterministic workout assessment",
+          "On the workout builder: which muscles the workout trains (and which body regions it doesn't touch), a weight-selection tip inferred from the rep ranges actually prescribed, and a recovery tip based on the muscle groups hit — all rule-based, no AI call",
+          formatDate(),
+        ],
+      ],
+      [24, 56, 20],
+    ),
 
     h1("Not Yet Implemented"),
+
+    h2("Deferred to the end of the project"),
+    p(
+      "Explicitly sequenced last, by request — either because they need production photography/video work that doesn't make sense to do repeatedly while the app is still changing, or because they should be evaluated against what the deterministic version above actually turns out to need.",
+      { muted: true },
+    ),
+    spacer(),
+    table(
+      COLS,
+      [
+        [
+          "Photorealistic exercise images",
+          "Real photography or generated images showing each exercise's start and end position, exported in full, thumbnail, and mobile sizes; thumbnails would replace the current hotlinked source images in the library card list",
+          "The spreadsheet has only one static thumbnail per exercise (see TECHNICAL_SPEC.docx \"Media\" limitations) — this is the closest thing to the spec's original \"photorealistic visual\" requirement, but it's a production asset pipeline, not app code, and not worth doing more than once",
+          "Large",
+        ],
+        [
+          "AI-powered training coach / assessment",
+          "Replace or augment the deterministic workout assessment with a Claude API call — a natural-language coach that can answer follow-up questions, or a richer assessment than fixed rules can produce",
+          "Worth evaluating once there's real usage of the deterministic version to see what it actually can't do — an LLM call adds cost, latency, and a new failure mode (hallucinated advice) that a fixed rule set doesn't have",
+          "Medium",
+        ],
+      ],
+      WIDTHS,
+    ),
 
     h2("Training practicality — highest value for the least work"),
     p("These address friction that shows up the first time the app is used in an actual gym.", { muted: true }),

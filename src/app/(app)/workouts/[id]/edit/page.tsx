@@ -4,10 +4,13 @@ import { ArrowLeft, Clock } from "lucide-react";
 import { AddExerciseButton } from "@/components/workout-builder/add-exercise-button";
 import { BlockList } from "@/components/workout-builder/block-list";
 import { WorkoutMetaForm } from "@/components/workout-builder/workout-meta-form";
+import { WorkoutAssessmentPanel } from "@/components/workout-assessment/workout-assessment-panel";
 import { getWorkoutForEdit } from "@/db/queries/workouts";
 import { getSubstitutionCandidates } from "@/db/queries/exercises";
 import { getActiveProfileId } from "@/lib/active-profile";
 import { estimateWorkoutMinutes } from "@/domain/workout-duration";
+import { assessWorkout } from "@/domain/workout-assessment";
+import { parseMuscleList } from "@/domain/importParsing";
 import type { PickerExercise } from "./actions";
 
 export default async function WorkoutBuilderPage({ params }: { params: Promise<{ id: string }> }) {
@@ -38,6 +41,17 @@ export default async function WorkoutBuilderPage({ params }: { params: Promise<{
     workout.blocks.map((b) => ({ restSeconds: b.restSeconds, items: b.items.map((i) => ({ sets: i.sets })) })),
   );
 
+  const allItems = workout.blocks.flatMap((b) => b.items);
+  const assessment = assessWorkout(
+    allItems.map((i) => ({
+      primaryMuscle: i.exercisePrimaryMuscle,
+      secondaryMuscles: parseMuscleList(i.exerciseSecondaryMuscles),
+      bodyRegion: i.exerciseBodyRegion,
+      repsMin: i.repsMin,
+      repsMax: i.repsMax,
+    })),
+  );
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 md:px-6">
       <Link href="/workouts" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
@@ -55,9 +69,11 @@ export default async function WorkoutBuilderPage({ params }: { params: Promise<{
 
       <BlockList workoutId={workout.id} blocks={workout.blocks} substitutionCandidates={substitutionCandidates} />
 
-      <div className="mt-4">
+      <div className="mt-4 mb-6">
         <AddExerciseButton workoutId={workout.id} />
       </div>
+
+      <WorkoutAssessmentPanel assessment={assessment} />
     </div>
   );
 }
