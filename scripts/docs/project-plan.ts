@@ -160,12 +160,12 @@ export async function generateProjectPlan() {
     table(
       EPIC_COLS,
       [
-        ["F1", "Questionnaire flow", S.notStarted, "Goals, duration, focus, equipment, experience, constraints"],
-        ["F2", "Equipment-aware candidate filtering", S.notStarted, "Driven by the Equipment Inventory the user maintains"],
-        ["F3", "Selection and balance engine", S.notStarted, "Movement-pattern coverage, push/pull balance, no redundant overlap"],
-        ["F4", "Ordering and time-fitting", S.notStarted, "Compound-first; fits the chosen duration including rest and transitions"],
-        ["F5", "Review, substitute and save", S.notStarted, "Generated workouts are fully editable before saving"],
-        ["F6", "Generator test suite", S.notStarted, "Constraint tests plus unhappy paths (no equipment, impossible focus)"],
+        ["F1", "Questionnaire flow", S.done, "5-step wizard: goal, duration, focus, experience, equipment (saved as a full profile snapshot)"],
+        ["F2", "Equipment-aware candidate filtering", S.done, "fetchCandidatePool filters by equipment; verified 5/28 selected -> persisted as 5 have/23 no"],
+        ["F3", "Selection and balance engine", S.done, "One compound anchor per movement pattern first, then diverse accessories; verified real full-body run covered squat/hinge/push patterns"],
+        ["F4", "Ordering and time-fitting", S.done, "Compound-first ordering; duration-fit loop reuses Epic E's estimator — verified a strength workout correctly trimmed to 3 exercises (~41 min vs 40 requested) because of its long rest"],
+        ["F5", "Review, substitute and save", S.done, "Generated workouts seed a real workout row and redirect straight into Epic E's builder — full edit/substitute/save for free, no separate review UI needed"],
+        ["F6", "Generator test suite", S.done, "src/domain/generator/generate.test.ts, 15 tests: pattern coverage, experience filtering, duration fitting, goal prescriptions, 3 unhappy paths, determinism"],
       ],
       EPIC_WIDTHS,
     ),
@@ -264,6 +264,9 @@ export async function generateProjectPlan() {
         ["20", "The \"Add exercise\" picker (Epic E1) is name-search only, not the Exercise Library's full 8-filter set — a deliberate scope cut to keep the builder dialog light. Epic G's workout library or a future pass could bring the full filter bar in.", "Decided"],
         ["21", "Duration estimate constants (40s work per set, 60s rest default, 60s transition per block) are named, documented assumptions in src/domain/workout-duration.ts, not measured values — same caveat as the original estimate design in TECHNICAL_SPEC.", "Assumed"],
         ["22", "New workout items default to 3 sets, 8-12 reps — a reasonable general-purpose default, not derived from any exercise-specific data (the source has no prescription data to draw from).", "Assumed"],
+        ["23", "The revised, confirmed spec ('goals, available equipment, available workout time, areas of focus, experience level') is intentionally less rigid than an earlier abandoned draft (which specified an exact goal list, exact duration options, and multi-select goal ranking). The implemented questionnaire uses single-select for goal/focus/experience and the earlier draft's clean 20/30/40/50/60 duration options, as a reasonable structured default consistent with the confirmed spec's intent.", "Decided"],
+        ["24", "The generator produces one exercise per block (no auto-supersetting) — supersets/circuits are presented as a manual grouping tool (Epic E4) the user applies afterwards in the builder, not a generator decision. Keeps the algorithm's output predictable and easy to reason about.", "Decided"],
+        ["25", "Reusing Epic E's estimateWorkoutMinutes for the generator's duration-fit loop means goal-driven rest time directly affects how many exercises fit — e.g. a 40-minute \"strength\" workout (150s rest) generates fewer, not more padded, exercises than a hypertrophy workout of the same length. Confirmed intentional and verified in a live run rather than assumed.", "Resolved"],
       ],
       [6, 79, 15],
     ),
@@ -274,6 +277,10 @@ export async function generateProjectPlan() {
       [
         [
           formatDate(),
+          "Epic F complete (Intelligent Workout Generator). 5-step questionnaire (goal, duration, focus, experience, equipment) feeds a pure, unit-tested selection algorithm (src/domain/generator/, 15 tests): one compound anchor exercise per relevant movement pattern first for push/pull/squat/hinge/core balance, then diverse accessory work, compound-first ordering, and a duration-fit loop reusing Epic E's own duration estimator so goal-driven rest time genuinely changes how many exercises fit. Equipment answers are saved as a full profile snapshot to equipment_inventory. Generated workouts seed a real workout row and redirect straight into Epic E's existing builder — review, substitute and save came for free from Epic E rather than needing a separate UI. Verified end-to-end in a real browser: a 40-minute strength-goal full-body workout correctly generated only 3 exercises (not padded to more) because strength's 150s rest genuinely fills the time budget faster, and the full equipment selection (5 of 28) persisted correctly as a complete have/no snapshot.",
+        ],
+        [
+          "26 July 2026",
           "Epic E complete (Manual Workout Builder). /build hub (\"start from scratch\" now functional; generator stubbed for Epic F) creates a draft workout and opens the builder. Full CRUD via Server Actions: add exercise (new block or grouped into an existing one, auto-promoting to superset), reorder blocks via dnd-kit drag-and-drop, per-item prescription (sets/reps/rest/notes) with auto-save on blur, per-block rest and a Superset/Circuit label toggle, remove (auto-reverting a block to \"single\" when it drops to one item), and inline substitution reusing Epic D's candidate data. Live duration estimate (src/domain/workout-duration.ts, 8 unit tests) recalculates after every change. All of the above verified end-to-end in a real browser against real data, including that changes persist across a reload and that deleting a profile correctly cascades to its workouts. Found and fixed a real schema gap along the way: no foreign key had ON DELETE behaviour, so deleting a workout failed outright — added cascade/set-null rules across the app-owned tables (new migration 0001).",
         ],
         [

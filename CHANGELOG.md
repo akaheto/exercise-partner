@@ -9,6 +9,15 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Intelligent Workout Generator (`/build/generate`): a 5-step questionnaire
+  (goal, duration, focus, experience, equipment) feeds a pure, unit-tested
+  selection algorithm (`src/domain/generator/`, 15 tests) — one compound
+  anchor exercise per relevant movement pattern first, then diverse
+  accessory work, compound-first ordering, and a duration-fit loop that
+  reuses the Workout Builder's own duration estimator. Equipment answers
+  save as a full profile snapshot to `equipment_inventory`. Generated
+  workouts seed a real workout and redirect straight into the existing
+  builder, so review/substitute/save needed no new UI.
 - Manual Workout Builder (`/build`, `/workouts/[id]/edit`): add exercises from
   a search picker as a new block or grouped into an existing one (auto-
   promoting it to a superset), drag-and-drop block reordering (`dnd-kit`,

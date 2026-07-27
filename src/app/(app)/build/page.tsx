@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { PenLine, Wand2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { startNewWorkout } from "./actions";
 
 export default function BuildPage() {
@@ -22,15 +24,17 @@ export default function BuildPage() {
           </Button>
         </form>
 
-        <div className="flex flex-col gap-3 rounded-2xl border border-dashed border-border p-5 opacity-60">
-          <Wand2 className="size-6 text-muted-foreground" aria-hidden="true" />
+        <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
+          <Wand2 className="size-6 text-primary" aria-hidden="true" />
           <div>
             <h2 className="font-semibold text-foreground">Generate for me</h2>
-            <p className="text-sm text-muted-foreground">Not built yet — part of Epic F.</p>
+            <p className="text-sm text-muted-foreground">
+              Answer a few questions about your goal, time, focus and equipment — fully editable afterwards.
+            </p>
           </div>
-          <Button type="button" disabled className="mt-auto">
-            Coming soon
-          </Button>
+          <Link href="/build/generate" className={cn(buttonVariants({ variant: "default" }), "mt-auto")}>
+            Answer questions
+          </Link>
         </div>
       </div>
     </div>

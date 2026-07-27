@@ -10,12 +10,13 @@ research spreadsheet as its seed database and builds four capabilities on top:
 
 ## Status
 
-Epics A–E (foundation, data import, app shell, exercise library, manual
-workout builder) are complete. Start at `/build` to create a workout: add
-exercises from the library, drag to reorder, group into supersets/circuits,
-set sets/reps/rest, substitute, and watch the estimated duration update live.
-Feature work continues with Epic F (the questionnaire-driven generator). See
-`PROJECT_PLAN.docx` for the current deliverable status.
+Epics A–F (foundation, data import, app shell, exercise library, manual
+workout builder, intelligent generator) are complete. Start at `/build`:
+build a workout by hand, or answer 5 quick questions at `/build/generate`
+and get one assembled for you — balanced across movement patterns, fitted to
+your time budget, fully editable afterwards in the same builder. Feature
+work continues with Epic G (the workout library). See `PROJECT_PLAN.docx`
+for the current deliverable status.
 
 The site is protected by a single shared password (`SITE_PASSWORD` in `.env`);
 inside it, a lightweight profile picker (no per-person login) scopes workouts
