@@ -174,10 +174,10 @@ export async function generateProjectPlan() {
     table(
       EPIC_COLS,
       [
-        ["G1", "Save, list and search workouts", S.notStarted, "Scoped to the active profile"],
-        ["G2", "Duplicate, edit and archive", S.notStarted, "Archive rather than hard delete by default"],
-        ["G3", "Versioning", S.notStarted, "Editing a workout never rewrites history already recorded against it"],
-        ["G4", "Organisation", S.notStarted, "Tags, folders or collections"],
+        ["G1", "Save, list and search workouts", S.done, "/workouts: search by name, exercise count + estimated duration per card, verified end-to-end with real data"],
+        ["G2", "Duplicate, edit and archive", S.done, "Deep-copy duplicate verified independent at the DB level (separate block/item rows); archive/restore via archivedAt; edit already existed (Epic E)"],
+        ["G3", "Versioning", S.blocked, "Deliberately deferred, not skipped: only meaningful once Epic H's sessions exist to protect — versioning-on-edit only matters once a session could reference the version being changed. Current builder edits mutate in place, which is safe today because no session history exists yet to violate. Revisit as part of Epic H."],
+        ["G4", "Organisation", S.notStarted, "Search (G1) covers the immediate need; tags/folders deferred until real usage shows whether they're needed — see PROJECT_PLAN section 4"],
       ],
       EPIC_WIDTHS,
     ),
@@ -269,6 +269,8 @@ export async function generateProjectPlan() {
         ["25", "Reusing Epic E's estimateWorkoutMinutes for the generator's duration-fit loop means goal-driven rest time directly affects how many exercises fit — e.g. a 40-minute \"strength\" workout (150s rest) generates fewer, not more padded, exercises than a hypertrophy workout of the same length. Confirmed intentional and verified in a live run rather than assumed.", "Resolved"],
         ["26", "Two enhancements beyond the core plan were requested and built directly rather than only logged: multi-select workout building with a live duration tally (Exercise Library), and a deterministic (rule-based, no AI call) workout assessment — muscles worked, a weight/rep tip inferred from prescribed rep ranges, and a recovery tip. Both recorded in ENHANCEMENTS.docx \"Implemented\".", "Resolved"],
         ["27", "By explicit request, two enhancement ideas are sequenced to the end of the project rather than built now: photorealistic exercise images (full/thumbnail/mobile sizes, start+end position — a production asset pipeline, not app code) and an AI-powered training coach / assessment via the Claude API (to be evaluated against what the deterministic assessment turns out not to cover). See ENHANCEMENTS.docx \"Deferred to the end of the project\".", "Decided"],
+        ["28", "G3 (versioning) is marked Blocked rather than built: it protects sessions from a template edit rewriting their history, but Epic H (which creates sessions) doesn't exist yet, so there is no history to protect and no way to verify versioning behaves correctly. Building it now would be speculative complexity in the builder's every-edit auto-save path. Revisit when Epic H starts.", "Decided"],
+        ["29", "G4 (tags/folders/collections) is deferred past v1: G1's name search already covers the immediate need, and organisation features designed before there's a real multi-workout library in use risk solving the wrong problem. Revisit once there's enough saved-workout volume to see what's actually hard to find.", "Decided"],
       ],
       [6, 79, 15],
     ),
@@ -279,6 +281,10 @@ export async function generateProjectPlan() {
       [
         [
           formatDate(),
+          "Epic G partially complete (Workout Library) — G1 and G2 built, G3 and G4 explicitly deferred rather than skipped silently (see section 4, items 28-29). /workouts replaces the Epic A-era placeholder: name search, exercise count and estimated duration per card (computed the same way the builder does), archive/restore via the existing archivedAt column, and a duplicate that deep-copies blocks and items into fully independent rows — verified at the database level, not just visually, that a duplicated workout's rows are distinct from the original's. Also added, by request: multi-select exercise cards on the Exercise Library (checkbox overlay, a live duration tally that survives filter navigation because the selection provider lives at the (app) layout level, and one-click bulk workout creation), and a deterministic per-workout assessment (muscles worked, a weight-selection tip inferred from actual prescribed rep ranges, a recovery tip) — both logged in ENHANCEMENTS.docx \"Implemented\". Two further ideas — photorealistic exercise images and an AI-powered coach/assessment — logged as explicitly deferred to the end of the project rather than built now.",
+        ],
+        [
+          "26 July 2026",
           "Epic F complete (Intelligent Workout Generator). 5-step questionnaire (goal, duration, focus, experience, equipment) feeds a pure, unit-tested selection algorithm (src/domain/generator/, 15 tests): one compound anchor exercise per relevant movement pattern first for push/pull/squat/hinge/core balance, then diverse accessory work, compound-first ordering, and a duration-fit loop reusing Epic E's own duration estimator so goal-driven rest time genuinely changes how many exercises fit. Equipment answers are saved as a full profile snapshot to equipment_inventory. Generated workouts seed a real workout row and redirect straight into Epic E's existing builder — review, substitute and save came for free from Epic E rather than needing a separate UI. Verified end-to-end in a real browser: a 40-minute strength-goal full-body workout correctly generated only 3 exercises (not padded to more) because strength's 150s rest genuinely fills the time budget faster, and the full equipment selection (5 of 28) persisted correctly as a complete have/no snapshot.",
         ],
         [

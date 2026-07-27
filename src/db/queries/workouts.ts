@@ -1,6 +1,7 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, isNull, isNotNull } from "drizzle-orm";
 import { db } from "@/db/client";
 import { sourceExercises, workoutBlocks, workoutItems, workouts } from "@/db/schema";
+import { estimateWorkoutMinutes } from "@/domain/workout-duration";
 
 export interface WorkoutItemForEdit {
   id: number;
@@ -107,10 +108,69 @@ export async function getWorkoutForEdit(workoutId: string, profileId: string): P
   };
 }
 
-export function listWorkoutsForProfile(profileId: string) {
-  return db
+export interface WorkoutSummary {
+  id: string;
+  name: string;
+  description: string | null;
+  archivedAt: Date | null;
+  updatedAt: Date;
+  exerciseCount: number;
+  estimatedMinutes: number;
+}
+
+/**
+ * Workout list for the library (Epic G1). Excludes archived workouts unless
+ * explicitly requested, and computes exercise count + duration in JS from a
+ * single follow-up query rather than a SQL aggregation — simple and correct
+ * at the scale a personal app's workout list actually reaches.
+ */
+export async function listWorkoutSummaries(
+  profileId: string,
+  options: { search?: string; includeArchived?: boolean } = {},
+): Promise<WorkoutSummary[]> {
+  const conditions = [eq(workouts.profileId, profileId)];
+  conditions.push(options.includeArchived ? isNotNull(workouts.archivedAt) : isNull(workouts.archivedAt));
+  if (options.search) conditions.push(ilike(workouts.name, `%${options.search}%`));
+
+  const rows = await db
     .select()
     .from(workouts)
-    .where(eq(workouts.profileId, profileId))
-    .orderBy(asc(workouts.createdAt));
+    .where(and(...conditions))
+    .orderBy(desc(workouts.updatedAt));
+
+  if (rows.length === 0) return [];
+
+  const workoutIds = rows.map((w) => w.id);
+  const blockRows = await db
+    .select({
+      workoutId: workoutBlocks.workoutId,
+      blockId: workoutBlocks.id,
+      restSeconds: workoutBlocks.restSeconds,
+      sets: workoutItems.sets,
+    })
+    .from(workoutBlocks)
+    .leftJoin(workoutItems, eq(workoutItems.blockId, workoutBlocks.id))
+    .where(inArray(workoutBlocks.workoutId, workoutIds));
+
+  const blocksByWorkout = new Map<string, Map<number, { restSeconds: number | null; items: { sets: number }[] }>>();
+  const countByWorkout = new Map<string, number>();
+  for (const row of blockRows) {
+    if (!blocksByWorkout.has(row.workoutId)) blocksByWorkout.set(row.workoutId, new Map());
+    const blocks = blocksByWorkout.get(row.workoutId)!;
+    if (!blocks.has(row.blockId)) blocks.set(row.blockId, { restSeconds: row.restSeconds, items: [] });
+    if (row.sets !== null) {
+      blocks.get(row.blockId)!.items.push({ sets: row.sets });
+      countByWorkout.set(row.workoutId, (countByWorkout.get(row.workoutId) ?? 0) + 1);
+    }
+  }
+
+  return rows.map((w) => ({
+    id: w.id,
+    name: w.name,
+    description: w.description,
+    archivedAt: w.archivedAt,
+    updatedAt: w.updatedAt,
+    exerciseCount: countByWorkout.get(w.id) ?? 0,
+    estimatedMinutes: estimateWorkoutMinutes([...(blocksByWorkout.get(w.id)?.values() ?? [])]),
+  }));
 }

@@ -9,6 +9,16 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Workout Library (`/workouts`), replacing the Epic A-era placeholder: every
+  saved workout as a card with name search (debounced, URL-driven) and an
+  archived/active toggle, exercise count and estimated duration computed the
+  same way the builder does (`listWorkoutSummaries`), one-click duplicate
+  that deep-copies blocks and items into fully independent rows inside a
+  transaction (verified at the database level, not just visually, that the
+  copy's rows are distinct from the original's), and archive/restore via the
+  existing `archivedAt` column. Versioning and tags/folders are deliberately
+  deferred rather than skipped silently — see PROJECT_PLAN.docx section 4,
+  assumptions #28-29.
 - Multi-select exercise cards (`/exercises`): a checkbox overlay on every
   card, a persistent selection tray (survives filter/pagination navigation —
   the selection provider lives at the (app) layout level, not the page, so
