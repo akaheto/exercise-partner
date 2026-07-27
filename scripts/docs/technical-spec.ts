@@ -156,10 +156,13 @@ export async function generateTechnicalSpec() {
 
     h3("History integrity"),
     rich(
-      "Two mechanisms protect history from later template edits. First, **sessions carry a jsonb snapshot** of the workout exactly as it was when the session started. Second, **session_sets reference exercise_id directly** rather than workout_item_id, so a set stays meaningful even if the block or item that prescribed it is later deleted.",
+      "Three mechanisms protect history from later template edits. First, **sessions carry a jsonb snapshot** of the workout exactly as it was when the session started. Second, **sessions.workoutId sets null (not cascade) on delete** — deleting the template entirely still doesn't touch the session, since the snapshot already has everything needed. Third, **session_sets reference exercise_id directly** rather than workout_item_id, so a set stays meaningful even if the block or item that prescribed it is later deleted.",
     ),
     p(
       "Weight is stored in a single canonical unit with the entered unit recorded alongside it, so a profile switching between kg and lb never introduces rounding drift into historical comparisons.",
+    ),
+    p(
+      "Everything else in the app-owned schema cascades on delete (workout → blocks → items; profile → workouts/sessions/overrides/equipment inventory), added in migration 0001 after a real bug: the original schema had no ON DELETE behaviour at all, so deleting a workout failed outright with a foreign-key violation. Discovered and fixed during Epic E's verification, not left for Epic G to trip over.",
     ),
 
     h1("5. Key Decisions & Tradeoffs"),

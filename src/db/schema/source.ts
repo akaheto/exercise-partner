@@ -128,10 +128,10 @@ export const sourceRelationships = pgTable("source_relationships", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
   fromExerciseId: text("from_exercise_id")
     .notNull()
-    .references(() => sourceExercises.exerciseId),
+    .references(() => sourceExercises.exerciseId, { onDelete: "cascade" }),
   toExerciseId: text("to_exercise_id")
     .notNull()
-    .references(() => sourceExercises.exerciseId),
+    .references(() => sourceExercises.exerciseId, { onDelete: "cascade" }),
   relationshipType: text("relationship_type").notNull(),
   similarityScore: integer("similarity_score").notNull(),
   evidenceType: text("evidence_type"),

@@ -9,6 +9,17 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Manual Workout Builder (`/build`, `/workouts/[id]/edit`): add exercises from
+  a search picker as a new block or grouped into an existing one (auto-
+  promoting it to a superset), drag-and-drop block reordering (`dnd-kit`,
+  keyboard-accessible), per-item prescription (sets/reps range/rest/notes,
+  auto-save on blur), per-block rest with a Superset/Circuit label toggle,
+  removing an item (auto-reverting a block to "single" at one item left), and
+  inline substitution reusing the Exercise Library's candidate data.
+- Live estimated workout duration (`src/domain/workout-duration.ts`, 8 unit
+  tests) — recalculates after every add/remove/reorder/prescription change.
+- `ON DELETE` cascade/set-null rules across the app-owned schema (migration
+  `0001_reflective_titanium_man.sql`) — see Fixed below.
 - Exercise Library (`/exercises`): search, 8 filter dimensions (muscle,
   equipment, type, mechanics, force, experience level, body region, video
   availability — muscle/equipment filters match secondary muscles too, via
@@ -84,6 +95,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The no-flash theme script triggered a real React 19 warning ("script tag
   while rendering") as a raw JSX `<script>` child; moved to `next/script`'s
   `beforeInteractive` strategy, Next's sanctioned mechanism for this.
+- The original schema (Epic B) had no `ON DELETE` behaviour on any foreign
+  key, discovered when a workout-deletion test failed with a constraint
+  violation. Added cascade rules across the app-owned tables, and set-null on
+  `sessions.workoutId` specifically so deleting a workout template never
+  deletes the history recorded against it.
 
 ### Notes
 

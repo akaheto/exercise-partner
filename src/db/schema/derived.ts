@@ -12,7 +12,7 @@ export const exerciseMuscles = pgTable(
   {
     exerciseId: text("exercise_id")
       .notNull()
-      .references(() => sourceExercises.exerciseId),
+      .references(() => sourceExercises.exerciseId, { onDelete: "cascade" }),
     muscleId: text("muscle_id")
       .notNull()
       .references(() => sourceMuscles.muscleId),
@@ -28,7 +28,7 @@ export const exerciseEquipment = pgTable(
   {
     exerciseId: text("exercise_id")
       .notNull()
-      .references(() => sourceExercises.exerciseId),
+      .references(() => sourceExercises.exerciseId, { onDelete: "cascade" }),
     equipmentId: text("equipment_id")
       .notNull()
       .references(() => sourceEquipment.equipmentId),
@@ -48,9 +48,9 @@ export const exerciseLinks = pgTable("exercise_links", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
   fromExerciseId: text("from_exercise_id")
     .notNull()
-    .references(() => sourceExercises.exerciseId),
+    .references(() => sourceExercises.exerciseId, { onDelete: "cascade" }),
   relationType: text("relation_type").notNull(), // "variation" | "alternative" | "progression" | "regression"
   label: text("label").notNull(),
   url: text("url"),
-  toExerciseId: text("to_exercise_id").references(() => sourceExercises.exerciseId),
+  toExerciseId: text("to_exercise_id").references(() => sourceExercises.exerciseId, { onDelete: "cascade" }),
 });

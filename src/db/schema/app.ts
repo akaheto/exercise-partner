@@ -38,8 +38,8 @@ export const exerciseOverrides = pgTable("exercise_overrides", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
   exerciseId: text("exercise_id")
     .notNull()
-    .references(() => sourceExercises.exerciseId),
-  profileId: uuid("profile_id").references(() => profiles.id),
+    .references(() => sourceExercises.exerciseId, { onDelete: "cascade" }),
+  profileId: uuid("profile_id").references(() => profiles.id, { onDelete: "cascade" }),
   field: text("field").notNull(), // matches a sourceExercises column name, e.g. "instructions"
   value: text("value").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -51,7 +51,7 @@ export const equipmentInventory = pgTable(
   {
     profileId: uuid("profile_id")
       .notNull()
-      .references(() => profiles.id),
+      .references(() => profiles.id, { onDelete: "cascade" }),
     equipmentId: text("equipment_id")
       .notNull()
       .references(() => sourceEquipment.equipmentId),
@@ -70,7 +70,7 @@ export const workouts = pgTable("workouts", {
   id: uuid("id").primaryKey().defaultRandom(),
   profileId: uuid("profile_id")
     .notNull()
-    .references(() => profiles.id),
+    .references(() => profiles.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   description: text("description"),
   version: integer("version").notNull().default(1),
@@ -85,7 +85,7 @@ export const workoutBlocks = pgTable("workout_blocks", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
   workoutId: uuid("workout_id")
     .notNull()
-    .references(() => workouts.id),
+    .references(() => workouts.id, { onDelete: "cascade" }),
   position: integer("position").notNull(),
   kind: text("kind").notNull().default("single"), // "single" | "superset" | "circuit"
   restSeconds: integer("rest_seconds"),
@@ -96,7 +96,7 @@ export const workoutItems = pgTable("workout_items", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
   blockId: integer("block_id")
     .notNull()
-    .references(() => workoutBlocks.id),
+    .references(() => workoutBlocks.id, { onDelete: "cascade" }),
   exerciseId: text("exercise_id")
     .notNull()
     .references(() => sourceExercises.exerciseId),
@@ -117,8 +117,10 @@ export const sessions = pgTable("sessions", {
   id: uuid("id").primaryKey().defaultRandom(),
   profileId: uuid("profile_id")
     .notNull()
-    .references(() => profiles.id),
-  workoutId: uuid("workout_id").references(() => workouts.id),
+    .references(() => profiles.id, { onDelete: "cascade" }),
+  // set null (not cascade): workoutSnapshot already has everything needed to
+  // display this session, so deleting the template must never delete history.
+  workoutId: uuid("workout_id").references(() => workouts.id, { onDelete: "set null" }),
   workoutSnapshot: jsonb("workout_snapshot"),
   status: text("status").notNull().default("in_progress"), // "in_progress" | "completed" | "abandoned"
   startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
@@ -134,7 +136,7 @@ export const sessionSets = pgTable("session_sets", {
   id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
   sessionId: uuid("session_id")
     .notNull()
-    .references(() => sessions.id),
+    .references(() => sessions.id, { onDelete: "cascade" }),
   exerciseId: text("exercise_id")
     .notNull()
     .references(() => sourceExercises.exerciseId),
