@@ -10,10 +10,11 @@ research spreadsheet as its seed database and builds four capabilities on top:
 
 ## Status
 
-Epics A–C (foundation, data import, app shell) are complete: the database is
-seeded from the spreadsheet, and the app has a working password gate, profile
-switcher, and navigation shell. Feature work begins with Epic D (exercise
-library). See `PROJECT_PLAN.docx` for the current deliverable status.
+Epics A–D (foundation, data import, app shell, exercise library) are complete:
+the Exercise Library is fully browsable at `/exercises` — search, filter,
+sort, card/table views, and a detail page with a custom muscle diagram, video
+embeds, and substitutions. Feature work continues with Epic E (manual workout
+builder). See `PROJECT_PLAN.docx` for the current deliverable status.
 
 The site is protected by a single shared password (`SITE_PASSWORD` in `.env`);
 inside it, a lightweight profile picker (no per-person login) scopes workouts

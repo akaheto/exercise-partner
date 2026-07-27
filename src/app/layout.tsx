@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { NO_FLASH_THEME_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
@@ -31,8 +32,12 @@ export default function RootLayout({
     >
       <head>
         {/* Applies the persisted/system theme before first paint — avoids a
-            flash of the wrong theme. See src/lib/theme.ts. */}
-        <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
+            flash of the wrong theme. See src/lib/theme.ts. beforeInteractive
+            is Next.js's sanctioned mechanism for this (unlike a raw <script>
+            JSX child, which React 19 warns never executes on client renders). */}
+        <Script id="theme-init" strategy="beforeInteractive">
+          {NO_FLASH_THEME_SCRIPT}
+        </Script>
       </head>
       <body className="flex min-h-full flex-col">{children}</body>
     </html>

@@ -9,6 +9,25 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Exercise Library (`/exercises`): search, 8 filter dimensions (muscle,
+  equipment, type, mechanics, force, experience level, body region, video
+  availability — muscle/equipment filters match secondary muscles too, via
+  `IN (SELECT ...)` subqueries), 5 sort orders, and card/table views, all
+  driven by a parseable/shareable URL query string (`src/domain/exercise-filters.ts`,
+  18 unit tests).
+- Exercise detail page (`/exercises/[id]`): instructions/tips/common mistakes
+  rendered as bullets from the source's prose (`src/domain/text.ts`,
+  sentence-splitting), video embed with YouTube + Vimeo support and a
+  source-link fallback for anything else, and both relationship types —
+  rule-derived substitutions (`source_relationships`) and human-curated
+  variation/alternative/progression/regression links (`exercise_links`).
+- Custom SVG muscle diagram (`src/components/exercise/muscle-diagram.tsx`):
+  front + back simplified body map, all 23 canonical muscles mapped to
+  regions, explicitly labelled as a derived/approximate diagram, not source
+  data (one muscle, Plantar Fascia, has no visual mapping and is called out
+  in text instead of silently dropped).
+- A styled 404 for exercise ids that don't resolve, matching the app's design
+  system instead of Next's generic default.
 - App shell: responsive top bar (desktop) / bottom tab bar (mobile) across five
   nav destinations, light/dark theme with no flash of unstyled content
   (`src/lib/theme.ts` + `useSyncExternalStore`-based toggle).
@@ -62,6 +81,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the app was silently falling back to system fonts instead of Geist Sans.
 - shadcn's default `Button`/`Input` heights (32px) fell short of the style
   guide's 44px touch-target minimum; bumped the whole size scale.
+- The no-flash theme script triggered a real React 19 warning ("script tag
+  while rendering") as a raw JSX `<script>` child; moved to `next/script`'s
+  `beforeInteractive` strategy, Next's sanctioned mechanism for this.
 
 ### Notes
 
@@ -82,3 +104,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   overlay into `type="password"` fields that blocks Chrome automation's
   synthetic click/type. Does not affect real users or the app itself; noted in
   PROJECT_PLAN.docx assumption #15 for future browser-based verification work.
+- `next/script`'s `beforeInteractive` strategy still triggers a React 19
+  dev-only console warning in this Next.js 16.2.12 build, despite being the
+  framework's own recommended pattern. Confirmed dev-only (`npm run build` has
+  no warnings) and functionally correct; not fixable from application code —
+  see PROJECT_PLAN.docx assumption #16.
+- `next/image` is configured for a single remote host
+  (`cdn.muscleandstrength.com`) — the only one in the current data. A future
+  additional import source would need its host added to `next.config.ts`.
