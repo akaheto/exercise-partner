@@ -12,6 +12,7 @@ interface Step1ProfileProps {
 
 export function OnboardingStep1Profile({ onNext }: Step1ProfileProps) {
   const [name, setName] = useState("");
+  const [pin, setPin] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,11 +30,17 @@ export function OnboardingStep1Profile({ onNext }: Step1ProfileProps) {
       return;
     }
 
+    if (!/^\d{4,6}$/.test(pin)) {
+      setError("PIN must be 4-6 digits");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const formData = new FormData();
       formData.set("displayName", name);
+      formData.set("pin", pin);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await (createProfile as any)(null, formData);
 
@@ -75,6 +82,25 @@ export function OnboardingStep1Profile({ onNext }: Step1ProfileProps) {
             className="h-11"
             autoFocus
           />
+        </div>
+
+        <div>
+          <label htmlFor="pin" className="mb-2 block text-sm font-semibold text-foreground">
+            Choose a PIN
+          </label>
+          <Input
+            id="pin"
+            type="password"
+            inputMode="numeric"
+            placeholder="4-6 digits"
+            value={pin}
+            onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            disabled={isLoading}
+            className="h-11"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            You&apos;ll need this to delete your profile later. Keep it somewhere safe.
+          </p>
           {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
         </div>
 

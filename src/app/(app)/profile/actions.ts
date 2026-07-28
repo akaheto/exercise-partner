@@ -8,6 +8,7 @@ import { db } from "@/db/client";
 import { profiles } from "@/db/schema";
 import { ACTIVE_PROFILE_COOKIE, getActiveProfileId } from "@/lib/active-profile";
 import { requireSiteSession } from "@/lib/require-site-session";
+import { hashPin, verifyPin } from "@/lib/pin";
 
 export interface CreateProfileState {
   error?: string;
@@ -30,7 +31,15 @@ export async function createProfile(
     return { error: result.error.issues[0]?.message ?? "Invalid name." };
   }
 
-  const [profile] = await db.insert(profiles).values({ displayName: result.data }).returning();
+  const pinResult = pinSchema.safeParse(formData.get("pin"));
+  if (!pinResult.success) {
+    return { error: "PIN must be 4-6 digits." };
+  }
+
+  const [profile] = await db
+    .insert(profiles)
+    .values({ displayName: result.data, pinHash: hashPin(pinResult.data) })
+    .returning();
 
   const cookieStore = await cookies();
   cookieStore.set(ACTIVE_PROFILE_COOKIE, profile.id, {
@@ -76,6 +85,7 @@ export async function updatePreferredWeightUnit(formData: FormData): Promise<voi
 
 const experienceLevelSchema = z.enum(["Beginner", "Intermediate", "Advanced"]);
 const trainingGoalSchema = z.enum(["Strength", "Hypertrophy", "Endurance", "Power", "General"]);
+const pinSchema = z.string().regex(/^\d{4,6}$/, "PIN must be 4-6 digits");
 
 export async function updateProfileAction(
   profileId: string,
@@ -111,18 +121,51 @@ export async function updateProfileAction(
   }
 }
 
-export async function deleteProfile(profileId: string): Promise<{ success: boolean; error?: string }> {
+export async function deleteProfile(
+  profileId: string,
+  pin: string,
+): Promise<{ success: boolean; error?: string }> {
   await requireSiteSession();
 
   try {
-    const activeProfileId = await getActiveProfileId();
+    const [profile] = await db.select().from(profiles).where(eq(profiles.id, profileId));
+    if (!profile) {
+      return { success: false, error: "Profile not found" };
+    }
 
-    // Delete the profile (cascading deletes will handle related data)
+    if (!profile.pinHash || !verifyPin(pin, profile.pinHash)) {
+      return { success: false, error: "Incorrect PIN" };
+    }
+
+    const activeProfileId = await getActiveProfileId();
     await db.delete(profiles).where(eq(profiles.id, profileId));
 
-    // If this was the active profile, clear the cookie
     if (profileId === activeProfileId) {
       const cookieStore = await cookies();
+      cookieStore.delete(ACTIVE_PROFILE_COOKIE);
+    }
+
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete profile:", error);
+    return { success: false, error: "Failed to delete profile" };
+  }
+}
+
+/** Admin-only deletion — bypasses the PIN check. Callers must already have
+ * verified the admin session. */
+export async function deleteProfileAsAdmin(profileId: string): Promise<{ success: boolean; error?: string }> {
+  const cookieStore = await cookies();
+  if (cookieStore.get("admin_session")?.value !== "authenticated") {
+    return { success: false, error: "Not authorized" };
+  }
+
+  try {
+    const activeProfileId = await getActiveProfileId();
+    await db.delete(profiles).where(eq(profiles.id, profileId));
+
+    if (profileId === activeProfileId) {
       cookieStore.delete(ACTIVE_PROFILE_COOKIE);
     }
 

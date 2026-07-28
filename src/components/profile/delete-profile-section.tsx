@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { deleteProfile } from "@/app/(app)/profile/actions";
 
@@ -16,6 +17,7 @@ export function DeleteProfileSection({ profileId, profileName }: DeleteProfileSe
   const router = useRouter();
   const [isConfirming, setIsConfirming] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [pin, setPin] = useState("");
   const [error, setError] = useState("");
 
   const handleDelete = async () => {
@@ -24,11 +26,16 @@ export function DeleteProfileSection({ profileId, profileName }: DeleteProfileSe
       return;
     }
 
+    if (!/^\d{4,6}$/.test(pin)) {
+      setError("Enter your 4-6 digit PIN");
+      return;
+    }
+
     setIsDeleting(true);
     setError("");
 
     try {
-      const result = await deleteProfile(profileId);
+      const result = await deleteProfile(profileId, pin);
 
       if (result.success) {
         // Redirect to home page after successful deletion
@@ -45,6 +52,7 @@ export function DeleteProfileSection({ profileId, profileName }: DeleteProfileSe
 
   const handleCancel = () => {
     setIsConfirming(false);
+    setPin("");
     setError("");
   };
 
@@ -72,6 +80,23 @@ export function DeleteProfileSection({ profileId, profileName }: DeleteProfileSe
               This will delete the profile and all associated workouts, sessions, and performance data. This action cannot be
               undone.
             </p>
+
+            <div className="mt-4">
+              <label htmlFor="delete-pin" className="text-sm font-medium text-red-900 dark:text-red-100">
+                Enter your PIN to confirm
+              </label>
+              <Input
+                id="delete-pin"
+                type="password"
+                inputMode="numeric"
+                placeholder="4-6 digit PIN"
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                disabled={isDeleting}
+                className="mt-1 h-11 max-w-xs"
+                autoFocus
+              />
+            </div>
 
             <div className="mt-4 flex gap-3">
               <Button

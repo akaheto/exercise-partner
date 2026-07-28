@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { deleteProfile } from "@/app/(app)/profile/actions";
+import { deleteProfileAsAdmin } from "@/app/(app)/profile/actions";
 
 interface ProfileDeleteButtonProps {
   profileId: string;
@@ -27,7 +27,7 @@ export function ProfileDeleteButton({ profileId, profileName }: ProfileDeleteBut
     setError("");
 
     try {
-      const result = await deleteProfile(profileId);
+      const result = await deleteProfileAsAdmin(profileId);
 
       if (result.success) {
         router.refresh();

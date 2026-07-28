@@ -32,6 +32,7 @@ export function ProfileSelector({ profiles }: ProfileSelectorProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [newProfileName, setNewProfileName] = useState("");
+  const [newProfilePin, setNewProfilePin] = useState("");
   const [error, setError] = useState("");
 
   const filteredProfiles = profiles.filter((p) =>
@@ -63,11 +64,17 @@ export function ProfileSelector({ profiles }: ProfileSelectorProps) {
       return;
     }
 
+    if (!/^\d{4,6}$/.test(newProfilePin)) {
+      setError("PIN must be 4-6 digits");
+      return;
+    }
+
     setIsCreating(true);
 
     try {
       const formData = new FormData();
       formData.set("displayName", newProfileName);
+      formData.set("pin", newProfilePin);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await (createProfile as any)(null, formData);
 
@@ -157,6 +164,21 @@ export function ProfileSelector({ profiles }: ProfileSelectorProps) {
               className="h-11"
               autoFocus={profiles.length === 0}
             />
+          </div>
+
+          <div>
+            <Input
+              type="password"
+              inputMode="numeric"
+              placeholder="Choose a 4-6 digit PIN..."
+              value={newProfilePin}
+              onChange={(e) => setNewProfilePin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              disabled={isCreating}
+              className="h-11"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              You&apos;ll need this PIN to delete your profile later. Keep it somewhere safe.
+            </p>
             {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
           </div>
 

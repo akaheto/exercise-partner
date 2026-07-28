@@ -9,7 +9,7 @@
  *
  * Usage: npm run import:exercises
  */
-import "dotenv/config";
+import "./load-env";
 import ExcelJS from "exceljs";
 import { join } from "node:path";
 import { sql } from "drizzle-orm";

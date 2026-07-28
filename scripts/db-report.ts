@@ -5,7 +5,7 @@
  *
  * Usage: npm run db:report
  */
-import "dotenv/config";
+import "./load-env";
 import { sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import {

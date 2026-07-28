@@ -65,6 +65,7 @@ export const profiles = pgTable("profiles", {
   preferredWeightUnit: text("preferred_weight_unit").notNull().default("kg"), // "kg" | "lb"
   experienceLevel: text("experience_level").notNull().default("Beginner"), // "Beginner" | "Intermediate" | "Advanced"
   trainingGoal: text("training_goal").notNull().default("General"), // "Strength" | "Hypertrophy" | "Endurance" | "Power" | "General"
+  pinHash: text("pin_hash"), // Hashed PIN for profile security
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
