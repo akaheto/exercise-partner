@@ -16,6 +16,11 @@ export interface Override {
  *
  * Pure and side-effect free: does not mutate `source` or `overrides`.
  */
+// Convert snake_case database field names to camelCase TypeScript property names
+function snakeToCamel(str: string): string {
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
 export function mergeOverrides<T extends Record<string, unknown>>(
   source: T,
   overrides: Override[],
@@ -32,8 +37,10 @@ export function mergeOverrides<T extends Record<string, unknown>>(
   ];
 
   for (const override of ordered) {
-    if (override.field in merged) {
-      (merged as Record<string, unknown>)[override.field] = override.value;
+    // Handle both camelCase and snake_case field names for compatibility
+    const propertyName = snakeToCamel(override.field);
+    if (propertyName in merged) {
+      (merged as Record<string, unknown>)[propertyName] = override.value;
     }
   }
 
