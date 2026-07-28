@@ -4,6 +4,15 @@ import { sessions, sessionSets, sourceExercises } from "@/db/schema";
 import { computeVolume } from "@/domain/session-history";
 import type { WorkoutForEdit } from "@/db/queries/workouts";
 
+export interface PersonalRecord {
+  exerciseId: string;
+  exerciseName: string;
+  weight: string | null;
+  weightUnit: string | null;
+  reps: number | null;
+  date: Date;
+}
+
 export interface SessionSummary {
   id: string;
   workoutName: string;
@@ -219,6 +228,45 @@ export interface ExportSet {
   reps: number | null;
   notes: string | null;
   completedAt: Date;
+}
+
+/** Personal records (max weight) for all exercises a profile has done.
+ * One row per exercise, sorted by exercise name. */
+export async function getPersonalRecords(profileId: string): Promise<PersonalRecord[]> {
+  const rows = await db
+    .select({
+      exerciseId: sessionSets.exerciseId,
+      exerciseName: sourceExercises.name,
+      weight: sessionSets.weight,
+      weightUnit: sessionSets.weightUnit,
+      reps: sessionSets.reps,
+      date: sessionSets.completedAt,
+    })
+    .from(sessionSets)
+    .innerJoin(sessions, eq(sessionSets.sessionId, sessions.id))
+    .innerJoin(sourceExercises, eq(sessionSets.exerciseId, sourceExercises.exerciseId))
+    .where(and(eq(sessions.profileId, profileId), eq(sessions.status, "completed")));
+
+  // Group by exercise and keep only the max weight for each
+  const prMap = new Map<string, PersonalRecord>();
+
+  for (const row of rows) {
+    const key = row.exerciseId;
+    const current = prMap.get(key);
+
+    if (!current || (row.weight && (!current.weight || Number(row.weight) > Number(current.weight)))) {
+      prMap.set(key, {
+        exerciseId: row.exerciseId,
+        exerciseName: row.exerciseName ?? row.exerciseId,
+        weight: row.weight,
+        weightUnit: row.weightUnit,
+        reps: row.reps,
+        date: row.date,
+      });
+    }
+  }
+
+  return Array.from(prMap.values()).sort((a, b) => a.exerciseName.localeCompare(b.exerciseName));
 }
 
 /** Flat, one-row-per-set view of a profile's entire history — the shape

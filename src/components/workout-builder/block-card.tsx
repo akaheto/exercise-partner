@@ -9,15 +9,22 @@ import { ExercisePickerDialog } from "./exercise-picker-dialog";
 import { ItemRow } from "./item-row";
 import { addExerciseToBlock, updateBlockKind, updateBlockRest, type PickerExercise } from "@/app/(app)/workouts/[id]/edit/actions";
 import type { WorkoutBlockForEdit } from "@/db/queries/workouts";
+import type { ExerciseGuidanceRow } from "@/domain/getExerciseGuidance";
 
 const KIND_LABEL: Record<string, string> = { single: "Exercise", superset: "Superset", circuit: "Circuit" };
 
 export function BlockCard({
   block,
   substitutionCandidates,
+  guidanceMap,
+  userLevel,
+  userGoal,
 }: {
   block: WorkoutBlockForEdit;
   substitutionCandidates: Map<string, PickerExercise[]>;
+  guidanceMap: Map<string, ExerciseGuidanceRow | null>;
+  userLevel: string;
+  userGoal: string;
 }) {
   const [isSavingRest, startSaveRest] = useTransition();
   const [isChangingKind, startChangeKind] = useTransition();
@@ -67,7 +74,14 @@ export function BlockCard({
 
       <div>
         {block.items.map((item) => (
-          <ItemRow key={item.id} item={item} substitutionCandidates={substitutionCandidates.get(item.exerciseId) ?? []} />
+          <ItemRow
+            key={item.id}
+            item={item}
+            substitutionCandidates={substitutionCandidates.get(item.exerciseId) ?? []}
+            guidance={guidanceMap.get(item.exerciseId) ?? null}
+            userLevel={userLevel}
+            userGoal={userGoal}
+          />
         ))}
       </div>
 

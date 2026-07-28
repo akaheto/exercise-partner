@@ -6,6 +6,7 @@ import { Dumbbell, GripVertical, Repeat, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ExercisePickerDialog } from "./exercise-picker-dialog";
+import { ExerciseItemGuidance } from "@/components/workout/exercise-item-guidance";
 import {
   removeItem,
   substituteExercise,
@@ -13,13 +14,20 @@ import {
   type PickerExercise,
 } from "@/app/(app)/workouts/[id]/edit/actions";
 import type { WorkoutItemForEdit } from "@/db/queries/workouts";
+import type { ExerciseGuidanceRow } from "@/domain/getExerciseGuidance";
 
 export function ItemRow({
   item,
   substitutionCandidates,
+  guidance,
+  userLevel,
+  userGoal,
 }: {
   item: WorkoutItemForEdit;
   substitutionCandidates: PickerExercise[];
+  guidance?: ExerciseGuidanceRow | null;
+  userLevel?: string;
+  userGoal?: string;
 }) {
   const [sets, setSets] = useState(item.sets);
   const [repsMin, setRepsMin] = useState(item.repsMin ?? "");
@@ -137,6 +145,20 @@ export function ItemRow({
           <Trash2 className="size-3.5" />
         </Button>
       </div>
+
+      {guidance && userLevel && userGoal && (
+        <div className="col-span-full mt-2">
+          <ExerciseItemGuidance
+            sets={sets}
+            repsMin={Number(repsMin)}
+            repsMax={Number(repsMax)}
+            tempo={guidance.tempo}
+            notes={notes || undefined}
+            userLevel={userLevel}
+            userGoal={userGoal}
+          />
+        </div>
+      )}
     </div>
   );
 }

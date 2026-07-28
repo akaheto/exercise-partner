@@ -2,9 +2,11 @@ import { and, asc, count, desc, eq, ilike, inArray, isNull, or, sql, type SQL } 
 import { db } from "@/db/client";
 import {
   exerciseEquipment,
+  exerciseGuidanceOverrides,
   exerciseLinks,
   exerciseMuscles,
   exerciseOverrides,
+  guidancePatterns,
   sourceEquipment,
   sourceExercises,
   sourceMuscles,
@@ -12,6 +14,7 @@ import {
 } from "@/db/schema";
 import { mergeOverrides } from "@/domain/mergeOverrides";
 import { PAGE_SIZE, type ExerciseFilters } from "@/domain/exercise-filters";
+import type { ExerciseGuidanceRow } from "@/domain/getExerciseGuidance";
 
 /**
  * Fetches a single exercise with any applicable overrides merged in — the
@@ -191,4 +194,62 @@ export async function getRelatedLinks(exerciseId: string): Promise<RelatedLink[]
       ? { exerciseId: row.toExerciseId, name: row.toExerciseName!, thumbnailUrl: row.toExerciseThumbnail }
       : null,
   }));
+}
+
+/**
+ * Fetch exercise guidance joined with pattern details.
+ * Returns the prescribed sets/reps/RPE/tempo/breathing based on the user's
+ * experience level and training goal.
+ */
+export async function getExerciseGuidance(
+  exerciseId: string,
+  experienceLevel: string,
+  trainingGoal: string
+): Promise<ExerciseGuidanceRow | null> {
+  const rows = await db
+    .select({
+      exerciseId: sourceExercises.exerciseId,
+      exerciseName: sourceExercises.name,
+      patternId: exerciseGuidanceOverrides.patternId,
+      experienceLevel: guidancePatterns.experienceLevel,
+      trainingGoal: guidancePatterns.trainingGoal,
+      recommendedSets: guidancePatterns.recommendedSets,
+      recommendedRepsMin: guidancePatterns.recommendedRepsMin,
+      recommendedRepsMax: guidancePatterns.recommendedRepsMax,
+      targetRpe: guidancePatterns.targetRpe,
+      tempo: guidancePatterns.tempo,
+      breathingCue: guidancePatterns.breathingCue,
+      formCue: guidancePatterns.formCue,
+      regressionTier1ExerciseId: exerciseGuidanceOverrides.regressionTier1ExerciseId,
+      regressionTier1Note: exerciseGuidanceOverrides.regressionTier1Note,
+      regressionTier2ExerciseId: exerciseGuidanceOverrides.regressionTier2ExerciseId,
+      regressionTier2Note: exerciseGuidanceOverrides.regressionTier2Note,
+      regressionTier3ExerciseId: exerciseGuidanceOverrides.regressionTier3ExerciseId,
+      regressionTier3Note: exerciseGuidanceOverrides.regressionTier3Note,
+      alternative1ExerciseId: exerciseGuidanceOverrides.alternative1ExerciseId,
+      alternative1Note: exerciseGuidanceOverrides.alternative1Note,
+      alternative2ExerciseId: exerciseGuidanceOverrides.alternative2ExerciseId,
+      alternative2Note: exerciseGuidanceOverrides.alternative2Note,
+      requiredMobility: exerciseGuidanceOverrides.requiredMobility,
+      contraindicatedFor: exerciseGuidanceOverrides.contraindicatedFor,
+      minimumExperienceLevel: exerciseGuidanceOverrides.minimumExperienceLevel,
+      exerciseSpecificFormCue: exerciseGuidanceOverrides.exerciseSpecificFormCue,
+      beginnerSafetyCue: exerciseGuidanceOverrides.beginnerSafetyCue,
+    })
+    .from(sourceExercises)
+    .innerJoin(
+      exerciseGuidanceOverrides,
+      eq(sourceExercises.exerciseId, exerciseGuidanceOverrides.exerciseId)
+    )
+    .innerJoin(
+      guidancePatterns,
+      and(
+        eq(exerciseGuidanceOverrides.patternId, guidancePatterns.id),
+        eq(guidancePatterns.experienceLevel, experienceLevel),
+        eq(guidancePatterns.trainingGoal, trainingGoal)
+      )
+    )
+    .where(eq(sourceExercises.exerciseId, exerciseId));
+
+  return rows[0] || null;
 }

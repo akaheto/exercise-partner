@@ -4,12 +4,14 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Dumbbell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { GuidanceCard } from "@/components/exercise/guidance-card";
 import { MuscleDiagram } from "@/components/exercise/muscle-diagram";
 import { RelatedExercises } from "@/components/exercise/related-exercises";
 import { VideoEmbed } from "@/components/exercise/video-embed";
 import { ExerciseHistorySection } from "@/components/history/exercise-history-section";
-import { getExerciseById, getRelatedLinks, getSubstitutionCandidates } from "@/db/queries/exercises";
+import { getExerciseById, getExerciseGuidance, getRelatedLinks, getSubstitutionCandidates } from "@/db/queries/exercises";
 import { getExerciseHistory } from "@/db/queries/history";
+import { getProfileById } from "@/db/queries/profiles";
 import { getActiveProfileId } from "@/lib/active-profile";
 import { parseMuscleList } from "@/domain/importParsing";
 import { splitIntoSentences } from "@/domain/text";
@@ -33,6 +35,16 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
 
   const exercise = await getExerciseById(id, profileId);
   if (!exercise) notFound();
+
+  // Fetch profile for user's experience level and training goal
+  let profile = null;
+  let guidance = null;
+  if (profileId) {
+    profile = await getProfileById(profileId);
+    if (profile) {
+      guidance = await getExerciseGuidance(id, profile.experienceLevel, profile.trainingGoal);
+    }
+  }
 
   const [substitutions, relatedLinks, rawHistory] = await Promise.all([
     getSubstitutionCandidates(id),
@@ -80,6 +92,10 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
             <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-border bg-muted">
               <Image src={exercise.thumbnailUrl} alt={exercise.name} fill sizes="640px" className="object-cover" />
             </div>
+          )}
+
+          {guidance && profile && (
+            <GuidanceCard guidance={guidance} userLevel={profile.experienceLevel} userGoal={profile.trainingGoal} />
           )}
 
           <section>

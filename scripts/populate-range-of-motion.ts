@@ -1,6 +1,5 @@
 import { db } from "../src/db/client";
 import { exerciseOverrides, sourceExercises } from "../src/db/schema";
-import { eq, isNull } from "drizzle-orm";
 
 /**
  * Populate exercise-specific range of motion guidance for all exercises.

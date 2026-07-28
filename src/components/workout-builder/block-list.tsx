@@ -22,8 +22,21 @@ import { GripVertical } from "lucide-react";
 import { BlockCard } from "./block-card";
 import { reorderBlocks, type PickerExercise } from "@/app/(app)/workouts/[id]/edit/actions";
 import type { WorkoutBlockForEdit } from "@/db/queries/workouts";
+import type { ExerciseGuidanceRow } from "@/domain/getExerciseGuidance";
 
-function SortableBlock({ block, substitutionCandidates }: { block: WorkoutBlockForEdit; substitutionCandidates: Map<string, PickerExercise[]> }) {
+function SortableBlock({
+  block,
+  substitutionCandidates,
+  guidanceMap,
+  userLevel,
+  userGoal,
+}: {
+  block: WorkoutBlockForEdit;
+  substitutionCandidates: Map<string, PickerExercise[]>;
+  guidanceMap: Map<string, ExerciseGuidanceRow | null>;
+  userLevel: string;
+  userGoal: string;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
 
   return (
@@ -42,7 +55,13 @@ function SortableBlock({ block, substitutionCandidates }: { block: WorkoutBlockF
         <GripVertical className="size-4" />
       </button>
       <div className="flex-1">
-        <BlockCard block={block} substitutionCandidates={substitutionCandidates} />
+        <BlockCard
+          block={block}
+          substitutionCandidates={substitutionCandidates}
+          guidanceMap={guidanceMap}
+          userLevel={userLevel}
+          userGoal={userGoal}
+        />
       </div>
     </div>
   );
@@ -52,10 +71,16 @@ export function BlockList({
   workoutId,
   blocks,
   substitutionCandidates,
+  guidanceMap,
+  userLevel,
+  userGoal,
 }: {
   workoutId: string;
   blocks: WorkoutBlockForEdit[];
   substitutionCandidates: Map<string, PickerExercise[]>;
+  guidanceMap: Map<string, ExerciseGuidanceRow | null>;
+  userLevel: string;
+  userGoal: string;
 }) {
   const [ordered, setOrdered] = useState(blocks);
   const [syncedBlocks, setSyncedBlocks] = useState(blocks);
@@ -96,7 +121,14 @@ export function BlockList({
       <SortableContext items={ordered.map((b) => b.id)} strategy={verticalListSortingStrategy}>
         <div className="space-y-3">
           {ordered.map((block) => (
-            <SortableBlock key={block.id} block={block} substitutionCandidates={substitutionCandidates} />
+            <SortableBlock
+              key={block.id}
+              block={block}
+              substitutionCandidates={substitutionCandidates}
+              guidanceMap={guidanceMap}
+              userLevel={userLevel}
+              userGoal={userGoal}
+            />
           ))}
         </div>
       </SortableContext>

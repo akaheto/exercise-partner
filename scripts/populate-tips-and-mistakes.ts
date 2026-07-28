@@ -1,6 +1,6 @@
 import { db } from "../src/db/client";
 import { exerciseOverrides, sourceExercises } from "../src/db/schema";
-import { eq, and, isNull } from "drizzle-orm";
+import { isNull } from "drizzle-orm";
 
 /**
  * Populate exercise-specific tips and common mistakes for all exercises.

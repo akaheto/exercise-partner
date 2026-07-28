@@ -2,6 +2,8 @@ import { UserPlus } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProfileEditor } from "@/components/profile/profile-editor";
+import { DeleteProfileSection } from "@/components/profile/delete-profile-section";
 import { listProfiles } from "@/db/queries/profiles";
 import { getActiveProfileId } from "@/lib/active-profile";
 import { selectProfile, updatePreferredWeightUnit } from "./actions";
@@ -30,38 +32,48 @@ export default async function ProfilePage() {
       </div>
 
       {activeProfile ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Current profile</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Avatar size="lg">
-                <AvatarFallback>{initials(activeProfile.displayName)}</AvatarFallback>
-              </Avatar>
-              <span className="font-medium text-foreground">{activeProfile.displayName}</span>
-            </div>
-
-            <form action={updatePreferredWeightUnit} className="flex items-center gap-3">
-              <input type="hidden" name="profileId" value={activeProfile.id} />
-              <span className="text-sm text-muted-foreground">Weight unit</span>
-              <div className="flex gap-1">
-                {(["kg", "lb"] as const).map((unit) => (
-                  <Button
-                    key={unit}
-                    type="submit"
-                    name="unit"
-                    value={unit}
-                    size="sm"
-                    variant={activeProfile.preferredWeightUnit === unit ? "default" : "outline"}
-                  >
-                    {unit}
-                  </Button>
-                ))}
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Current profile</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Avatar size="lg">
+                  <AvatarFallback>{initials(activeProfile.displayName)}</AvatarFallback>
+                </Avatar>
+                <span className="font-medium text-foreground">{activeProfile.displayName}</span>
               </div>
-            </form>
-          </CardContent>
-        </Card>
+
+              <form action={updatePreferredWeightUnit} className="flex items-center gap-3">
+                <input type="hidden" name="profileId" value={activeProfile.id} />
+                <span className="text-sm text-muted-foreground">Weight unit</span>
+                <div className="flex gap-1">
+                  {(["kg", "lb"] as const).map((unit) => (
+                    <Button
+                      key={unit}
+                      type="submit"
+                      name="unit"
+                      value={unit}
+                      size="sm"
+                      variant={activeProfile.preferredWeightUnit === unit ? "default" : "outline"}
+                    >
+                      {unit}
+                    </Button>
+                  ))}
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          <ProfileEditor
+            profileId={activeProfile.id}
+            currentLevel={activeProfile.experienceLevel}
+            currentGoal={activeProfile.trainingGoal}
+          />
+
+          <DeleteProfileSection profileId={activeProfile.id} profileName={activeProfile.displayName} />
+        </>
       ) : (
         <Card>
           <CardHeader>

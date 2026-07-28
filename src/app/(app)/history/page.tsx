@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { CheckCircle2, Clock, Dumbbell, History as HistoryIcon, PlayCircle, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Dumbbell, History as HistoryIcon, PlayCircle, XCircle, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { VolumeChart } from "@/components/history/volume-chart";
 import { MuscleBalancePanel } from "@/components/history/muscle-balance-panel";
-import { listSessionSummaries } from "@/db/queries/history";
+import { PersonalRecordsPanel } from "@/components/history/personal-records-panel";
+import { listSessionSummaries, getPersonalRecords } from "@/db/queries/history";
 import { getMuscleVolumePoints } from "@/db/queries/metrics";
 import { getActiveProfileId } from "@/lib/active-profile";
 import { groupVolumeByWeek, sessionDurationMinutes } from "@/domain/session-history";
@@ -36,6 +38,7 @@ function statusBadge(status: string) {
 export default async function HistoryPage() {
   const profileId = await getActiveProfileId();
   const sessions = profileId ? await listSessionSummaries(profileId) : [];
+  const personalRecords = profileId ? await getPersonalRecords(profileId) : [];
 
   const weeklyVolume = groupVolumeByWeek(
     sessions.filter((s) => s.status === "completed" && s.volume > 0).map((s) => ({ date: s.startedAt, volume: s.volume })),
@@ -75,6 +78,21 @@ export default async function HistoryPage() {
         <div className="space-y-6">
           {weeklyVolume.length > 1 && <VolumeChart data={weeklyVolume} />}
           {muscleBalance.length > 0 && <MuscleBalancePanel entries={muscleBalance} weeks={MUSCLE_BALANCE_WEEKS} />}
+
+          {personalRecords.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="size-5 text-teal-600" />
+                  Personal Records
+                </CardTitle>
+                <CardDescription>Your best lifts by exercise</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PersonalRecordsPanel records={personalRecords.slice(0, 10)} />
+              </CardContent>
+            </Card>
+          )}
 
           <div className="space-y-3">
             {sessions.map((s) => {

@@ -8,8 +8,10 @@ import { equipmentInventory, workoutBlocks, workoutItems, workouts } from "@/db/
 import { getActiveProfileId } from "@/lib/active-profile";
 import { requireSiteSession } from "@/lib/require-site-session";
 import { fetchCandidatePool } from "@/db/queries/generator";
+import { getExerciseGuidance } from "@/db/queries/exercises";
 import { generateWorkout } from "@/domain/generator/generate";
 import { DURATION_OPTIONS, EXPERIENCE_LEVELS, FOCUS_AREAS, GOALS } from "@/domain/generator/types";
+import { getProfileById } from "@/db/queries/profiles";
 
 const FOCUS_LABELS: Record<(typeof FOCUS_AREAS)[number], string> = {
   full_body: "Full Body",
@@ -87,6 +89,19 @@ export async function generateWorkoutAction(
     return { error: "Couldn't generate a workout — no exercises matched your equipment and experience level.", warnings: result.warnings };
   }
 
+  // Fetch profile to get user's preferred experience level for guidance
+  const profile = await getProfileById(profileId);
+  const userLevel = profile?.experienceLevel || parsed.data.experienceLevel;
+
+  // Map goal names to guidance pattern training goals (lowercase to Title case)
+  const goalMap: Record<typeof parsed.data.goal, string> = {
+    strength: "Strength",
+    hypertrophy: "Hypertrophy",
+    endurance: "Endurance",
+    general: "General",
+  };
+  const guidanceGoal = goalMap[parsed.data.goal];
+
   const workout = await db.transaction(async (tx) => {
     const [w] = await tx
       .insert(workouts)
@@ -98,17 +113,27 @@ export async function generateWorkoutAction(
       .returning();
 
     for (const [index, item] of result.items.entries()) {
+      // Look up guidance for this exercise based on user's level + goal
+      const guidance = await getExerciseGuidance(item.exerciseId, userLevel, guidanceGoal);
+
+      // Use guidance if available, otherwise fall back to generated prescription
+      const sets = guidance?.recommendedSets ?? item.sets;
+      const repsMin = guidance?.recommendedRepsMin ?? item.repsMin;
+      const repsMax = guidance?.recommendedRepsMax ?? item.repsMax;
+      const restSeconds = guidance ? Math.round(guidance.targetRpe * 20) : item.restSeconds; // RPE-based rest calculation
+
       const [block] = await tx
         .insert(workoutBlocks)
-        .values({ workoutId: w.id, position: index, kind: "single", restSeconds: item.restSeconds })
+        .values({ workoutId: w.id, position: index, kind: "single", restSeconds })
         .returning();
       await tx.insert(workoutItems).values({
         blockId: block.id,
         exerciseId: item.exerciseId,
         position: 0,
-        sets: item.sets,
-        repsMin: item.repsMin,
-        repsMax: item.repsMax,
+        sets,
+        repsMin,
+        repsMax,
+        notes: guidance?.tempo ? `Tempo: ${guidance.tempo}` : undefined,
       });
     }
 

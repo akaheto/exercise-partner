@@ -63,6 +63,8 @@ export const profiles = pgTable("profiles", {
   displayName: text("display_name").notNull(),
   avatar: text("avatar"),
   preferredWeightUnit: text("preferred_weight_unit").notNull().default("kg"), // "kg" | "lb"
+  experienceLevel: text("experience_level").notNull().default("Beginner"), // "Beginner" | "Intermediate" | "Advanced"
+  trainingGoal: text("training_goal").notNull().default("General"), // "Strength" | "Hypertrophy" | "Endurance" | "Power" | "General"
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -83,59 +85,105 @@ export const exerciseOverrides = pgTable("exercise_overrides", {
 });
 
 /**
- * Exercise guidance indexed by both experience level AND training goal.
- * Allows the app to tailor prescription based on:
- * - Experience Level: Beginner | Intermediate | Advanced
- * - Training Goal: Strength | Hypertrophy | Endurance | Power | General
+ * Guidance patterns: reusable templates for (experience_level, training_goal) combinations.
+ * Stores the canonical guidance for each combination, indexed by pattern ID.
+ * 15 total rows: 3 levels × 5 goals.
  *
- * When a user selects (e.g.) "Intermediate" + "Hypertrophy", the app queries
- * for matching rows to get: sets, reps, RPE, tempo, breathing cues, regressions.
+ * This separates pattern definitions from exercise-specific overrides,
+ * reducing data redundancy and making updates easier.
  */
-export const exerciseGuidance = pgTable(
-  "exercise_guidance",
+export const guidancePatterns = pgTable(
+  "guidance_patterns",
   {
-    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
-    exerciseId: text("exercise_id")
-      .notNull()
-      .references(() => sourceExercises.exerciseId, { onDelete: "cascade" }),
+    id: text("id").primaryKey(), // e.g., "beginner_strength", "intermediate_hypertrophy"
     experienceLevel: text("experience_level").notNull(), // "Beginner" | "Intermediate" | "Advanced"
     trainingGoal: text("training_goal").notNull(), // "Strength" | "Hypertrophy" | "Endurance" | "Power" | "General"
 
     // Rep range guidance
-    recommendedSets: integer("recommended_sets"),
-    recommendedRepsMin: integer("recommended_reps_min"),
-    recommendedRepsMax: integer("recommended_reps_max"),
+    recommendedSets: integer("recommended_sets").notNull(),
+    recommendedRepsMin: integer("recommended_reps_min").notNull(),
+    recommendedRepsMax: integer("recommended_reps_max").notNull(),
 
-    // Load/Intensity guidance (RPE: 1-10 scale, nullable for SMR/warmup)
-    targetRpe: integer("target_rpe"),
+    // Load/Intensity guidance (RPE: 1-10 scale)
+    targetRpe: integer("target_rpe").notNull(),
 
     // Tempo guidance (eccentric-isometric-concentric, e.g., "3-0-1")
-    tempo: text("tempo"),
+    tempo: text("tempo").notNull(),
 
-    // Breathing cue
-    breathingCue: text("breathing_cue"),
+    // Breathing cue template
+    breathingCue: text("breathing_cue").notNull(),
 
-    // Regression option for when this exercise is too difficult
-    regressionExerciseId: text("regression_exercise_id").references(
-      () => sourceExercises.exerciseId
-    ),
-    regressionDescription: text("regression_description"),
-
-    // Equipment alternatives if prescribed equipment unavailable
-    equipmentAlternatives: jsonb("equipment_alternatives"),
-
-    // Additional form cues and modifications
-    formCue: text("form_cue"),
-    modificationNote: text("modification_note"),
+    // General form cue for this level/goal combo
+    formCue: text("form_cue").notNull(),
 
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [
-    primaryKey({
-      columns: [t.exerciseId, t.experienceLevel, t.trainingGoal],
-    }),
-  ]
+  }
+);
+
+/**
+ * Exercise-specific guidance overrides: maps exercises to patterns with optional customizations.
+ * 1,218 rows (one per exercise). Uses composite FK to guidance_patterns.
+ *
+ * Each exercise gets a default pattern (e.g., all compound pushes → "beginner_strength" pattern)
+ * plus optional exercise-specific overrides for regression options, equipment alternatives,
+ * safety notes, and form cues.
+ */
+export const exerciseGuidanceOverrides = pgTable(
+  "exercise_guidance_overrides",
+  {
+    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+    exerciseId: text("exercise_id")
+      .notNull()
+      .references(() => sourceExercises.exerciseId, { onDelete: "cascade" })
+      .unique(), // One override row per exercise
+
+    // Reference to the pattern this exercise primarily follows
+    // In queries, join guidance_patterns to get all the pattern-based fields
+    patternId: text("pattern_id")
+      .notNull()
+      .references(() => guidancePatterns.id),
+
+    // Exercise-specific overrides (all optional — null means use pattern defaults)
+    // Regression options: tiered fallbacks for when exercise is too hard
+    regressionTier1ExerciseId: text("regression_tier_1_exercise_id").references(
+      () => sourceExercises.exerciseId
+    ),
+    regressionTier1Note: text("regression_tier_1_note"),
+
+    regressionTier2ExerciseId: text("regression_tier_2_exercise_id").references(
+      () => sourceExercises.exerciseId
+    ),
+    regressionTier2Note: text("regression_tier_2_note"),
+
+    regressionTier3ExerciseId: text("regression_tier_3_exercise_id").references(
+      () => sourceExercises.exerciseId
+    ),
+    regressionTier3Note: text("regression_tier_3_note"),
+
+    // Equipment alternatives: structured alternatives with priority
+    alternative1ExerciseId: text("alternative_1_exercise_id").references(
+      () => sourceExercises.exerciseId
+    ),
+    alternative1Note: text("alternative_1_note"),
+
+    alternative2ExerciseId: text("alternative_2_exercise_id").references(
+      () => sourceExercises.exerciseId
+    ),
+    alternative2Note: text("alternative_2_note"),
+
+    // Exercise-specific safety/mobility notes
+    requiredMobility: text("required_mobility"), // "ankle" | "shoulder" | "hip" | null
+    contraindicatedFor: text("contraindicated_for"), // "lower_back_pain" | "shoulder_impingement" | null
+    minimumExperienceLevel: text("minimum_experience_level"), // "Beginner" | "Intermediate"
+
+    // Exercise-specific form cues (overrides pattern defaults)
+    exerciseSpecificFormCue: text("exercise_specific_form_cue"), // e.g., "Elbows 45°, not flared"
+    beginnerSafetyCue: text("beginner_safety_cue"), // "Check shoulder mobility first"
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  }
 );
 
 /** What a profile actually has access to. Drives generator filtering (Epic F). */

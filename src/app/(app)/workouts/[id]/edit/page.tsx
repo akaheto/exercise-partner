@@ -8,8 +8,9 @@ import { WorkoutAssessmentPanel } from "@/components/workout-assessment/workout-
 import { WorkoutSessionHistoryPanel } from "@/components/history/workout-session-history-panel";
 import { Button } from "@/components/ui/button";
 import { getWorkoutForEdit } from "@/db/queries/workouts";
-import { getSubstitutionCandidates } from "@/db/queries/exercises";
+import { getSubstitutionCandidates, getExerciseGuidance } from "@/db/queries/exercises";
 import { getWorkoutSessionHistory } from "@/db/queries/history";
+import { getProfileById } from "@/db/queries/profiles";
 import { getActiveProfileId } from "@/lib/active-profile";
 import { estimateWorkoutMinutes } from "@/domain/workout-duration";
 import { assessWorkout } from "@/domain/workout-assessment";
@@ -22,8 +23,14 @@ export default async function WorkoutBuilderPage({ params }: { params: Promise<{
   const profileId = await getActiveProfileId();
   if (!profileId) notFound();
 
-  const workout = await getWorkoutForEdit(id, profileId);
+  const [workout, profile] = await Promise.all([
+    getWorkoutForEdit(id, profileId),
+    getProfileById(profileId),
+  ]);
   if (!workout) notFound();
+
+  const userLevel = profile?.experienceLevel || "Beginner";
+  const userGoal = profile?.trainingGoal || "General";
 
   const allExerciseIds = [...new Set(workout.blocks.flatMap((b) => b.items.map((i) => i.exerciseId)))];
   const candidateEntries = await Promise.all(
@@ -40,6 +47,16 @@ export default async function WorkoutBuilderPage({ params }: { params: Promise<{
     }),
   );
   const substitutionCandidates = new Map(candidateEntries);
+
+  // Fetch guidance data for all exercises
+  const guidanceEntries = await Promise.all(
+    allExerciseIds.map(async (exerciseId) => {
+      const guidance = await getExerciseGuidance(exerciseId, userLevel, userGoal);
+      return [exerciseId, guidance] as const;
+    }),
+  );
+  const guidanceMap = new Map(guidanceEntries);
+
   const sessionHistory = await getWorkoutSessionHistory(id, profileId);
 
   const minutes = estimateWorkoutMinutes(
@@ -81,7 +98,14 @@ export default async function WorkoutBuilderPage({ params }: { params: Promise<{
         </div>
       </div>
 
-      <BlockList workoutId={workout.id} blocks={workout.blocks} substitutionCandidates={substitutionCandidates} />
+      <BlockList
+        workoutId={workout.id}
+        blocks={workout.blocks}
+        substitutionCandidates={substitutionCandidates}
+        guidanceMap={guidanceMap}
+        userLevel={userLevel}
+        userGoal={userGoal}
+      />
 
       <div className="mt-4 mb-6">
         <AddExerciseButton workoutId={workout.id} />

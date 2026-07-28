@@ -15,6 +15,11 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:studio": "drizzle-kit studio",
+    "db:seed:patterns": "tsx scripts/seed-guidance-patterns.ts",
+    "db:seed:overrides": "tsx scripts/seed-exercise-guidance-overrides.ts",
+    "db:seed:all": "npm run db:seed:patterns && npm run db:seed:overrides",
+    "db:populate:exercise-overrides": "tsx scripts/populate-exercise-overrides.ts",
+    "db:populate:all-exercise-overrides": "tsx scripts/populate-all-exercise-overrides.ts",
     "import:exercises": "tsx scripts/import-exercises.ts",
     "db:report": "tsx scripts/db-report.ts"
   },

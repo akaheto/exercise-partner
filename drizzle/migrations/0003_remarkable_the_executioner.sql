@@ -1,2 +1,2 @@
-ALTER TABLE "source_exercises" DROP COLUMN "movement_pattern";--> statement-breakpoint
-ALTER TABLE "source_exercises" DROP COLUMN "breathing";
+-- Placeholder migration (no schema changes in this version)
+SELECT 1;

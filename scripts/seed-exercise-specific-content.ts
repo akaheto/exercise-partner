@@ -174,11 +174,11 @@ async function seedContent() {
   console.log("Seeding exercise-specific tips and mistakes...\n");
 
   let added = 0;
-  let skipped = 0;
+  const skipped = 0;
 
   for (const [exerciseId, content] of Object.entries(exerciseContent)) {
     // Check if overrides already exist for tips or mistakes
-    const existing = await db
+    await db
       .select()
       .from(exerciseOverrides)
       .where(eq(exerciseOverrides.exerciseId, exerciseId));
