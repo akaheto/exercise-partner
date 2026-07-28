@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildExerciseFiltersQuery,
+  describeActiveFilters,
   hasActiveFilters,
   parseExerciseFilters,
 } from "./exercise-filters";
@@ -130,5 +131,45 @@ describe("hasActiveFilters", () => {
 
   it("is false for sort/view/page changes alone (not filters)", () => {
     expect(hasActiveFilters({ ...base, sort: "muscle", view: "table", page: 2 })).toBe(false);
+  });
+});
+
+describe("describeActiveFilters", () => {
+  const base = parseExerciseFilters({});
+
+  it("returns nothing for the default filter state", () => {
+    expect(describeActiveFilters(base)).toEqual([]);
+  });
+
+  it("names each active filter with the field it came from", () => {
+    const filters = parseExerciseFilters({
+      q: "row",
+      muscle: "Lats",
+      equipment: "Cable",
+      level: "Beginner",
+      video: "yes",
+    });
+    expect(describeActiveFilters(filters)).toEqual([
+      "search “row”",
+      "muscle: Lats",
+      "equipment: Cable",
+      "level: Beginner",
+      "has video",
+    ]);
+  });
+
+  it("lists labels in filter-bar order regardless of how they were set", () => {
+    const filters = parseExerciseFilters({ region: "Upper Body", type: "Strength", force: "Push" });
+    expect(describeActiveFilters(filters)).toEqual([
+      "type: Strength",
+      "force: Push",
+      "body region: Upper Body",
+    ]);
+  });
+
+  // Unhappy path: sort/view/page are not filters, so a sorted-but-unfiltered
+  // empty result must not claim a filter is to blame.
+  it("ignores sort, view and page", () => {
+    expect(describeActiveFilters({ ...base, sort: "muscle", view: "table", page: 3 })).toEqual([]);
   });
 });

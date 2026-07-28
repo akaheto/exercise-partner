@@ -26,7 +26,7 @@ function MiniExerciseCard({
   return (
     <Link
       href={`/exercises/${exerciseId}`}
-      className="flex items-center gap-3 rounded-xl border border-border p-2 transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      className="focus-ring flex items-center gap-3 rounded-xl border border-border p-2 transition-colors hover:border-primary/50"
     >
       <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-muted">
         {thumbnailUrl ? (
@@ -38,8 +38,8 @@ function MiniExerciseCard({
         )}
       </div>
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-foreground">{name}</p>
-        {caption && <p className="text-xs text-muted-foreground">{caption}</p>}
+        <p className="truncate text-small font-medium text-foreground">{name}</p>
+        {caption && <p className="text-small text-muted-foreground">{caption}</p>}
       </div>
     </Link>
   );
@@ -68,8 +68,8 @@ export function RelatedExercises({
     <div className="space-y-6">
       {substitutions.length > 0 && (
         <div>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Suggested substitutions</h2>
-          <p className="mb-3 text-xs text-muted-foreground">
+          <h2 className="mb-3 text-h3 text-foreground">Suggested substitutions</h2>
+          <p className="mb-3 text-small text-muted-foreground">
             Rule-derived candidates, ranked by similarity — check the setup before swapping.
           </p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -88,7 +88,7 @@ export function RelatedExercises({
 
       {resolvedLinks.length > 0 && (
         <div>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Variations &amp; related exercises</h2>
+          <h2 className="mb-3 text-h3 text-foreground">Variations &amp; related exercises</h2>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {resolvedLinks.map((link, i) => (
               <MiniExerciseCard
@@ -105,7 +105,7 @@ export function RelatedExercises({
 
       {unresolvedLinks.length > 0 && (
         <div>
-          <h3 className="mb-2 text-xs font-semibold text-muted-foreground uppercase">Also mentioned on the source page</h3>
+          <h3 className="mb-2 text-caption font-semibold text-muted-foreground">Also mentioned on the source page</h3>
           <ul className="space-y-1">
             {unresolvedLinks.map((link, i) =>
               link.url ? (
@@ -114,18 +114,18 @@ export function RelatedExercises({
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline"
+                    className="focus-ring text-small text-primary-text hover:underline"
                   >
                     {link.label}
                   </a>
-                  <span className="ml-2 text-xs text-muted-foreground">
+                  <span className="ml-2 text-caption text-muted-foreground">
                     {RELATION_LABELS[link.relationType] ?? link.relationType}
                   </span>
                 </li>
               ) : (
-                <li key={i} className="text-sm text-muted-foreground">
+                <li key={i} className="text-small text-muted-foreground">
                   {link.label}
-                  <span className="ml-2 text-xs">{RELATION_LABELS[link.relationType] ?? link.relationType}</span>
+                  <span className="ml-2 text-caption">{RELATION_LABELS[link.relationType] ?? link.relationType}</span>
                 </li>
               ),
             )}

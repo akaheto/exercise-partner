@@ -22,7 +22,7 @@ export function Pagination({ filters, pageCount }: { filters: ExerciseFilters; p
       >
         Previous
       </Link>
-      <span className="text-sm text-muted-foreground">
+      <span className="text-small text-muted-foreground">
         Page {filters.page} of {pageCount}
       </span>
       <Link

@@ -87,6 +87,32 @@ export function buildExerciseFiltersQuery(
   return qs ? `?${qs}` : "";
 }
 
+/**
+ * Human-readable labels for whichever filters are actually on, in the order
+ * they appear in the filter bar.
+ *
+ * VISUAL_STYLE_GUIDE.docx voice rules: an empty state names the specific
+ * reason it is empty rather than saying "no results". Each label carries its
+ * own field name because "Chest" on its own doesn't say whether it came from
+ * the muscle or the body-region control.
+ *
+ * Returns [] when nothing is filtered — the caller uses that to tell "you
+ * filtered everything out" apart from "there is nothing here at all".
+ */
+export function describeActiveFilters(filters: ExerciseFilters): string[] {
+  const labels: string[] = [];
+  if (filters.q) labels.push(`search “${filters.q}”`);
+  if (filters.muscle) labels.push(`muscle: ${filters.muscle}`);
+  if (filters.equipment) labels.push(`equipment: ${filters.equipment}`);
+  if (filters.type) labels.push(`type: ${filters.type}`);
+  if (filters.mechanics) labels.push(`mechanics: ${filters.mechanics}`);
+  if (filters.force) labels.push(`force: ${filters.force}`);
+  if (filters.level) labels.push(`level: ${filters.level}`);
+  if (filters.region) labels.push(`body region: ${filters.region}`);
+  if (filters.videoOnly) labels.push("has video");
+  return labels;
+}
+
 export function hasActiveFilters(filters: ExerciseFilters): boolean {
   return Boolean(
     filters.q ||

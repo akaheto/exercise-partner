@@ -2,11 +2,11 @@
   "generated": "2026-07-28",
   "note": "Ratchet baseline for scripts/check-design-tokens.ts. Counts may only go DOWN. Re-run with --update after each cleanup phase. Target for every rule is 0.",
   "counts": {
-    "raw-palette-color": 125,
-    "raw-text-size": 263,
-    "off-scale-spacing": 65,
+    "raw-palette-color": 122,
+    "raw-text-size": 189,
+    "off-scale-spacing": 48,
     "raw-shadow": 2,
-    "off-scale-radius": 28,
+    "off-scale-radius": 21,
     "gradient": 4
   }
 }

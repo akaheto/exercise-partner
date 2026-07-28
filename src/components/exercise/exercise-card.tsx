@@ -22,7 +22,7 @@ export function ExerciseCard({ exercise }: { exercise: SourceExerciseRow }) {
     <Link
       href={`/exercises/${exercise.exerciseId}`}
       className={cn(
-        "group flex flex-col overflow-hidden rounded-2xl border bg-card transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+        "group focus-ring flex flex-col overflow-hidden rounded-xl border bg-card shadow-flat transition-colors hover:border-primary/50",
         selected ? "border-primary" : "border-border",
       )}
     >
@@ -41,10 +41,13 @@ export function ExerciseCard({ exercise }: { exercise: SourceExerciseRow }) {
           </div>
         )}
         {exercise.videoAvailable && (
-          <span className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-background/90 px-2 py-1 text-[11px] font-medium text-foreground">
+          <span className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-background/90 px-2 py-1 text-caption font-medium text-foreground">
             <Video className="size-3" aria-hidden="true" /> Video
           </span>
         )}
+        {/* 44px hit area (VISUAL_STYLE_GUIDE.docx touch-target minimum) with a
+            28px visual mark, so the control stays small on a thumbnail without
+            being small to hit. */}
         <button
           type="button"
           aria-label={selected ? `Remove ${exercise.name} from selection` : `Select ${exercise.name}`}
@@ -54,18 +57,24 @@ export function ExerciseCard({ exercise }: { exercise: SourceExerciseRow }) {
             e.stopPropagation();
             toggle({ exerciseId: exercise.exerciseId, name: exercise.name });
           }}
-          className={cn(
-            "absolute top-2 left-2 flex size-7 items-center justify-center rounded-full border-2 transition-colors",
-            selected ? "border-primary bg-primary text-primary-foreground" : "border-background/80 bg-background/60 text-transparent hover:bg-background/90",
-          )}
+          className="group/select focus-ring absolute top-0 left-0 flex size-11 items-center justify-center"
         >
-          <Check className="size-4" aria-hidden="true" />
+          <span
+            className={cn(
+              "flex size-7 items-center justify-center rounded-full border-2 transition-colors",
+              selected
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-background/80 bg-background/60 text-transparent group-hover/select:bg-background/90",
+            )}
+          >
+            <Check className="size-4" aria-hidden="true" />
+          </span>
         </button>
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-3">
-        <h3 className="line-clamp-2 text-sm font-semibold text-foreground">{exercise.name}</h3>
-        <div className="mt-auto flex flex-wrap gap-1.5">
+        <h3 className="line-clamp-2 text-body font-semibold text-foreground">{exercise.name}</h3>
+        <div className="mt-auto flex flex-wrap gap-2">
           {exercise.primaryMuscle && <Badge variant="secondary">{exercise.primaryMuscle}</Badge>}
           {exercise.equipment && <Badge variant="outline">{exercise.equipment}</Badge>}
           {exercise.experienceLevel && (

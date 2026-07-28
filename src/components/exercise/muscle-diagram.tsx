@@ -6,6 +6,8 @@
  * is at muscle-group granularity, matching the documented tradeoff.
  */
 
+import { Card, CardContent } from "@/components/ui/card";
+
 type Shape =
   | { kind: "circle"; cx: number; cy: number; r: number }
   | { kind: "rect"; x: number; y: number; w: number; h: number; rx: number };
@@ -134,27 +136,29 @@ export function MuscleDiagram({
   if (primaryMuscle && UNMAPPED_MUSCLES.has(primaryMuscle)) unmapped.push(primaryMuscle);
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <div className="grid grid-cols-2 gap-2">
-        <Silhouette view="front" primaryMuscle={primaryMuscle} secondaryMuscles={secondaryMuscles} />
-        <Silhouette view="back" primaryMuscle={primaryMuscle} secondaryMuscles={secondaryMuscles} />
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full bg-muscle-primary" /> Primary
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full bg-muscle-secondary" /> Secondary
-        </span>
-      </div>
-      {unmapped.length > 0 && (
-        <p className="mt-2 text-xs text-muted-foreground">
-          Not shown above (no clear body position on a standing view): {unmapped.join(", ")}.
+    <Card>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-2">
+          <Silhouette view="front" primaryMuscle={primaryMuscle} secondaryMuscles={secondaryMuscles} />
+          <Silhouette view="back" primaryMuscle={primaryMuscle} secondaryMuscles={secondaryMuscles} />
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-caption text-muted-foreground">
+          <span className="flex items-center gap-2">
+            <span className="size-3 rounded-full bg-muscle-primary" /> Primary
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="size-3 rounded-full bg-muscle-secondary" /> Secondary
+          </span>
+        </div>
+        {unmapped.length > 0 && (
+          <p className="mt-2 text-caption text-muted-foreground">
+            Not shown above (no clear body position on a standing view): {unmapped.join(", ")}.
+          </p>
+        )}
+        <p className="mt-2 text-caption text-muted-foreground">
+          Approximate, generated diagram — not part of the source data. Muscle-group granularity only.
         </p>
-      )}
-      <p className="mt-2 text-xs text-muted-foreground">
-        Approximate, generated diagram — not part of the source data. Muscle-group granularity only.
-      </p>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

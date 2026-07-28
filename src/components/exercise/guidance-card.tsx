@@ -1,4 +1,16 @@
-import { AlertCircle, ArrowDown, Lightbulb } from "lucide-react";
+import type { ReactNode } from "react";
+import { ArrowDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Callout } from "@/components/ui/callout";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Stat } from "@/components/ui/stat";
 import type { ExerciseGuidanceRow } from "@/domain/getExerciseGuidance";
 
 interface GuidanceCardProps {
@@ -7,161 +19,115 @@ interface GuidanceCardProps {
   userGoal: string;
 }
 
+/** Sentence-case section label. Not the uppercase caption treatment — D4
+ * reserves that for form field labels and Stat labels. */
+function SectionLabel({ children }: { children: ReactNode }) {
+  return <p className="text-caption font-semibold text-foreground">{children}</p>;
+}
+
 export function GuidanceCard({ guidance, userLevel, userGoal }: GuidanceCardProps) {
   const repsDisplay = `${guidance.recommendedRepsMin}–${guidance.recommendedRepsMax}`;
-  const rpeDisplay = `RPE ${guidance.targetRpe}/10`;
-  const setsDisplay = `${guidance.recommendedSets} sets`;
+  const hasRegressions =
+    guidance.regressionTier1ExerciseId ||
+    guidance.regressionTier2ExerciseId ||
+    guidance.regressionTier3ExerciseId;
+  const regressions = [
+    { tier: 1, exerciseId: guidance.regressionTier1ExerciseId, note: guidance.regressionTier1Note },
+    { tier: 2, exerciseId: guidance.regressionTier2ExerciseId, note: guidance.regressionTier2Note },
+    { tier: 3, exerciseId: guidance.regressionTier3ExerciseId, note: guidance.regressionTier3Note },
+  ].filter((r) => r.exerciseId);
+  const alternatives = [
+    { exerciseId: guidance.alternative1ExerciseId, note: guidance.alternative1Note },
+    { exerciseId: guidance.alternative2ExerciseId, note: guidance.alternative2Note },
+  ].filter((a) => a.exerciseId);
 
   return (
-    <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
-      <div>
-        <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground">
-            Guidance for {userLevel} • {userGoal}
-          </h3>
-          <span className="text-xs text-muted-foreground">{guidance.patternId}</span>
-        </div>
-        <p className="text-xs text-muted-foreground">Personalized based on your experience level and training goal</p>
-      </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          Guidance for {userLevel} • {userGoal}
+        </CardTitle>
+        <CardDescription>Derived from your experience level and training goal, not measured for you.</CardDescription>
+        <CardAction>
+          <Badge variant="muted">{guidance.patternId}</Badge>
+        </CardAction>
+      </CardHeader>
 
-      {/* Prescription Grid */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-lg bg-muted/50 p-3">
-          <div className="text-xs text-muted-foreground">Sets</div>
-          <div className="text-lg font-semibold text-foreground">{setsDisplay}</div>
-        </div>
-        <div className="rounded-lg bg-muted/50 p-3">
-          <div className="text-xs text-muted-foreground">Reps</div>
-          <div className="text-lg font-semibold text-foreground">{repsDisplay}</div>
-        </div>
-        <div className="rounded-lg bg-muted/50 p-3">
-          <div className="text-xs text-muted-foreground">Intensity</div>
-          <div className="text-lg font-semibold text-foreground">{rpeDisplay}</div>
-        </div>
-        <div className="rounded-lg bg-muted/50 p-3">
-          <div className="text-xs text-muted-foreground">Tempo</div>
-          <div className="text-lg font-semibold text-foreground">{guidance.tempo}</div>
-        </div>
-      </div>
+      {/* The four numbers you act on. Stat puts them in mono tabular figures so
+          the row stays aligned across exercises. */}
+      <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <Stat label="Sets" value={guidance.recommendedSets} />
+        <Stat label="Reps" value={repsDisplay} />
+        <Stat label="Target RPE" value={`${guidance.targetRpe}/10`} />
+        <Stat label="Tempo" value={guidance.tempo} />
+      </CardContent>
 
-      {/* Breathing & Form Cues */}
-      <div className="space-y-2 border-t border-border pt-3">
-        <div className="text-xs font-semibold text-foreground">Breathing</div>
-        <p className="text-sm text-foreground">{guidance.breathingCue}</p>
-      </div>
+      <CardContent className="space-y-2 border-t border-border pt-4">
+        <SectionLabel>Breathing</SectionLabel>
+        <p className="text-body text-foreground">{guidance.breathingCue}</p>
+      </CardContent>
 
-      <div className="space-y-2 border-t border-border pt-3">
-        <div className="text-xs font-semibold text-foreground">Form Cue</div>
-        <p className="text-sm text-foreground">
-          {guidance.exerciseSpecificFormCue || guidance.formCue}
-        </p>
-      </div>
+      <CardContent className="space-y-2 border-t border-border pt-4">
+        <SectionLabel>Form cue</SectionLabel>
+        <p className="text-body text-foreground">{guidance.exerciseSpecificFormCue || guidance.formCue}</p>
+      </CardContent>
 
-      {/* Beginner Safety Cue */}
       {userLevel === "Beginner" && guidance.beginnerSafetyCue && (
-        <div className="space-y-2 border-t border-border pt-3">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="mt-0.5 size-4 shrink-0 text-yellow-600" />
-            <div>
-              <div className="text-xs font-semibold text-foreground">Beginner Safety</div>
-              <p className="text-sm text-foreground">{guidance.beginnerSafetyCue}</p>
-            </div>
-          </div>
-        </div>
+        <CardContent>
+          <Callout tone="warning" title="Beginner safety">
+            {guidance.beginnerSafetyCue}
+          </Callout>
+        </CardContent>
       )}
 
-      {/* Mobility Requirement */}
       {guidance.requiredMobility && (
-        <div className="space-y-2 border-t border-border pt-3">
-          <div className="flex items-start gap-2">
-            <Lightbulb className="mt-0.5 size-4 shrink-0 text-blue-600" />
-            <div>
-              <div className="text-xs font-semibold text-foreground">Mobility Required</div>
-              <p className="text-sm text-foreground capitalize">{guidance.requiredMobility} mobility needed</p>
-            </div>
-          </div>
-        </div>
+        <CardContent>
+          <Callout tone="info" title="Mobility required">
+            <p className="capitalize">{guidance.requiredMobility} mobility needed.</p>
+          </Callout>
+        </CardContent>
       )}
 
-      {/* Contraindications */}
       {guidance.contraindicatedFor && (
-        <div className="space-y-2 border-t border-border pt-3">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="mt-0.5 size-4 shrink-0 text-red-600" />
-            <div>
-              <div className="text-xs font-semibold text-foreground">Avoid If</div>
-              <p className="text-sm text-foreground capitalize">{guidance.contraindicatedFor.replace(/_/g, " ")}</p>
-            </div>
-          </div>
-        </div>
+        <CardContent>
+          <Callout tone="danger" title="Avoid if">
+            <p className="capitalize">{guidance.contraindicatedFor.replace(/_/g, " ")}</p>
+          </Callout>
+        </CardContent>
       )}
 
-      {/* Regression Tiers */}
-      {(guidance.regressionTier1ExerciseId || guidance.regressionTier2ExerciseId || guidance.regressionTier3ExerciseId) && (
-        <div className="space-y-2 border-t border-border pt-3">
-          <div className="text-xs font-semibold text-foreground">Regression Tiers (If Too Difficult)</div>
-          <div className="space-y-1.5">
-            {guidance.regressionTier1ExerciseId && (
-              <div className="flex items-start gap-2 text-sm">
-                <ArrowDown className="mt-0.5 size-3 shrink-0 text-muted-foreground" />
+      {hasRegressions && (
+        <CardContent className="space-y-2 border-t border-border pt-4">
+          <SectionLabel>Regressions (if this is too hard)</SectionLabel>
+          <div className="space-y-2">
+            {regressions.map((r) => (
+              <div key={r.tier} className="flex items-start gap-2 text-small">
+                <ArrowDown className="mt-1 size-3 shrink-0 text-muted-foreground" aria-hidden="true" />
                 <div>
-                  <div className="font-medium text-foreground">Tier 1: {guidance.regressionTier1ExerciseId}</div>
-                  {guidance.regressionTier1Note && (
-                    <p className="text-xs text-muted-foreground">{guidance.regressionTier1Note}</p>
-                  )}
+                  <p className="font-medium text-foreground">
+                    Tier {r.tier}: {r.exerciseId}
+                  </p>
+                  {r.note && <p className="text-caption text-muted-foreground">{r.note}</p>}
                 </div>
               </div>
-            )}
-            {guidance.regressionTier2ExerciseId && (
-              <div className="flex items-start gap-2 text-sm">
-                <ArrowDown className="mt-0.5 size-3 shrink-0 text-muted-foreground" />
-                <div>
-                  <div className="font-medium text-foreground">Tier 2: {guidance.regressionTier2ExerciseId}</div>
-                  {guidance.regressionTier2Note && (
-                    <p className="text-xs text-muted-foreground">{guidance.regressionTier2Note}</p>
-                  )}
-                </div>
-              </div>
-            )}
-            {guidance.regressionTier3ExerciseId && (
-              <div className="flex items-start gap-2 text-sm">
-                <ArrowDown className="mt-0.5 size-3 shrink-0 text-muted-foreground" />
-                <div>
-                  <div className="font-medium text-foreground">Tier 3: {guidance.regressionTier3ExerciseId}</div>
-                  {guidance.regressionTier3Note && (
-                    <p className="text-xs text-muted-foreground">{guidance.regressionTier3Note}</p>
-                  )}
-                </div>
-              </div>
-            )}
+            ))}
           </div>
-        </div>
+        </CardContent>
       )}
 
-      {/* Equipment Alternatives */}
-      {(guidance.alternative1ExerciseId || guidance.alternative2ExerciseId) && (
-        <div className="space-y-2 border-t border-border pt-3">
-          <div className="text-xs font-semibold text-foreground">Equipment Alternatives</div>
-          <div className="space-y-1.5">
-            {guidance.alternative1ExerciseId && (
-              <div className="text-sm">
-                <div className="font-medium text-foreground">{guidance.alternative1ExerciseId}</div>
-                {guidance.alternative1Note && (
-                  <p className="text-xs text-muted-foreground">{guidance.alternative1Note}</p>
-                )}
+      {alternatives.length > 0 && (
+        <CardContent className="space-y-2 border-t border-border pt-4">
+          <SectionLabel>Equipment alternatives</SectionLabel>
+          <div className="space-y-2">
+            {alternatives.map((a) => (
+              <div key={a.exerciseId} className="text-small">
+                <p className="font-medium text-foreground">{a.exerciseId}</p>
+                {a.note && <p className="text-caption text-muted-foreground">{a.note}</p>}
               </div>
-            )}
-            {guidance.alternative2ExerciseId && (
-              <div className="text-sm">
-                <div className="font-medium text-foreground">{guidance.alternative2ExerciseId}</div>
-                {guidance.alternative2Note && (
-                  <p className="text-xs text-muted-foreground">{guidance.alternative2Note}</p>
-                )}
-              </div>
-            )}
+            ))}
           </div>
-        </div>
+        </CardContent>
       )}
-    </section>
+    </Card>
   );
 }

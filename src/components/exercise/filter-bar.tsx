@@ -42,7 +42,7 @@ function Select({
       aria-label={label}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="h-11 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+      className="focus-ring h-11 rounded-lg border border-input bg-background px-3 text-small text-foreground outline-none"
     >
       <option value="">{label}</option>
       {options.map((opt) => (
@@ -109,7 +109,7 @@ export function FilterBar({
             aria-label="Sort"
             value={filters.sort}
             onChange={(e) => go({ sort: e.target.value as SortOption })}
-            className="h-11 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="focus-ring h-11 rounded-lg border border-input bg-background px-3 text-small text-foreground outline-none"
           >
             {SORT_OPTIONS.map((opt) => (
               <option key={opt} value={opt}>
@@ -168,7 +168,7 @@ export function FilterBar({
         />
         <Select label="Body region" value={filters.region ?? ""} options={BODY_REGION_OPTIONS} onChange={(v) => go({ region: v || null })} />
 
-        <label className="flex h-11 items-center gap-2 rounded-lg border border-input px-3 text-sm text-foreground">
+        <label className="flex h-11 items-center gap-2 rounded-lg border border-input px-3 text-small text-foreground">
           <input
             type="checkbox"
             checked={filters.videoOnly}
@@ -180,7 +180,7 @@ export function FilterBar({
 
         {hasActiveFilters(filters) && (
           <Button type="button" variant="ghost" size="sm" onClick={() => router.push(pathname)} className="gap-1">
-            <X className="size-3.5" /> Clear filters
+            <X className="size-4" /> Clear filters
           </Button>
         )}
       </div>

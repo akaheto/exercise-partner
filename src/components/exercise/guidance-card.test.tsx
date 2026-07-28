@@ -37,9 +37,14 @@ describe("GuidanceCard", () => {
   it("renders the guidance card with prescribed sets/reps/RPE/tempo", () => {
     render(<GuidanceCard guidance={mockGuidance} userLevel="Beginner" userGoal="Strength" />);
 
-    expect(screen.getByText(/3 sets/)).toBeTruthy();
-    expect(screen.getByText(/3–6/)).toBeTruthy();
-    expect(screen.getByText(/RPE 7\/10/)).toBeTruthy();
+    // Each prescription is a <Stat>: an uppercase label plus a mono value.
+    expect(screen.getByText("Sets")).toBeTruthy();
+    expect(screen.getByText("3")).toBeTruthy();
+    expect(screen.getByText("Reps")).toBeTruthy();
+    expect(screen.getByText("3–6")).toBeTruthy();
+    expect(screen.getByText("Target RPE")).toBeTruthy();
+    expect(screen.getByText("7/10")).toBeTruthy();
+    expect(screen.getByText("Tempo")).toBeTruthy();
     expect(screen.getByText("2-0-1")).toBeTruthy();
   });
 
@@ -83,5 +88,56 @@ describe("GuidanceCard", () => {
   it("displays user level and goal in header", () => {
     render(<GuidanceCard guidance={mockGuidance} userLevel="Intermediate" userGoal="Hypertrophy" />);
     expect(screen.getByText(/Intermediate • Hypertrophy/)).toBeTruthy();
+  });
+  it("falls back to the generic form cue when there is no exercise-specific one", () => {
+    render(
+      <GuidanceCard
+        guidance={{ ...mockGuidance, exerciseSpecificFormCue: null }}
+        userLevel="Beginner"
+        userGoal="Strength"
+      />,
+    );
+    expect(screen.getByText("Maintain form throughout.")).toBeTruthy();
+  });
+
+  it("raises the contraindication as an alert callout when one is set", () => {
+    render(
+      <GuidanceCard
+        guidance={{ ...mockGuidance, contraindicatedFor: "lower_back_pain" }}
+        userLevel="Beginner"
+        userGoal="Strength"
+      />,
+    );
+    const alert = screen.getByRole("alert");
+    expect(alert.textContent).toContain("Avoid if");
+    expect(alert.textContent).toContain("lower back pain");
+  });
+
+  // Unhappy path: a guidance row with every optional field empty must render
+  // the prescription and nothing else — no empty callouts, no stray headings.
+  it("omits every optional section when the guidance row has none of them", () => {
+    render(
+      <GuidanceCard
+        guidance={{
+          ...mockGuidance,
+          requiredMobility: null,
+          contraindicatedFor: null,
+          beginnerSafetyCue: null,
+          regressionTier1ExerciseId: null,
+          regressionTier1Note: null,
+          alternative1ExerciseId: null,
+          alternative1Note: null,
+        }}
+        userLevel="Beginner"
+        userGoal="Strength"
+      />,
+    );
+
+    expect(screen.getByText("3–6")).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByText(/Mobility required/)).toBeNull();
+    expect(screen.queryByText(/Beginner safety/)).toBeNull();
+    expect(screen.queryByText(/Regressions/)).toBeNull();
+    expect(screen.queryByText(/Equipment alternatives/)).toBeNull();
   });
 });
