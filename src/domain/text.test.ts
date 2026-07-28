@@ -35,4 +35,24 @@ describe("splitIntoSentences", () => {
   it("collapses extra whitespace between sentences", () => {
     expect(splitIntoSentences("First point.    Second point.")).toEqual(["First point.", "Second point."]);
   });
+
+  it("preserves numbered steps as part of their sentences", () => {
+    expect(
+      splitIntoSentences(
+        "1. Set up the kettlebell at chest height in the front rack position. 2. Dip slightly at the knees and then explode straight up. 3. Catch the bell overhead with your arm locked out."
+      )
+    ).toEqual([
+      "1. Set up the kettlebell at chest height in the front rack position.",
+      "2. Dip slightly at the knees and then explode straight up.",
+      "3. Catch the bell overhead with your arm locked out.",
+    ]);
+  });
+
+  it("handles single-digit numbered steps without splitting on the step number", () => {
+    expect(splitIntoSentences("1. Start here. This is important. 2. Continue.")).toEqual([
+      "1. Start here.",
+      "This is important.",
+      "2. Continue.",
+    ]);
+  });
 });
