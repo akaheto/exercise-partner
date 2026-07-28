@@ -11,6 +11,43 @@ import {
 import { sourceEquipment, sourceExercises } from "./source";
 
 /**
+ * Curation tracking: monitors progress on populating exercise content
+ * (instructions, starting_position) from the source site.
+ */
+export const curationStatus = pgTable("curation_status", {
+  exerciseId: text("exercise_id")
+    .primaryKey()
+    .references(() => sourceExercises.exerciseId, { onDelete: "cascade" }),
+
+  // Instructions
+  instructionsStatus: text("instructions_status")
+    .notNull()
+    .default("not_started"), // not_started | fetching | fetch_failed | needs_review | approved
+  instructionsSource: text("instructions_source"), // muscleandstrength_scraped | manual | ai_generated | etc.
+  instructionsFetchedAt: timestamp("instructions_fetched_at", {
+    withTimezone: true,
+  }),
+  instructionsFetchError: text("instructions_fetch_error"),
+
+  // Starting position
+  startingPositionStatus: text("starting_position_status")
+    .notNull()
+    .default("not_started"),
+  startingPositionSource: text("starting_position_source"),
+  startingPositionFetchedAt: timestamp("starting_position_fetched_at", {
+    withTimezone: true,
+  }),
+  startingPositionFetchError: text("starting_position_fetch_error"),
+
+  // Metadata
+  notes: text("notes"),
+  lastAttemptedAt: timestamp("last_attempted_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/**
  * App layer: everything the app or its users create. Never touched by the
  * import pipeline — this is what exercise_overrides, workouts and history
  * are protected from being clobbered by a spreadsheet re-import.
