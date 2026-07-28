@@ -122,15 +122,11 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
               <dt className="text-xs text-muted-foreground">Range of motion</dt>
               <dd className="text-foreground">{exercise.rangeOfMotion ?? "—"}</dd>
             </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">Breathing</dt>
-              <dd className="text-foreground">{exercise.breathing ?? "—"}</dd>
-            </div>
           </dl>
 
           {exercise.derivedStatus && (
             <p className="text-xs text-muted-foreground">
-              Classification fields on this page (movement pattern, body position, mobility/balance demand) are{" "}
+              Classification fields on this page (body position, range, body position, mobility/balance demand) are{" "}
               {exercise.derivedStatus.toLowerCase()} — treat them as a starting point, not verified fact.
             </p>
           )}
