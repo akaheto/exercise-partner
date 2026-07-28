@@ -4,6 +4,27 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ---------------------------------------------------------------------------
+ * DESIGN TOKENS — Phase 0
+ *
+ * Two blocks below:
+ *   @theme inline  — anything whose value must change between light and dark.
+ *                    Tailwind inlines the reference so the runtime `.dark`
+ *                    override wins.
+ *   @theme         — literal, theme-independent scales (radius, type).
+ *
+ * SEMANTIC COLOUR MODEL (four roles per hue). Every semantic hue exposes:
+ *   --{name}              solid fill (buttons, filled badges)
+ *   --{name}-foreground   text/icon ON that solid fill
+ *   --{name}-text         text/icon on NEUTRAL surfaces — measured >= 4.5:1
+ *                         against background, card and muted in both themes
+ *   --{name}-subtle       tinted surface (callouts, quiet buttons, chips)
+ *   --{name}-border       border for that tinted surface
+ *
+ * The missing tinted-surface role is why ~125 raw palette classes accumulated
+ * downstream (bg-red-50/dark:bg-red-950 pairs hand-written per component).
+ * ------------------------------------------------------------------------ */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -26,41 +47,138 @@
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
-  --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  /* Semantic states, per VISUAL_STYLE_GUIDE.docx section 1 ("Semantic"). Not
-   * part of shadcn's default token set — added so success/warning/danger/info
-   * are first-class Tailwind utilities (bg-success, text-warning, etc). */
+
+  /* --- Semantic hues, four roles each --- */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-text: var(--primary-text);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-primary-border: var(--primary-border);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-success-text: var(--success-text);
+  --color-success-subtle: var(--success-subtle);
+  --color-success-border: var(--success-border);
+
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-warning-text: var(--warning-text);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-warning-border: var(--warning-border);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-text: var(--destructive-text);
+  --color-destructive-subtle: var(--destructive-subtle);
+  --color-destructive-border: var(--destructive-border);
+
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --color-info-text: var(--info-text);
+  --color-info-subtle: var(--info-subtle);
+  --color-info-border: var(--info-border);
+
+  /* --- Muscle-involvement ramp (Epic D4 body map).
+   * Exactly three steps because the source data only distinguishes primary
+   * from secondary involvement — there is no stabiliser tier to encode. --- */
+  --color-muscle-primary: var(--muscle-primary);
+  --color-muscle-secondary: var(--muscle-secondary);
+  --color-muscle-none: var(--muscle-none);
+
+  /* --- Elevation. Exactly two levels. shadow-sm/md/lg/xl are banned
+   * downstream by scripts/check-design-tokens.ts. --- */
+  --shadow-flat: var(--elevation-flat);
+  --shadow-overlay: var(--elevation-overlay);
+}
+
+@theme {
+  /* --- Radius. Explicit values, no calc() chain.
+   * Cards standardise on rounded-xl. NOTE: --radius-xl previously resolved to
+   * 14px (0.625rem * 1.4), so this is a real +2px shift on every card. --- */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+  /* Off-scale radii removed from the theme. --radius-3xl is aliased rather
+   * than deleted because one onboarding surface still uses it; Phase 2 moves
+   * that call site to rounded-2xl and this alias goes away. */
+  --radius-3xl: var(--radius-2xl);
+  --radius-xs: initial;
+  --radius-4xl: initial;
+
+  /* --- Type scale. Class names state the role, not the size.
+   *
+   * D2: in-app page titles are text-h1 (24px); full-screen moments
+   *     (onboarding, session summary, login) are text-display (30px).
+   * D5: text-small (14px) is for metadata and table cells only.
+   *     text-body (16px) and text-body-lg (18px) carry prose and anything
+   *     read mid-workout.
+   * D4: text-caption is NOT uppercase here. The uppercase treatment belongs
+   *     to field labels only (see <FieldLabel>); badges stay sentence case.
+   * --- */
+  --text-display: 1.875rem; /* 30px */
+  --text-display--line-height: 2.25rem;
+  --text-display--letter-spacing: -0.02em;
+  --text-display--font-weight: 700;
+
+  --text-h1: 1.5rem; /* 24px */
+  --text-h1--line-height: 1.875rem;
+  --text-h1--letter-spacing: -0.015em;
+  --text-h1--font-weight: 600;
+
+  --text-h2: 1.25rem; /* 20px */
+  --text-h2--line-height: 1.75rem;
+  --text-h2--letter-spacing: -0.01em;
+  --text-h2--font-weight: 600;
+
+  --text-h3: 1.125rem; /* 18px */
+  --text-h3--line-height: 1.625rem;
+  --text-h3--font-weight: 600;
+
+  --text-body-lg: 1.125rem; /* 18px — prose, mid-workout reading */
+  --text-body-lg--line-height: 1.75rem;
+
+  --text-body: 1rem; /* 16px — default prose */
+  --text-body--line-height: 1.5rem;
+
+  --text-small: 0.875rem; /* 14px — metadata, table cells */
+  --text-small--line-height: 1.25rem;
+
+  --text-caption: 0.75rem; /* 12px — field labels, footnotes */
+  --text-caption--line-height: 1rem;
+  --text-caption--letter-spacing: 0.02em;
+  --text-caption--font-weight: 500;
+
+  --text-metric: 1.75rem; /* 28px — a single headline number */
+  --text-metric--line-height: 2rem;
+  --text-metric--letter-spacing: -0.02em;
+  --text-metric--font-weight: 600;
+
+  --text-timer: 3.5rem; /* 56px — Workout Mode clock */
+  --text-timer--line-height: 1;
+  --text-timer--letter-spacing: -0.03em;
+  --text-timer--font-weight: 700;
 }
 
 /*
- * Palette below implements VISUAL_STYLE_GUIDE.docx section 1 directly —
- * these are not shadcn's generic default tokens. See that document for the
- * full ramp, rationale, and accessibility notes.
+ * Palette implements VISUAL_STYLE_GUIDE.docx section 1 plus the Phase 0
+ * decisions. Every -text value below was computed against its real surfaces;
+ * measured ratios are in the Phase 0 report.
  */
 :root {
   --background: #f8fafc; /* neutral-50 */
@@ -69,40 +187,91 @@
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  --primary: #0d9488; /* teal-600 */
-  --primary-foreground: #ffffff;
   --secondary: #f1f5f9; /* neutral-100 */
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
-  --muted-foreground: #64748b; /* neutral-500 */
+  /* Darkened from neutral-500 #64748b, which measured 4.34:1 on --muted and
+     failed AA. 4.80:1 on --muted, 5.25:1 on --background. The dark theme's
+     #94a3b8 already passes at 5.71:1, so it is unchanged. */
+  --muted-foreground: #5f6d82;
   --accent: #f0fdfa; /* teal-50 */
   --accent-foreground: #115e59; /* teal-800 */
-  --destructive: #dc2626;
   --border: #e2e8f0; /* neutral-200 */
   --input: #e2e8f0;
-  --ring: #0d9488; /* teal-600 */
-  --success: #16a34a;
+  --ring: #0f766e; /* teal-700 */
+
+  /* D1: teal-700 is the resting fill. White label measures 5.47:1 (AA).
+   * teal-600 was 3.74:1 and failed. */
+  --primary: #0f766e; /* teal-700 */
+  --primary-foreground: #ffffff;
+  --primary-hover: #0d9488; /* teal-600 */
+  --primary-active: #115e59; /* teal-800 */
+  --primary-text: #0f766e;
+  --primary-subtle: #ccfbf1; /* teal-100 */
+  --primary-border: #5eead4; /* teal-300 */
+
+  --success: #15803d; /* green-700 */
   --success-foreground: #ffffff;
-  --warning: #d97706;
+  --success-text: #15803d;
+  --success-subtle: #dcfce7; /* green-100 */
+  --success-border: #86efac; /* green-300 */
+
+  --warning: #b45309; /* amber-700 */
   --warning-foreground: #ffffff;
-  --info: #2563eb;
+  --warning-text: #b45309;
+  --warning-subtle: #fef3c7; /* amber-100 */
+  --warning-border: #fcd34d; /* amber-300 */
+
+  --destructive: #dc2626; /* red-600 */
+  --destructive-foreground: #ffffff;
+  --destructive-text: #b91c1c; /* red-700 — the fill is too light for body text */
+  --destructive-subtle: #fee2e2; /* red-100 */
+  --destructive-border: #fca5a5; /* red-300 */
+
+  --info: #2563eb; /* blue-600 */
   --info-foreground: #ffffff;
-  --chart-1: #0d9488;
+  --info-text: #1d4ed8; /* blue-700 */
+  --info-subtle: #dbeafe; /* blue-100 */
+  --info-border: #93c5fd; /* blue-300 */
+
+  --muscle-primary: #0f766e;
+  --muscle-secondary: #2dd4bf;
+  --muscle-none: #e2e8f0;
+
+  --chart-1: #0f766e;
   --chart-2: #5eead4;
   --chart-3: #64748b;
   --chart-4: #2563eb;
-  --chart-5: #d97706;
-  --radius: 0.625rem;
+  --chart-5: #b45309;
+
+  --elevation-flat:
+    0 1px 2px 0 rgb(15 23 42 / 0.06), 0 1px 3px 0 rgb(15 23 42 / 0.1);
+  --elevation-overlay:
+    0 8px 24px -4px rgb(15 23 42 / 0.18), 0 2px 6px -2px rgb(15 23 42 / 0.1);
+
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  /* Retained for shadcn compatibility; the radius scale no longer derives
+   * from it. */
+  --radius: 10px;
+
   --sidebar: #f8fafc;
   --sidebar-foreground: #0f172a;
-  --sidebar-primary: #0d9488;
+  --sidebar-primary: #0f766e;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f0fdfa;
   --sidebar-accent-foreground: #115e59;
   --sidebar-border: #e2e8f0;
-  --sidebar-ring: #0d9488;
+  --sidebar-ring: #0f766e;
 }
 
+/*
+ * Dark is NOT a copy of light. Solid fills brighten (a dark-on-bright fill
+ * reads as "raised" against a near-black page); tinted surfaces move to the
+ * 900 tier so they separate from --card (#1e293b) rather than from #020617;
+ * -text values move to the 300 tier.
+ */
 .dark {
   --background: #020617; /* neutral-950 */
   --foreground: #f8fafc; /* neutral-50 */
@@ -110,47 +279,104 @@
   --card-foreground: #f8fafc;
   --popover: #1e293b;
   --popover-foreground: #f8fafc;
-  --primary: #14b8a6; /* teal-500 */
-  --primary-foreground: #020617;
   --secondary: #1e293b;
   --secondary-foreground: #f8fafc;
   --muted: #1e293b;
-  --muted-foreground: #94a3b8; /* interpolated neutral-400 */
+  --muted-foreground: #94a3b8; /* neutral-400 */
   --accent: #134e4a; /* teal-900 */
   --accent-foreground: #f0fdfa;
-  --destructive: #dc2626;
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
   --ring: #2dd4bf; /* teal-400 */
-  --success: #16a34a;
-  --success-foreground: #ffffff;
-  --warning: #d97706;
-  --warning-foreground: #ffffff;
-  --info: #2563eb;
-  --info-foreground: #ffffff;
+
+  --primary: #14b8a6; /* teal-500 */
+  --primary-foreground: #022c22;
+  --primary-hover: #2dd4bf; /* teal-400 — brighter on press-in, not darker */
+  --primary-active: #5eead4; /* teal-300 */
+  --primary-text: #5eead4;
+  --primary-subtle: #134e4a; /* teal-900 */
+  --primary-border: #0f766e; /* teal-700 */
+
+  --success: #22c55e; /* green-500 */
+  --success-foreground: #052e16;
+  --success-text: #86efac; /* green-300 */
+  --success-subtle: #14532d; /* green-900 */
+  --success-border: #15803d; /* green-700 */
+
+  --warning: #f59e0b; /* amber-500 */
+  --warning-foreground: #1c1310;
+  --warning-text: #fcd34d; /* amber-300 */
+  --warning-subtle: #78350f; /* amber-900 */
+  --warning-border: #b45309; /* amber-700 */
+
+  --destructive: #ef4444; /* red-500 */
+  --destructive-foreground: #2b0505;
+  --destructive-text: #fca5a5; /* red-300 */
+  --destructive-subtle: #7f1d1d; /* red-900 */
+  --destructive-border: #b91c1c; /* red-700 */
+
+  --info: #3b82f6; /* blue-500 */
+  --info-foreground: #071026;
+  --info-text: #93c5fd; /* blue-300 */
+  --info-subtle: #1e3a8a; /* blue-900 */
+  --info-border: #1d4ed8; /* blue-700 */
+
+  --muscle-primary: #5eead4;
+  --muscle-secondary: #0d9488;
+  --muscle-none: #334155;
+
   --chart-1: #2dd4bf;
   --chart-2: #14b8a6;
   --chart-3: #94a3b8;
   --chart-4: #60a5fa;
   --chart-5: #f59e0b;
+
+  --elevation-flat: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --elevation-overlay:
+    0 12px 32px -6px rgb(0 0 0 / 0.65), 0 2px 8px -2px rgb(0 0 0 / 0.45);
+
   --sidebar: #0f172a;
   --sidebar-foreground: #f8fafc;
   --sidebar-primary: #14b8a6;
-  --sidebar-primary-foreground: #020617;
+  --sidebar-primary-foreground: #022c22;
   --sidebar-accent: #134e4a;
   --sidebar-accent-foreground: #f0fdfa;
   --sidebar-border: oklch(1 0 0 / 12%);
   --sidebar-ring: #2dd4bf;
 }
 
+/* One focus treatment for the whole product: 2px ring, 2px offset, --ring.
+ * Primitives opt in with `focus-ring`; nothing should hand-roll focus rings. */
+@utility focus-ring {
+  &:focus-visible {
+    outline: var(--focus-ring-width) solid var(--ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+}
+
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
   }
   html {
     @apply font-sans;
+  }
+  /* Fallback so anything that never opts into `focus-ring` still gets the one
+   * approved treatment rather than the browser default. */
+  :focus-visible {
+    outline: var(--focus-ring-width) solid var(--ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+}
+
+@layer utilities {
+  /* Numerals are Geist Mono and tabular so digits don't jitter as they tick. */
+  .text-metric,
+  .text-timer {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
   }
 }

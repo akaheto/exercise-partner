@@ -74,10 +74,13 @@ function roleFor(muscle: string, primaryMuscle: string | null, secondaryMuscles:
   return "none";
 }
 
+/* Three steps, no more: the source data only distinguishes primary from
+ * secondary involvement, so inventing a stabiliser tier would be presenting
+ * derived data as sourced fact (CLAUDE.md rule 4). */
 const FILL_BY_ROLE: Record<Role, string> = {
-  primary: "var(--primary)",
-  secondary: "color-mix(in oklch, var(--primary) 45%, transparent)",
-  none: "var(--muted)",
+  primary: "var(--muscle-primary)",
+  secondary: "var(--muscle-secondary)",
+  none: "var(--muscle-none)",
 };
 
 function Silhouette({
@@ -138,10 +141,10 @@ export function MuscleDiagram({
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full bg-primary" /> Primary
+          <span className="size-2.5 rounded-full bg-muscle-primary" /> Primary
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full bg-primary/45" /> Secondary
+          <span className="size-2.5 rounded-full bg-muscle-secondary" /> Secondary
         </span>
       </div>
       {unmapped.length > 0 && (
