@@ -6,8 +6,8 @@ describe("isEmbeddableVideoUrl", () => {
     expect(isEmbeddableVideoUrl("https://www.youtube.com/embed/xaCF5qu7j0c?rel=0")).toBe(true);
   });
 
-  it("accepts a Vimeo player URL", () => {
-    expect(isEmbeddableVideoUrl("https://player.vimeo.com/video/756793640?badge=0")).toBe(true);
+  it("rejects Vimeo URLs because of privacy restrictions blocking embedding", () => {
+    expect(isEmbeddableVideoUrl("https://player.vimeo.com/video/756793640?badge=0")).toBe(false);
   });
 
   it("accepts any youtube.com URL, not just /embed/ paths (host-based check, not path-based)", () => {

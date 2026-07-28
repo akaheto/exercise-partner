@@ -119,16 +119,40 @@ function extractInstructions(html: string): string | null {
     /<h[2-4][^>]*>\s*(?:Instructions|Execution|Steps)\s*<\/h[2-4]>([\s\S]*?)(?=<h[2-4]|<\/main|<\/section|$)/i
   );
   if (instructionsMatch) {
-    const content = instructionsMatch[1]
+    const lines = instructionsMatch[1]
       .replace(/<[^>]+>/g, "")
       .replace(/&nbsp;/g, " ")
       .replace(/&[a-z]+;/g, "")
       .trim()
       .split(/\n+/)
       .map((line) => line.trim())
-      .filter((line) => line.length > 0)
-      .join("\n");
+      .filter((line) => line.length > 0);
 
+    // Rejoin step numbers with their content
+    // e.g., ["1.", "Grab two dumbbells..."] -> "1. Grab two dumbbells..."
+    const steps: string[] = [];
+    let currentStep = "";
+
+    for (const line of lines) {
+      // Check if line is just a step number (e.g., "1.", "2.", "3.")
+      if (/^\d+\.$/.test(line)) {
+        if (currentStep) steps.push(currentStep);
+        currentStep = line;
+      } else if (currentStep && /^\d+\.$/.test(currentStep)) {
+        // Append content to the current step number
+        currentStep += " " + line;
+      } else if (currentStep) {
+        // Continuation of previous step
+        currentStep += " " + line;
+      } else {
+        // No step number yet, just collect
+        currentStep = line;
+      }
+    }
+
+    if (currentStep) steps.push(currentStep);
+
+    const content = steps.join("\n");
     if (content && content.length > 20) {
       return content;
     }
