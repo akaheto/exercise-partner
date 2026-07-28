@@ -82,6 +82,62 @@ export const exerciseOverrides = pgTable("exercise_overrides", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * Exercise guidance indexed by both experience level AND training goal.
+ * Allows the app to tailor prescription based on:
+ * - Experience Level: Beginner | Intermediate | Advanced
+ * - Training Goal: Strength | Hypertrophy | Endurance | Power | General
+ *
+ * When a user selects (e.g.) "Intermediate" + "Hypertrophy", the app queries
+ * for matching rows to get: sets, reps, RPE, tempo, breathing cues, regressions.
+ */
+export const exerciseGuidance = pgTable(
+  "exercise_guidance",
+  {
+    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+    exerciseId: text("exercise_id")
+      .notNull()
+      .references(() => sourceExercises.exerciseId, { onDelete: "cascade" }),
+    experienceLevel: text("experience_level").notNull(), // "Beginner" | "Intermediate" | "Advanced"
+    trainingGoal: text("training_goal").notNull(), // "Strength" | "Hypertrophy" | "Endurance" | "Power" | "General"
+
+    // Rep range guidance
+    recommendedSets: integer("recommended_sets"),
+    recommendedRepsMin: integer("recommended_reps_min"),
+    recommendedRepsMax: integer("recommended_reps_max"),
+
+    // Load/Intensity guidance (RPE: 1-10 scale, nullable for SMR/warmup)
+    targetRpe: integer("target_rpe"),
+
+    // Tempo guidance (eccentric-isometric-concentric, e.g., "3-0-1")
+    tempo: text("tempo"),
+
+    // Breathing cue
+    breathingCue: text("breathing_cue"),
+
+    // Regression option for when this exercise is too difficult
+    regressionExerciseId: text("regression_exercise_id").references(
+      () => sourceExercises.exerciseId
+    ),
+    regressionDescription: text("regression_description"),
+
+    // Equipment alternatives if prescribed equipment unavailable
+    equipmentAlternatives: jsonb("equipment_alternatives"),
+
+    // Additional form cues and modifications
+    formCue: text("form_cue"),
+    modificationNote: text("modification_note"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({
+      columns: [t.exerciseId, t.experienceLevel, t.trainingGoal],
+    }),
+  ]
+);
+
 /** What a profile actually has access to. Drives generator filtering (Epic F). */
 export const equipmentInventory = pgTable(
   "equipment_inventory",
