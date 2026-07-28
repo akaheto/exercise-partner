@@ -61,12 +61,10 @@ export const sourceExercises = pgTable("source_exercises", {
 
   // Execution
   startingPosition: text("starting_position"),
-  movementPattern: text("movement_pattern"),
   rangeOfMotion: text("range_of_motion"),
   instructions: text("instructions"),
   tips: text("tips"),
   commonMistakes: text("common_mistakes"),
-  breathing: text("breathing"),
 
   // Relationships — raw "label | url; label2 | url2" text, parsed into exercise_links at import
   variationsRaw: text("variations_raw"),
