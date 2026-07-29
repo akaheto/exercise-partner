@@ -1,10 +1,14 @@
 import Link from "next/link";
-import { CheckCircle2, Clock, Dumbbell, History as HistoryIcon, PlayCircle, XCircle, TrendingUp } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { VolumeChart } from "@/components/history/volume-chart";
+import { Clock, Dumbbell, History as HistoryIcon, TrendingUp, UserRound, Weight } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { cn } from "@/lib/utils";
 import { MuscleBalancePanel } from "@/components/history/muscle-balance-panel";
 import { PersonalRecordsPanel } from "@/components/history/personal-records-panel";
+import { SessionStatusBadge } from "@/components/history/session-status-badge";
+import { VolumeChart } from "@/components/history/volume-chart";
 import { listSessionSummaries, getPersonalRecords } from "@/db/queries/history";
 import { getMuscleVolumePoints } from "@/db/queries/metrics";
 import { getActiveProfileId } from "@/lib/active-profile";
@@ -12,28 +16,6 @@ import { groupVolumeByWeek, sessionDurationMinutes } from "@/domain/session-hist
 import { groupMuscleVolumeByWeek, summarizeMuscleBalance } from "@/domain/training-metrics";
 
 const MUSCLE_BALANCE_WEEKS = 4;
-
-function statusBadge(status: string) {
-  if (status === "completed") {
-    return (
-      <Badge variant="outline" className="gap-1 border-success/30 text-success">
-        <CheckCircle2 className="size-3" /> Completed
-      </Badge>
-    );
-  }
-  if (status === "in_progress") {
-    return (
-      <Badge variant="outline" className="gap-1 border-primary/30 text-primary">
-        <PlayCircle className="size-3" /> In progress
-      </Badge>
-    );
-  }
-  return (
-    <Badge variant="outline" className="gap-1 text-muted-foreground">
-      <XCircle className="size-3" /> Ended early
-    </Badge>
-  );
-}
 
 export default async function HistoryPage() {
   const profileId = await getActiveProfileId();
@@ -49,83 +31,120 @@ export default async function HistoryPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 md:px-6">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-foreground">History</h1>
-        {sessions.length > 0 && (
-          <div className="flex gap-2 text-sm">
-            <Link href="/history/export/csv" className="text-muted-foreground hover:text-foreground hover:underline">
-              Export CSV
-            </Link>
-            <span className="text-muted-foreground">·</span>
-            <Link href="/history/export/json" className="text-muted-foreground hover:text-foreground hover:underline">
-              Export JSON
-            </Link>
-          </div>
-        )}
-      </div>
+      <PageHeader
+        title="History"
+        description="Every workout you've run, kept exactly as it was performed."
+        className="mb-6"
+        actions={
+          sessions.length > 0 ? (
+            <>
+              {/* Plain links to the export route handlers — the browser
+                  downloads the response. Do not swap these for buttons. */}
+              <Link
+                href="/history/export/csv"
+                className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+              >
+                Export CSV
+              </Link>
+              <Link
+                href="/history/export/json"
+                className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+              >
+                Export JSON
+              </Link>
+            </>
+          ) : undefined
+        }
+      />
 
       {!profileId ? (
-        <p className="text-sm text-muted-foreground">Choose a profile to see its history.</p>
+        <EmptyState
+          icon={UserRound}
+          title="No profile selected"
+          description="History belongs to a profile. Choose one and its sessions show up here."
+          action={
+            <Link href="/profile" className={cn(buttonVariants({ variant: "default" }))}>
+              Choose a profile
+            </Link>
+          }
+        />
       ) : sessions.length === 0 ? (
-        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center">
-          <HistoryIcon className="size-10 text-muted-foreground" aria-hidden="true" />
-          <h2 className="text-lg font-semibold text-foreground">No workouts logged yet</h2>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            Every workout you run in Workout Mode shows up here, permanently.
-          </p>
-        </div>
+        <EmptyState
+          icon={HistoryIcon}
+          title="No workouts logged yet"
+          description="Every workout you run in Workout Mode shows up here, permanently."
+          action={
+            <Link href="/workouts" className={cn(buttonVariants({ variant: "default" }))}>
+              Go to your workouts
+            </Link>
+          }
+        />
       ) : (
         <div className="space-y-6">
           {weeklyVolume.length > 1 && <VolumeChart data={weeklyVolume} />}
           {muscleBalance.length > 0 && <MuscleBalancePanel entries={muscleBalance} weeks={MUSCLE_BALANCE_WEEKS} />}
 
-          {personalRecords.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="size-5 text-teal-600" />
-                  Personal Records
-                </CardTitle>
-                <CardDescription>Your best lifts by exercise</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <PersonalRecordsPanel records={personalRecords.slice(0, 10)} />
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="size-5 text-primary-text" aria-hidden="true" />
+                Personal records
+              </CardTitle>
+              <CardDescription>Your heaviest logged set for each exercise.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PersonalRecordsPanel records={personalRecords.slice(0, 10)} />
+            </CardContent>
+          </Card>
 
-          <div className="space-y-3">
+          <ul className="space-y-3">
             {sessions.map((s) => {
               const minutes = sessionDurationMinutes(s.startedAt, s.completedAt);
               const href = s.status === "in_progress" ? `/session/${s.id}` : `/history/${s.id}`;
               return (
-                <Link
-                  key={s.id}
-                  href={href}
-                  className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="font-semibold text-foreground">{s.workoutName}</p>
-                    {statusBadge(s.status)}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                    <span>
-                      {s.startedAt.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
-                    </span>
-                    {minutes !== null && (
-                      <span className="flex items-center gap-1">
-                        <Clock className="size-3.5" /> {minutes} min
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1">
-                      <Dumbbell className="size-3.5" /> {s.exerciseCount} exercise{s.exerciseCount === 1 ? "" : "s"} ·{" "}
-                      {s.setCount} set{s.setCount === 1 ? "" : "s"}
-                    </span>
-                  </div>
-                </Link>
+                <li key={s.id}>
+                  <Link href={href} className="focus-ring block rounded-xl">
+                    <Card className="transition-shadow hover:ring-2 hover:ring-primary">
+                      <CardHeader>
+                        <CardTitle>{s.workoutName}</CardTitle>
+                        <CardAction>
+                          <SessionStatusBadge status={s.status} />
+                        </CardAction>
+                      </CardHeader>
+                      <CardContent className="flex flex-wrap items-center gap-3 text-caption text-muted-foreground">
+                        <span>
+                          {s.startedAt.toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </span>
+                        {minutes !== null && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="size-4" aria-hidden="true" />
+                            <span className="font-mono tabular-nums">{minutes}</span> min
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <Dumbbell className="size-4" aria-hidden="true" />
+                          <span className="font-mono tabular-nums">{s.exerciseCount}</span> exercise
+                          {s.exerciseCount === 1 ? "" : "s"} ·{" "}
+                          <span className="font-mono tabular-nums">{s.setCount}</span> set
+                          {s.setCount === 1 ? "" : "s"}
+                        </span>
+                        {s.volume > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Weight className="size-4" aria-hidden="true" />
+                            <span className="font-mono tabular-nums">{Math.round(s.volume).toLocaleString()}</span> vol
+                          </span>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </li>
               );
             })}
-          </div>
+          </ul>
         </div>
       )}
     </div>

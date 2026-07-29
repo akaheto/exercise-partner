@@ -1,6 +1,16 @@
 "use client";
 
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  chartAxisLineProps,
+  chartGridProps,
+  chartLineCursorProps,
+  chartSeriesFillClassName,
+  chartSeriesStrokeClassName,
+  chartTickProps,
+  chartTooltipProps,
+} from "@/components/history/chart-theme";
 import type { ExerciseSessionPoint } from "@/domain/session-history";
 
 export function ExerciseTrendChart({ points }: { points: ExerciseSessionPoint[] }) {
@@ -13,20 +23,30 @@ export function ExerciseTrendChart({ points }: { points: ExerciseSessionPoint[] 
   }));
 
   return (
-    <div className="h-48 w-full rounded-2xl border border-border bg-card p-4">
-      <p className="mb-3 text-sm font-semibold text-foreground">Top set weight over time</p>
-      <ResponsiveContainer width="100%" height="80%">
-        <LineChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-          <XAxis dataKey="date" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={{ stroke: "var(--border)" }} tickLine={false} />
-          <YAxis tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} width={40} />
-          <Tooltip
-            contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 12 }}
-            labelStyle={{ color: "var(--foreground)" }}
-          />
-          <Line type="monotone" dataKey="maxWeight" stroke="var(--primary)" strokeWidth={2} dot={{ r: 3, fill: "var(--primary)" }} />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Top set weight over time</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="h-40 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+              <CartesianGrid {...chartGridProps} />
+              <XAxis dataKey="date" tick={chartTickProps} axisLine={chartAxisLineProps} tickLine={false} />
+              <YAxis tick={chartTickProps} axisLine={false} tickLine={false} width={40} />
+              <Tooltip {...chartTooltipProps} cursor={chartLineCursorProps} />
+              <Line
+                type="monotone"
+                dataKey="maxWeight"
+                className={chartSeriesStrokeClassName}
+                strokeWidth={2}
+                dot={{ r: 3, className: `${chartSeriesFillClassName} ${chartSeriesStrokeClassName}` }}
+                activeDot={{ r: 5, className: `${chartSeriesFillClassName} ${chartSeriesStrokeClassName}` }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
