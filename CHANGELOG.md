@@ -9,6 +9,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `profiles.pin_salt`, `pin_failed_attempts`, `pin_locked_until` (migration
+  0008). `generatePinSalt()` produces a genuinely random per-profile salt;
+  `nextPinAttemptState()`/`isPinLocked()` lock deletion out for 15 minutes
+  after 5 consecutive wrong guesses.
 - `profiles.onboarding_completed_at` (migration 0007), nullable, stamped only
   when the onboarding flow's step 4 is confirmed. Distinct from
   `experience_level`/`training_goal` on purpose: those default to
@@ -355,6 +359,23 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+- **Fixed: profile PINs shared one hardcoded salt and had no attempt
+  limiting.** Identical PINs used to produce identical `pin_hash` values —
+  anyone with database read access could see which profiles shared a PIN, and
+  one precomputed table covered every profile's 4-6 digit keyspace at once.
+  `generatePinSalt()` now produces a genuinely random salt per profile, stored
+  in the new `pin_salt` column. Existing profiles' `pin_hash` — computed under
+  the old fixed salt — keeps verifying via an explicit backfill of that same
+  salt onto their row in migration 0008, rather than a forced reset with no
+  reset UI to support it; a regression test pins `hashPin`'s output for a
+  known input under the legacy salt so this compatibility can't silently
+  break later. Verified directly against the database: two throwaway profiles
+  created with the identical PIN produce different `pin_hash` values. Attempt
+  limiting: 5 consecutive wrong guesses now lock deletion out for 15 minutes
+  (`pin_failed_attempts`/`pin_locked_until`, checked before a guess is even
+  hashed), verified live end-to-end — a 6th attempt with the *correct* PIN is
+  still refused while locked. `verifyPin` compares with
+  `crypto.timingSafeEqual` rather than `===`.
 - **Fixed: the admin session cookie was unsigned and forgeable.** Its value
   was the literal string `"authenticated"`, so setting one cookie by hand
   granted full admin access — including deleting any profile and all of its

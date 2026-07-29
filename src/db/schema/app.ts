@@ -66,6 +66,16 @@ export const profiles = pgTable("profiles", {
   experienceLevel: text("experience_level").notNull().default("Beginner"), // "Beginner" | "Intermediate" | "Advanced"
   trainingGoal: text("training_goal").notNull().default("General"), // "Strength" | "Hypertrophy" | "Endurance" | "Power" | "General"
   pinHash: text("pin_hash"), // Hashed PIN for profile security
+  /** Random per-profile salt for pinHash (src/lib/pin.ts). Every profile
+   * created before this column existed shares a single hardcoded salt,
+   * backfilled here rather than forced to reset — see migration 0008. */
+  pinSalt: text("pin_salt"),
+  /** Consecutive wrong PIN guesses since the last correct one or the last
+   * lockout. Resets to 0 on a correct guess. */
+  pinFailedAttempts: integer("pin_failed_attempts").notNull().default(0),
+  /** Set once pinFailedAttempts reaches MAX_PIN_ATTEMPTS (src/lib/pin.ts);
+   * PIN verification refuses to even check the guess until this passes. */
+  pinLockedUntil: timestamp("pin_locked_until", { withTimezone: true }),
   /** Null until the four-step onboarding flow is actually finished. Distinct
    * from experienceLevel/trainingGoal having non-default values, since those
    * default to "Beginner"/"General" and so can't tell "chose Beginner" from

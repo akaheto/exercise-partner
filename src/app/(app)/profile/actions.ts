@@ -9,7 +9,16 @@ import { db } from "@/db/client";
 import { profiles } from "@/db/schema";
 import { ACTIVE_PROFILE_COOKIE, getActiveProfileId } from "@/lib/active-profile";
 import { requireSiteSession } from "@/lib/require-site-session";
-import { hashPin, verifyPin } from "@/lib/pin";
+import {
+  generatePinSalt,
+  hashPin,
+  isPinLocked,
+  minutesUntil,
+  nextPinAttemptState,
+  verifyPin,
+  PIN_LOCKOUT_MINUTES,
+  type PinAttemptState,
+} from "@/lib/pin";
 
 export interface CreateProfileState {
   error?: string;
@@ -37,9 +46,14 @@ export async function createProfile(
     return { error: "PIN must be 4-6 digits." };
   }
 
+  const pinSalt = generatePinSalt();
   const [profile] = await db
     .insert(profiles)
-    .values({ displayName: result.data, pinHash: hashPin(pinResult.data) })
+    .values({
+      displayName: result.data,
+      pinSalt,
+      pinHash: hashPin(pinResult.data, pinSalt),
+    })
     .returning();
 
   const cookieStore = await cookies();
@@ -182,8 +196,38 @@ export async function deleteProfile(
       return { success: false, error: "Profile not found" };
     }
 
-    if (!profile.pinHash || !verifyPin(pin, profile.pinHash)) {
-      return { success: false, error: "Incorrect PIN" };
+    const attemptState: PinAttemptState = {
+      failedAttempts: profile.pinFailedAttempts,
+      lockedUntil: profile.pinLockedUntil,
+    };
+
+    // Checked, and rejected, before the guess is even hashed — a locked-out
+    // caller gets no signal at all about whether this particular guess would
+    // have been right.
+    if (isPinLocked(attemptState)) {
+      const minutes = minutesUntil(attemptState.lockedUntil!);
+      return {
+        success: false,
+        error: `Too many incorrect attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`,
+      };
+    }
+
+    const wasCorrect =
+      !!profile.pinHash && !!profile.pinSalt && verifyPin(pin, profile.pinSalt, profile.pinHash);
+
+    if (!wasCorrect) {
+      const next = nextPinAttemptState(attemptState, false);
+      await db
+        .update(profiles)
+        .set({ pinFailedAttempts: next.failedAttempts, pinLockedUntil: next.lockedUntil })
+        .where(eq(profiles.id, profileId));
+
+      return {
+        success: false,
+        error: next.lockedUntil
+          ? `Too many incorrect attempts. Try again in ${PIN_LOCKOUT_MINUTES} minutes.`
+          : "Incorrect PIN",
+      };
     }
 
     const activeProfileId = await getActiveProfileId();
