@@ -262,13 +262,25 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   confirming the rejection test actually fails when the check is removed.
   Known limitation, by design: revisiting `/onboarding` before step 4
   restarts the flow rather than resuming it.
-- `drizzle.config.ts` loaded env with plain `dotenv/config` (`.env` only —
+- **`npm run db:generate` is fixed — two layered bugs, not one.**
+  `drizzle.config.ts` loaded env with plain `dotenv/config` (`.env` only —
   local Postgres), the same bug class already fixed for runtime scripts in
-  `1396bd1` but never applied to the config file `drizzle-kit` itself reads.
-  Found when `npm run db:generate` hung on an interactive prompt while diffing
-  against the wrong database. Migration 0007 was written by hand instead,
-  matching the precedent already set by 0005/0006, and applied directly
-  against Neon. `drizzle.config.ts` itself is still unfixed.
+  `1396bd1` but never applied to the config file `drizzle-kit` itself reads;
+  now imports `scripts/load-env`. That alone did not fix it: `drizzle-kit`'s
+  own snapshot history had stopped at migration 0004, and 0005–0007
+  (hand-written) never got matching snapshots, so diffing today's schema
+  against the stale 0004 snapshot looked exactly like renaming the abandoned
+  `exercise_guidance` table into `exercise_guidance_overrides`/
+  `guidance_patterns` — an ambiguity `drizzle-kit` can only resolve
+  interactively. Repaired by installing a correct `0007_snapshot.json`
+  generated from an empty-history run of the current schema (nothing to
+  mistake for a rename), chained via `prevId` to the real `0004` snapshot.
+  The already-applied migration SQL history (0000–0007) is untouched — this
+  only repairs `drizzle-kit`'s own bookkeeping. Verified three ways: a clean
+  `db:generate` now reports "No schema changes, nothing to migrate"; a
+  throwaway test column produced exactly one correct `ALTER TABLE` line
+  before being reverted; nothing was applied to the database in the repair
+  itself.
 - `/onboarding` failed to render at all: the page is a Server Component and
   passed an `onComplete` function to the `OnboardingFlow` Client Component,
   which throws "Event handlers cannot be passed to Client Component props".
