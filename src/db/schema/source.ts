@@ -137,3 +137,72 @@ export const sourceRelationships = pgTable("source_relationships", {
   reviewStatus: text("review_status").notNull().default("Unreviewed"),
   notes: text("notes"),
 });
+
+/**
+ * Epic Q — packaged multi-day workout programs (muscleandstrength.com/workouts),
+ * imported by scripts/import-workout-programs.ts. Same two-layer principle as
+ * the exercise data: this is the source layer, rebuilt on re-import; "add to
+ * my workouts" (src/app/(app)/build/library/actions.ts) copies a program's
+ * days into the app-owned workouts/workout_blocks/workout_items tables,
+ * which this layer never touches once copied.
+ *
+ * Reconnaissance across four structurally different real programs (see
+ * PROJECT_PLAN.docx Epic Q) found no fixed vocabulary for day naming
+ * (muscle group, day-of-week, movement pattern, and lettered variants all
+ * appear) and an inconsistent exercise-table column set (a "Rest" column is
+ * sometimes present, sometimes not) — both kept as free text rather than
+ * enums or typed columns for that reason. A "12-week" program was confirmed
+ * to be one weekly split repeated for 12 weeks, progressed by adding load,
+ * not 12 different weeks of content — so there is deliberately no week
+ * dimension here, only a repeating day pattern plus a duration in weeks.
+ */
+export const sourceWorkoutPrograms = pgTable("source_workout_programs", {
+  programId: text("program_id").primaryKey(), // e.g. "WP-0001"
+  name: text("name").notNull(),
+  url: text("url").notNull().unique(),
+  description: text("description"),
+  mainGoal: text("main_goal"), // e.g. "Build Muscle", "Fat Loss", "Increase Strength"
+  workoutType: text("workout_type"), // e.g. "Split", "Full Body"
+  trainingLevel: text("training_level"), // "Beginner" | "Intermediate" | "Advanced"
+  durationWeeks: integer("duration_weeks"), // null when the source doesn't state one
+  daysPerWeek: integer("days_per_week"),
+  timePerWorkout: text("time_per_workout"), // raw range string, e.g. "45-60 minutes"
+  equipmentNeeded: text("equipment_needed"), // raw comma list, source's own wording
+  targetGender: text("target_gender"), // "Male" | "Female" | "Male & Female"
+  sourceRowHash: text("source_row_hash").notNull(),
+  importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** One row per day of a program's weekly cycle, including rest days — kept
+ * for fidelity to the source's own schedule rather than only storing
+ * training days. day_number is 1-7 within one repeating week, never a
+ * cross-week count. */
+export const sourceWorkoutProgramDays = pgTable("source_workout_program_days", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  programId: text("program_id")
+    .notNull()
+    .references(() => sourceWorkoutPrograms.programId, { onDelete: "cascade" }),
+  dayNumber: integer("day_number").notNull(),
+  isRestDay: boolean("is_rest_day").notNull().default(false),
+  focus: text("focus"), // e.g. "Back & Biceps", "Upper", "Push", "Upper A" — free text, no fixed vocabulary
+});
+
+/** One row per exercise prescribed on a training day. exerciseId is resolved
+ * by matching the program page's exercise link against source_exercises.url
+ * (same host, same /exercises/<slug> path the original spreadsheet import
+ * already used) — kept nullable with the raw name/url preserved alongside
+ * it, so a match failure loses nothing rather than silently dropping the row. */
+export const sourceWorkoutProgramExercises = pgTable("source_workout_program_exercises", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  programDayId: integer("program_day_id")
+    .notNull()
+    .references(() => sourceWorkoutProgramDays.id, { onDelete: "cascade" }),
+  position: integer("position").notNull(),
+  exerciseId: text("exercise_id").references(() => sourceExercises.exerciseId),
+  exerciseNameRaw: text("exercise_name_raw").notNull(),
+  exerciseUrlRaw: text("exercise_url_raw"),
+  sets: text("sets"), // raw text — not always a clean integer
+  reps: text("reps"), // raw text — "AMRAP", "5 Minute Burn", "8-12" all appear
+  rest: text("rest"), // nullable — the Rest column isn't present on every source page
+  notes: text("notes"), // trailing cell text after the exercise link, e.g. "- 3 sec negative"
+});

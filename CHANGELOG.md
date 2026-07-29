@@ -9,6 +9,21 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Workout Library (Epic Q evaluation checkpoint): a read-only browser for
+  packaged multi-day workout programs scraped from muscleandstrength.com.
+  Three new source tables (`source_workout_programs`,
+  `source_workout_program_days`, `source_workout_program_exercises`;
+  migrations 0009-0010) hold the imported data, kept separate from
+  app-owned workouts per the project's two-layer data principle.
+  `scripts/import-workout-programs.ts` parses three distinct page-structure
+  variants found across real program pages. 4 programs imported for
+  review — 4 Day Maximum Mass Workout, Upper/Lower 4 Day Bodybuilding
+  Workout, 3 Day PPL for Beginners, 12 Week Fat Destroyer — with 104/106
+  exercise rows matched to an existing library exercise. New
+  `/build/library` and `/build/library/[id]` pages, plus a third "Choose
+  from the library" card on `/build`. "Add to my saved workouts" and facet
+  filtering are deliberately not built yet, pending evaluation of this
+  checkpoint.
 - Real app icons, replacing the untouched default Next.js scaffold favicon.
   `scripts/generate-app-icons.mjs` rasterizes the exact top-bar Dumbbell mark
   (lucide-react's own path data, teal-700 background) via `sharp`: the

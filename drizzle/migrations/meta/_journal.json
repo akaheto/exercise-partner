@@ -64,6 +64,20 @@
       "when": 1785340410810,
       "tag": "0008_add_pin_salt_and_attempt_limiting",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785353431034,
+      "tag": "0009_mighty_ultron",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785353606459,
+      "tag": "0010_sad_ultimo",
+      "breakpoints": true
     }
   ]
 }

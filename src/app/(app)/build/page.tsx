@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PenLine, Wand2 } from "lucide-react";
+import { Library, PenLine, Wand2 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -15,7 +15,7 @@ export default function BuildPage() {
         className="mb-8"
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card className="h-full">
           <CardContent>
             <PenLine className="size-6 text-primary-text" aria-hidden="true" />
@@ -52,6 +52,27 @@ export default function BuildPage() {
               className={cn(buttonVariants({ variant: "default" }), "w-full")}
             >
               Answer questions
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="h-full">
+          <CardContent>
+            <Library className="size-6 text-primary-text" aria-hidden="true" />
+          </CardContent>
+          <CardHeader>
+            <CardTitle>Choose from the library</CardTitle>
+            <CardDescription>
+              Browse packaged multi-day programs. Currently for review only — adding one to your
+              saved workouts isn&apos;t built yet.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="mt-auto">
+            <Link
+              href="/build/library"
+              className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+            >
+              Browse programs
             </Link>
           </CardContent>
         </Card>

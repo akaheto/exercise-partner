@@ -1,0 +1,1 @@
+ALTER TABLE "source_workout_program_exercises" ADD COLUMN "notes" text;
