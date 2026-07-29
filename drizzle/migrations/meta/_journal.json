@@ -50,6 +50,13 @@
       "when": 1785259800000,
       "tag": "0006_add_profile_pin",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785322000000,
+      "tag": "0007_add_onboarding_completed_at",
+      "breakpoints": true
     }
   ]
 }

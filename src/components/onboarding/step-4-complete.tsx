@@ -9,6 +9,8 @@ interface Step4CompleteProps {
   level: string;
   goal: string;
   onComplete: () => void;
+  isSaving?: boolean;
+  error?: string | null;
 }
 
 export function OnboardingStep4Complete({
@@ -16,6 +18,8 @@ export function OnboardingStep4Complete({
   level,
   goal,
   onComplete,
+  isSaving = false,
+  error,
 }: Step4CompleteProps) {
   return (
     <div className="flex flex-col gap-6 py-6">
@@ -53,7 +57,9 @@ export function OnboardingStep4Complete({
         </ul>
       </Callout>
 
-      <Button onClick={onComplete} size="lg" className="w-full">
+      {error && <Callout tone="danger">{error}</Callout>}
+
+      <Button onClick={onComplete} loading={isSaving} loadingLabel="Saving" size="lg" className="w-full">
         Start using Exercise Partner
       </Button>
     </div>

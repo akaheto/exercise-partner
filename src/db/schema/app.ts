@@ -66,6 +66,12 @@ export const profiles = pgTable("profiles", {
   experienceLevel: text("experience_level").notNull().default("Beginner"), // "Beginner" | "Intermediate" | "Advanced"
   trainingGoal: text("training_goal").notNull().default("General"), // "Strength" | "Hypertrophy" | "Endurance" | "Power" | "General"
   pinHash: text("pin_hash"), // Hashed PIN for profile security
+  /** Null until the four-step onboarding flow is actually finished. Distinct
+   * from experienceLevel/trainingGoal having non-default values, since those
+   * default to "Beginner"/"General" and so can't tell "chose Beginner" from
+   * "never asked" — which is exactly the ambiguity that let /onboarding
+   * redirect away after step 1 without steps 2-4 ever running. */
+  onboardingCompletedAt: timestamp("onboarding_completed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

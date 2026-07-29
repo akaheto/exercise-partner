@@ -76,18 +76,11 @@ test("login, home and the onboarding flow render at both widths in both themes",
   await page.getByLabel("Choose a PIN").fill("1234");
   await page.getByRole("button", { name: /next: your experience level/i }).click();
 
-  // Steps 2-4 are currently unreachable in the running app. createProfile
-  // calls revalidatePath("/", "layout"), which re-runs the /onboarding server
-  // component; it sees the profile step 1 just created and redirects to
-  // /exercises. The screenshots below were captured with that guard disabled;
-  // this skip keeps the spec honest rather than silently green or permanently
-  // red. See PROJECT_PLAN.docx section 4, item 47.
-  await page.waitForTimeout(1500);
-  test.skip(
-    new URL(page.url()).pathname !== "/onboarding",
-    "onboarding steps 2-4 unreachable: /onboarding redirects once step 1 creates the profile",
-  );
-
+  // Fixed via onboarding_completed_at (PROJECT_PLAN.docx section 4, item 47
+  // — resolved): /onboarding used to redirect the instant step 1 created a
+  // profile, since experience_level/training_goal default to Beginner/
+  // General and can't distinguish "chose Beginner" from "never asked". Steps
+  // 2-4 are real now, so this proceeds rather than skipping.
   await expect(page.getByText("Step 2 of 4")).toBeVisible();
   await shoot(page, "onboarding-2");
 
@@ -99,4 +92,20 @@ test("login, home and the onboarding flow render at both widths in both themes",
   await expect(page.getByText("Step 4 of 4")).toBeVisible();
   await expect(page.getByText("You're all set")).toBeVisible();
   await shoot(page, "onboarding-4");
+
+  await page.getByRole("button", { name: /start using exercise partner/i }).click();
+  await expect(page).toHaveURL("/exercises");
+
+  // The real proof, not just that the button navigated: level and goal used
+  // to live only in this component's React state and were never written to
+  // the database at all, a second bug entirely masked by the redirect bug.
+  const sql = postgres(process.env.DATABASE_URL!);
+  const [row] = await sql`
+    select experience_level, training_goal, onboarding_completed_at
+    from profiles where display_name = ${PROFILE_NAME}
+  `;
+  await sql.end();
+  expect(row.experience_level).toBe("Intermediate");
+  expect(row.training_goal).toBe("Hypertrophy");
+  expect(row.onboarding_completed_at).not.toBeNull();
 });

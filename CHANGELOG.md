@@ -9,6 +9,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `profiles.onboarding_completed_at` (migration 0007), nullable, stamped only
+  when the onboarding flow's step 4 is confirmed. Distinct from
+  `experience_level`/`training_goal` on purpose: those default to
+  `Beginner`/`General`, so their presence alone can't tell a real choice from
+  a profile that never finished onboarding — which was the entire cause of
+  the redirect bug below.
 - Design system on onboarding, home and the remaining surfaces (Epic N8).
   Violations 90 → **0**: the ratchet baseline is now zero on every rule, so any
   new raw palette colour, off-scale text size, half-step spacing, stray shadow,
@@ -232,6 +238,37 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Onboarding steps 2-4 were unreachable from Epic M1's original ship until
+  29 July 2026.** `createProfile()` calls `revalidatePath("/", "layout")`,
+  which re-ran `/onboarding`'s server component; it redirected to
+  `/exercises` the instant an active profile existed, and step 1 had just
+  created one. A new user completed step 1 and landed straight in the
+  exercise library, never choosing an experience level or training goal —
+  both silently kept their defaults. A second, independent bug was masked by
+  the first the whole time: steps 2-3 only ever set local React state, so
+  even a user who somehow reached step 4 would not have had their choices
+  saved. Fixed together: migration 0007 adds `profiles.onboarding_completed_at`
+  (nullable — distinct from `experience_level`/`training_goal`, which can't
+  tell "chose Beginner" from "never asked"), and a new `completeOnboarding()`
+  Server Action writes `experience_level`, `training_goal` and the completion
+  timestamp together when step 4 is confirmed. `/onboarding`'s guard now
+  checks completion, not mere existence. `/` had the identical redirect bug
+  independently and is fixed the same way, sending an incomplete profile back
+  to `/onboarding` instead of `/exercises`. Verified against the real
+  database: `e2e/n8-screenshots.spec.ts` now drives all four steps for real
+  and queries `profiles` afterward rather than stopping at "the button
+  navigated". 6 new unit tests on `OnboardingFlow`, two of them unhappy paths
+  (the save rejecting, and the save throwing), with a mutation check
+  confirming the rejection test actually fails when the check is removed.
+  Known limitation, by design: revisiting `/onboarding` before step 4
+  restarts the flow rather than resuming it.
+- `drizzle.config.ts` loaded env with plain `dotenv/config` (`.env` only —
+  local Postgres), the same bug class already fixed for runtime scripts in
+  `1396bd1` but never applied to the config file `drizzle-kit` itself reads.
+  Found when `npm run db:generate` hung on an interactive prompt while diffing
+  against the wrong database. Migration 0007 was written by hand instead,
+  matching the precedent already set by 0005/0006, and applied directly
+  against Neon. `drizzle.config.ts` itself is still unfixed.
 - `/onboarding` failed to render at all: the page is a Server Component and
   passed an `onComplete` function to the `OnboardingFlow` Client Component,
   which throws "Event handlers cannot be passed to Client Component props".

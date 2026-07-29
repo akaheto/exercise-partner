@@ -2,14 +2,16 @@ import { redirect } from "next/navigation";
 import { Dumbbell } from "lucide-react";
 import { ProfileSelector } from "@/components/home/profile-selector";
 import { listProfiles } from "@/db/queries/profiles";
-import { getActiveProfileId } from "@/lib/active-profile";
+import { getActiveProfile } from "@/lib/active-profile";
 
 export default async function HomePage() {
-  const [profiles, activeProfileId] = await Promise.all([listProfiles(), getActiveProfileId()]);
+  const [profiles, activeProfile] = await Promise.all([listProfiles(), getActiveProfile()]);
 
-  // If user has an active profile, go to exercises
-  if (activeProfileId) {
-    redirect("/exercises");
+  // An active profile that hasn't finished onboarding goes back to it rather
+  // than to /exercises — same fix as /onboarding's own guard, applied here
+  // since a second tab opened mid-flow hit this exact redirect otherwise.
+  if (activeProfile) {
+    redirect(activeProfile.onboardingCompletedAt ? "/exercises" : "/onboarding");
   }
 
   return (

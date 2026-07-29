@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { completeOnboarding } from "@/app/(app)/profile/actions";
 import { OnboardingStep1Profile } from "./step-1-profile";
 import { OnboardingStep2Level } from "./step-2-level";
 import { OnboardingStep3Goal } from "./step-3-goal";
@@ -23,6 +24,8 @@ export function OnboardingFlow() {
   const [profileName, setProfileName] = useState("");
   const [level, setLevel] = useState("Beginner");
   const [goal, setGoal] = useState("General");
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [completeError, setCompleteError] = useState<string | null>(null);
 
   const handleStep1Next = (name: string) => {
     setProfileName(name);
@@ -37,6 +40,30 @@ export function OnboardingFlow() {
   const handleStep3Next = (selectedGoal: string) => {
     setGoal(selectedGoal);
     setStep(4);
+  };
+
+  /**
+   * Steps 2-3 only ever set local React state; nothing wrote level/goal to
+   * the database until this call. This is also the moment onboarding_
+   * completed_at is stamped, so /onboarding can stop redirecting a
+   * still-in-progress profile straight to /exercises.
+   */
+  const handleComplete = async () => {
+    setIsCompleting(true);
+    setCompleteError(null);
+
+    try {
+      const result = await completeOnboarding(level, goal);
+      if (!result.success) {
+        setCompleteError(result.error ?? "Failed to save your profile");
+        return;
+      }
+      router.push("/exercises");
+    } catch {
+      setCompleteError("Failed to save your profile");
+    } finally {
+      setIsCompleting(false);
+    }
   };
 
   return (
@@ -100,7 +127,9 @@ export function OnboardingFlow() {
               profileName={profileName}
               level={level}
               goal={goal}
-              onComplete={() => router.push("/exercises")}
+              onComplete={handleComplete}
+              isSaving={isCompleting}
+              error={completeError}
             />
           )}
         </div>

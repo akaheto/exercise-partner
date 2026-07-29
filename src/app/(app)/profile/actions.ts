@@ -122,6 +122,54 @@ export async function updateProfileAction(
   }
 }
 
+/**
+ * Confirms onboarding: persists the level/goal chosen in steps 2-3 (which,
+ * before this, were only ever kept in the flow's local React state and never
+ * written to the database — a second bug masked entirely by the first) and
+ * stamps onboardingCompletedAt so /onboarding can tell "chose Beginner" from
+ * "never asked" and stop redirecting an unfinished profile straight to
+ * /exercises. Reads the active profile from the cookie set by createProfile
+ * in step 1, rather than requiring the client to track and pass an id.
+ */
+export async function completeOnboarding(
+  experienceLevel: string,
+  trainingGoal: string,
+): Promise<{ success: boolean; error?: string }> {
+  await requireSiteSession();
+
+  const profileId = await getActiveProfileId();
+  if (!profileId) {
+    return { success: false, error: "No active profile to complete onboarding for" };
+  }
+
+  const levelResult = experienceLevelSchema.safeParse(experienceLevel);
+  if (!levelResult.success) {
+    return { success: false, error: "Invalid experience level" };
+  }
+
+  const goalResult = trainingGoalSchema.safeParse(trainingGoal);
+  if (!goalResult.success) {
+    return { success: false, error: "Invalid training goal" };
+  }
+
+  try {
+    await db
+      .update(profiles)
+      .set({
+        experienceLevel: levelResult.data,
+        trainingGoal: goalResult.data,
+        onboardingCompletedAt: new Date(),
+      })
+      .where(eq(profiles.id, profileId));
+
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to complete onboarding:", error);
+    return { success: false, error: "Failed to save your profile" };
+  }
+}
+
 export async function deleteProfile(
   profileId: string,
   pin: string,
