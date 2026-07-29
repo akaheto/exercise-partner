@@ -109,10 +109,12 @@ function Silhouette({
         };
         return (
           <g key={`${region.muscle}-${view}-${i}`}>
-            <title>
-              {region.muscle}
-              {role !== "none" ? ` (${role})` : ""}
-            </title>
+            {/* A single template-string child, not two — React rejects an
+                array of children on <title> specifically (it must resolve to
+                one Text node), and passing {a}{b} here caused a hydration
+                mismatch that regenerated this whole tree on the client on
+                every render, found while verifying Epic O. */}
+            <title>{`${region.muscle}${role !== "none" ? ` (${role})` : ""}`}</title>
             {shape.kind === "circle" ? (
               <circle cx={shape.cx} cy={shape.cy} r={shape.r} {...common} />
             ) : (

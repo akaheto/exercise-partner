@@ -108,6 +108,7 @@ export async function generateTechnicalSpec() {
         ["E2E tests", "Playwright (from Epic H)", "Deferred until Workout Mode exists — the flow most worth testing end to end"],
         ["Docs", "docx (npm)", "Word deliverables generated from scripts so they can be kept current cheaply"],
         ["Hosting", "Vercel", "Matches the framework; preview deployments per change"],
+        ["Object storage", "Vercel Blob (@vercel/blob)", "Epic O's 133 MB of muscle-diagram renders — too large for /public. Public access; a deterministic pathname (muscle-diagrams/<exercise_id>.webp) means no per-exercise database column is needed to link an exercise to its image"],
       ],
       [14, 24, 62],
     ),
@@ -234,6 +235,7 @@ export async function generateTechnicalSpec() {
     bullet("12 npm audit advisories are dev-only transitive dependencies (ESLint toolchain, PostCSS). Not shipped to users; the only fix is a breaking ESLint 10 upgrade that eslint-config-next does not yet support."),
     bullet("exceljs (used to read the source spreadsheet in the import pipeline) pulls in further advisories via its zip-writer dependency chain, which reading a file never exercises. Chosen over xlsx/SheetJS, whose read-path prototype-pollution and ReDoS CVEs have no fix available."),
     bullet("Workout Mode autosave must survive backgrounded mobile tabs, which browsers may suspend aggressively. This needs real device testing, not just desktop."),
+    bullet("Fixed: MuscleDiagram's SVG <title> elements passed two JSX children ({region.muscle}{role...}) where React 19 requires exactly one — a real, previously-dormant bug, found while verifying Epic O rather than caused by it, but only actually fired once a client component was added next to it on the same page, silently regenerating the whole tree on every exercise-detail load with 38 repeated console errors. Fixed with a single template-string child; verified zero warnings after."),
 
     footer("Generated from scripts/docs/technical-spec.ts — regenerate with npm run docs"),
   ]);

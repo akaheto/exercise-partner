@@ -9,6 +9,26 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Epic O: the 1,218 supplied anatomical muscle-diagram renders, uploaded to a
+  new public Vercel Blob store (`exercise-partner-images`) at
+  `muscle-diagrams/<exercise_id>.webp` — a deterministic pathname, so no
+  per-exercise database column is needed to link an exercise to its image.
+  `scripts/upload-muscle-diagrams.ts` re-derives the exact filename→exercise
+  mapping verified ahead of the epic (1,218/1,218, zero unmatched), refuses to
+  proceed on any mismatch, and verifies the result against the live store
+  afterward (paginated — the first run's un-paginated check under-reported by
+  218 and looked like a real failure; it was `list()`'s 1000-item page cap).
+  New `MuscleDiagramPhoto` component adds an "Anatomical reference" plate to
+  the exercise detail page, **alongside** the existing hand-built
+  `MuscleDiagram`, not replacing it — the render's orange/navy legend is
+  baked in and can't be re-themed to the app's teal ramp, so the ramp stays
+  as-is and the render is framed as a distinct, captioned "inserted
+  photograph" instead. Alt text is built from `primary_muscle`/
+  `secondary_muscles` in the database, never from the image's own baked-in
+  (and screen-reader-invisible) legend. Fails silent — renders nothing —
+  if the base URL is unset or the specific image fails to load, since the
+  existing diagram already covers that exercise. 6 unit tests,
+  mutation-checked.
 - `profiles.pin_salt`, `pin_failed_attempts`, `pin_locked_until` (migration
   0008). `generatePinSalt()` produces a genuinely random per-profile salt;
   `nextPinAttemptState()`/`isPinLocked()` lock deletion out for 15 minutes
@@ -242,6 +262,13 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `MuscleDiagram`'s SVG `<title>` elements passed two JSX children
+  (`{region.muscle}{role...}`) where React 19 requires exactly one — a real,
+  previously-dormant bug, found while verifying Epic O rather than caused by
+  it, but only actually fired once a client component (`MuscleDiagramPhoto`)
+  was added next to it on the same page: the whole tree was silently
+  regenerated on the client on every exercise-detail page load, with 38
+  repeated console errors. Fixed with a single template-string child.
 - **Onboarding steps 2-4 were unreachable from Epic M1's original ship until
   29 July 2026.** `createProfile()` calls `revalidatePath("/", "layout")`,
   which re-ran `/onboarding`'s server component; it redirected to
@@ -417,19 +444,17 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Notes
 
-- **Onboarding steps 2-4 are unreachable, and have been since Epic M1.**
-  `createProfile()` calls `revalidatePath("/", "layout")`, re-running the
-  `/onboarding` server component, which redirects to `/exercises` whenever an
-  active profile exists — and step 1 has just created one. A new user completes
-  step 1 and lands in the exercise library, never choosing an experience level
-  or training goal, so both keep their defaults. Combined with the pattern
-  routing note below, the personalisation Epic L exists to serve has
-  effectively never varied. Confirmed by driving the flow and logging the URL,
-  and verified as the cause by disabling the redirect (all four steps then run;
-  the guard was restored). **Not fixed** — the fix is a product decision:
-  dropping the guard lets anyone revisit onboarding, whereas an explicit
-  completion flag needs a schema change, since `experience_level` cannot
-  distinguish "chose Beginner" from "never asked".
+- Creating the Vercel Blob store (`vercel blob create-store`, for Epic O)
+  triggered an implicit env pull that overwrote `.env.local` with only the
+  project's "Development"-scoped cloud variables. On investigation nothing
+  was actually lost — `SITE_PASSWORD` and `SESSION_SECRET` have only ever
+  lived in the separate, untouched `.env` file, and all three secrets already
+  exist in Vercel's Preview/Production scope, just not "Development" — but
+  worth knowing: any future command that triggers an env pull will silently
+  overwrite `.env.local` with whatever is currently scoped to Development,
+  dropping anything hand-added there that isn't also registered on Vercel's
+  side. Local dev was confirmed intact afterward by running the admin-auth
+  e2e spec end to end.
 - Three `.sql` files sit directly in `drizzle/` (`0002_curation_tracking`,
   `0003_remove_breathing_movement_pattern`, `0004_exercise_experience_guidance`)
   rather than in `drizzle/migrations/`, and are absent from the journal.

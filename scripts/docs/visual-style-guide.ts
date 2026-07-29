@@ -265,8 +265,17 @@ export async function generateVisualStyleGuide() {
     spacer(),
     callout(
       "Enforcement",
-      "npm run lint runs scripts/check-design-tokens.ts, which counts raw palette colours, off-scale text sizes and spacing, raw shadows, off-scale radii and gradients against a recorded baseline. The count may only go down. It started at 487 and is currently 209, with the profile, admin, onboarding and home surfaces still to convert. Note it is a textual check — it catches a hardcoded hex, not a design that is merely ugly.",
+      "npm run lint runs scripts/check-design-tokens.ts, which counts raw palette colours, off-scale text sizes and spacing, raw shadows, off-scale radii and gradients against a recorded baseline. The count may only go down. It started at 487 in Epic N and reached 0 across every rule once Epic N8 converted the last surfaces (onboarding and home). Note it is a textual check — it catches a hardcoded hex, not a design that is merely ugly.",
     ),
+
+    h1("4b. Fixed-Light Plates — a Deliberate Exception"),
+    p(
+      "Epic O's supplied muscle-diagram renders are a photographic-style asset with a fixed white background and their own orange/navy involvement legend, baked into the raster and impossible to re-theme. Rather than amend the app's teal involvement ramp to match a raster image, or fight the image with a CSS filter, they are framed as a deliberate exception: a bordered \"plate\" — light background, border, shadow-flat — that keeps the same appearance in both light and dark theme, the way a photograph or printed diagram plate is presented on purpose rather than left to blend into the surrounding page.",
+      { muted: true },
+    ),
+    bullet("Use this pattern only for an asset that is genuinely theme-invariant by nature (a real photograph, a scanned document, a supplied render with its own baked-in colour language) — never as a shortcut to skip theming a component that could be themed."),
+    bullet("Always pair it with a caption naming the source and, if the asset's own colour legend could be confused with the app's own semantic colours nearby, saying so explicitly (MuscleDiagramPhoto's caption: \"its colour legend is its own, separate from the diagram above\")."),
+    bullet("bg-white in this one component is a deliberate literal, not a missed token — see the comment in src/components/exercise/muscle-diagram-photo.tsx. It will not and should not appear anywhere else; scripts/check-design-tokens.ts does not special-case it, so a second instance would need the same explicit justification, not a silent copy-paste."),
 
     h1("5. Tone & Voice"),
     rich(
