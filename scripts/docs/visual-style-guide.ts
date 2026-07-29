@@ -69,15 +69,38 @@ export async function generateVisualStyleGuide() {
         ["teal-50", "#F0FDFA", "Selected-row tint, subtle badge background (light)"],
         ["teal-400", "#2DD4BF", "Hover state in dark theme"],
         ["teal-500", "#14B8A6", "Primary action in dark theme"],
-        ["teal-600", "#0D9488", "Primary action in light theme; focus ring"],
-        ["teal-700", "#0F766E", "Pressed state in light theme"],
+        ["teal-600", "#0D9488", "Hover state in light theme (was the primary action until Epic N0)"],
+        ["teal-700", "#0F766E", "Primary action in light theme — the --primary token"],
+        ["teal-800", "#115E59", "Pressed state in light theme"],
       ],
       [22, 18, 60],
     ),
+    spacer(),
+    callout(
+      "Corrected in Epic N0",
+      "This section previously specified teal-600 as the light-theme primary and claimed AA compliance. It did not comply: white on teal-600 is 3.74:1, below the 4.5:1 floor. Primary is now teal-700 (5.47:1), teal-600 demoted to hover and teal-800 to pressed. muted-foreground was darkened to #5F6D82 for the same reason (4.34:1 → 4.80:1); the dark theme already passed at 5.71:1 and is unchanged. The lesson worth keeping: a contrast claim written into a style guide is not a measurement.",
+    ),
 
     h3("Semantic"),
+    p(
+      "Each semantic colour carries five roles, not one. The missing tinted-surface role was the structural reason 49 hardcoded colours had accumulated across the app — there was no token for \"a faint success-coloured panel\", so screens invented one each time.",
+      { muted: true },
+    ),
+    spacer(),
     table(
-      ["Token", "Hex", "Meaning"],
+      ["Role", "Token suffix", "Use"],
+      [
+        ["Fill", "--success", "Solid background of a badge or button"],
+        ["On-fill text", "--success-foreground", "Text placed on that solid fill"],
+        ["On-surface text", "--success-text", "The colour when writing on a neutral or tinted background"],
+        ["Tinted surface", "--success-subtle", "Faint background of a callout or panel"],
+        ["Tinted border", "--success-border", "Border of that same panel"],
+      ],
+      [22, 30, 48],
+    ),
+    spacer(),
+    table(
+      ["Token", "Hex (fill)", "Meaning"],
       [
         ["success", "#16A34A", "Set logged, workout completed, personal record"],
         ["warning", "#D97706", "Unreviewed derived data; approaching a volume limit"],
@@ -89,7 +112,7 @@ export async function generateVisualStyleGuide() {
     spacer(),
     callout(
       "Accessibility",
-      "Colour never carries meaning alone. Every semantic state pairs its colour with an icon or text label, so it survives colour-blindness and greyscale. All body text meets WCAG AA (4.5:1); large text and UI components meet 3:1 in both themes.",
+      "Colour never carries meaning alone. Every semantic state pairs its colour with an icon or text label, so it survives colour-blindness and greyscale. Every -text token has been checked to pass AA on both neutral and tinted surfaces, in both themes — and the dark theme now has its own values rather than the light hex values copied across, which was the previous state.",
     ),
 
     h3("Muscle involvement ramp"),
@@ -214,6 +237,35 @@ export async function generateVisualStyleGuide() {
         ["Unreviewed data", "Amber info icon with a tooltip explaining the value is rule-derived and correctable"],
       ],
       [18, 82],
+    ),
+
+    h1("4a. Shared Primitives"),
+    p(
+      "Added in Epic N1 so the patterns above are implemented once rather than re-hand-rolled per screen. Anything in src/components/ui is the canonical implementation; a screen composing its own version of one of these is a bug, and scripts/check-design-tokens.ts exists to catch the drift.",
+      { muted: true },
+    ),
+    spacer(),
+    table(
+      ["Primitive", "Replaces", "Notes"],
+      [
+        ["PageHeader", "Hand-written h1 blocks", "Title, optional description and action slot at the 24px in-app title size"],
+        ["Card", "Ad-hoc bordered divs", "The border/surface/radius combination from the Cards section above"],
+        ["Field", "Label + input + error markup", "Enforces label-above and the error treatment in one place"],
+        ["Callout", "Hand-tinted coloured boxes", "Uses the -subtle / -border / -text roles; the guidance card's green/yellow/blue boxes were the motivating case"],
+        ["EmptyState", "Bare \"No results\" text", "Icon, explanation and resolving action, per the States table"],
+        ["ErrorState", "Raw error text", "Plain-language failure plus retry"],
+        ["DataTable", "Bespoke table markup", "Whole-row link targets with a real anchor retained for keyboard and screen-reader users"],
+        ["Stat", "Inline numeric spans", "Pairs a label with a mono tabular figure so columns stay optically aligned"],
+        ["ConfirmDialog", "Immediate destructive actions", "Item removal and archive both used to fire without confirmation"],
+        ["NumberStepper", "Bare numeric inputs", "56px field plus 56px +/- buttons stepping by the plate increment (2.5 kg / 5 lb), still accepting direct typing — the Forms section had specified this since Epic A and nothing had implemented it until Epic N5"],
+        ["Skeletons", "Spinners", "Layout-shaped loading states"],
+      ],
+      [18, 26, 56],
+    ),
+    spacer(),
+    callout(
+      "Enforcement",
+      "npm run lint runs scripts/check-design-tokens.ts, which counts raw palette colours, off-scale text sizes and spacing, raw shadows, off-scale radii and gradients against a recorded baseline. The count may only go down. It started at 487 and is currently 209, with the profile, admin, onboarding and home surfaces still to convert. Note it is a textual check — it catches a hardcoded hex, not a design that is merely ugly.",
     ),
 
     h1("5. Tone & Voice"),

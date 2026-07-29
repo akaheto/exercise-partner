@@ -15,13 +15,6 @@ import {
   writeDocx,
 } from "./shared";
 
-/** Placeholder for a section whose feature has not shipped yet. */
-const pending = (epic: string) =>
-  p(`Not available yet — this section will be written when ${epic} is built.`, {
-    muted: true,
-    italics: true,
-  });
-
 export async function generateUserGuide() {
   const doc = buildDocument([
     title("User Guide — Exercise Partner"),
@@ -29,7 +22,7 @@ export async function generateUserGuide() {
 
     callout(
       "About this guide",
-      "The app is still being built. Sections describing features that do not exist yet are marked as such rather than described as though they work. Each one is written properly as its feature ships.",
+      "Everything described here is built and working. Where something is only partly done, or is not as solid as it sounds, this guide says so rather than glossing over it — you should not have to discover a limitation by hitting it.",
     ),
 
     h1("What this app is"),
@@ -44,31 +37,90 @@ export async function generateUserGuide() {
     p("The site is private. You reach it with a single shared password. Once inside, everyone has their own profile — your workouts and your training history are yours, and switching profiles switches everything over to that person."),
 
     h1("Getting in"),
-    pending("the password gate and profile switcher (Epic C)"),
+    p("Go to the site and enter the shared password. You will stay signed in on that device, so you should not have to type it every visit."),
+    p("Next, pick your profile — or create one if it is your first time. Your profile is what keeps your workouts and your training history separate from everyone else's. You can switch profiles at any time from the top right on a computer, or from the Profile tab on a phone."),
+
+    h2("Setting up your profile the first time"),
+    p("Creating a profile walks you through four short steps:"),
+    bullet("Your name — just what you want to be called."),
+    bullet("Your experience level — beginner, intermediate or advanced."),
+    bullet("Your training goal — strength, muscle size, endurance, power, or general fitness."),
+    bullet("A PIN — four to six digits."),
+    spacer(),
+    p("The experience level and goal are not just labels. They change the sets, reps and effort level the app suggests on every exercise page, so answer them honestly rather than aspirationally. You can change both later from your profile."),
+    p("The PIN is asked for when someone tries to delete your profile. It is there to stop an accidental or casual deletion of your training history by someone else using the same shared password. Pick something you will remember — there is currently no way to reset a forgotten PIN yourself."),
 
     h1("Finding an exercise"),
-    pending("the Exercise Library (Epic D)"),
-    p("Will cover: searching by name, narrowing by muscle group, equipment, difficulty and other filters, and switching between the list and card views.", { muted: true }),
+    p("The Exercises tab lists the whole library. Type in the search box to find something by name, or use the filters to narrow it down — by muscle group, equipment you have, difficulty, exercise type and several others. You can combine filters, and the app tells you which ones are active if a search comes back empty."),
+    p("You can switch between a compact list and a card view with pictures, whichever you prefer. Your filters stay in the web address, so you can bookmark a particular view or send it to someone."),
+    p("If you want to build a workout from what you are looking at, you can tick several exercises as you browse. A running total shows how long that workout would take, and it survives changing filters, so you can gather exercises from several searches before turning them into a workout in one click."),
 
     h1("Learning how to do an exercise"),
-    pending("the exercise detail page (Epic D)"),
-    p("Will cover: reading the instructions and coaching tips, understanding the muscle diagram, watching the demonstration video, and finding alternative exercises when you cannot do the one you are looking at.", { muted: true }),
+    p("Every exercise has its own page with:"),
+    bullet("Step-by-step instructions and the starting position."),
+    bullet("Coaching tips and common mistakes to avoid."),
+    bullet("A demonstration video."),
+    bullet("A muscle diagram showing what the movement works, with the main muscles picked out from the assisting ones."),
+    bullet("Suggested sets, reps and effort level based on your experience level and goal."),
+    bullet("Easier versions to fall back on, and alternatives if you do not have the equipment."),
+    spacer(),
+    callout(
+      "How much to trust what you read",
+      "Instructions and videos come from a real training source. But some details — the muscle diagrams, and the suggestions for which exercises substitute for which — were worked out automatically rather than checked by a person. Anywhere that is true, the app marks it. Treat those as a sensible starting point, not as gospel, and stop if a movement hurts.",
+    ),
+    p("The depth varies. About twenty exercises have detailed, movement-specific tips written for them; the rest fall back to more general coaching for your level and goal. If something looks wrong, it can be corrected, and your correction survives the next time the exercise database is updated."),
 
     h1("Building a workout yourself"),
-    pending("the manual workout builder (Epic E)"),
-    p("Will cover: starting a new workout, adding exercises, putting them in the order you want, setting how many sets and reps to do, grouping exercises together, and saving it.", { muted: true }),
+    p("From the Build tab, choose to start from scratch. That creates an empty workout and opens the builder."),
+    bullet("Add exercises with the search box. Each one becomes its own block."),
+    bullet("Set how many sets, what rep range, and how long to rest for each exercise. Changes save on their own as you go — there is no Save button to forget."),
+    bullet("Drag the handle on the left to reorder. This works with the keyboard too, not only the mouse."),
+    bullet("To superset or circuit two exercises, add one into another's block; the block relabels itself automatically."),
+    bullet("If you cannot do an exercise, use Substitute to swap it for a comparable one without losing your sets and reps."),
+    spacer(),
+    p("A running estimate of how long the workout will take updates as you change things. It is a calculation, not a measurement, so treat it as a guide."),
 
     h1("Letting the app build a workout for you"),
-    pending("the workout generator (Epic F)"),
-    p("Will cover: answering the questions about your goal, how long you have, what you want to work and what equipment you can use — then reviewing, changing and saving what it suggests.", { muted: true }),
+    p("From the Build tab, choose to generate one instead. You answer five questions: your goal, how long you have, what you want to focus on, your experience level, and which equipment you can actually use."),
+    p("The app then picks a balanced set of exercises — the big compound movements first, then accessory work — and fits them into the time you gave it."),
+    callout(
+      "Why you sometimes get fewer exercises than expected",
+      "Rest is part of the time budget. A 40-minute strength workout rests much longer between sets than a 40-minute muscle-building one, so it genuinely fits fewer exercises. That is the estimate being honest, not the app short-changing you.",
+    ),
+    p("What it generates opens straight into the normal builder, so you can change anything you disagree with before saving. Your equipment answers are remembered for next time."),
 
     h1("Doing a workout"),
-    pending("Workout Mode (Epic H)"),
-    p("Will cover: starting a workout, moving between exercises, recording what you lifted, using the rest timer, and picking up where you left off if you get interrupted.", { muted: true }),
+    p("Press Start on any workout. The screen changes to Workout Mode — one exercise at a time, large controls, and the normal navigation hidden so nothing is in your way mid-set."),
+    bullet("The instructions, video and muscle diagram for the current exercise are right there if you need a reminder."),
+    bullet("Enter your weight and reps and press Log. The buttons either side step the weight up and down by a sensible amount, so you can use them one-handed without aiming at a small box."),
+    bullet("Logged the wrong thing? Undo puts it back."),
+    bullet("A rest timer starts between sets, and you can skip it."),
+    bullet("To leave early, use the X. It asks you to confirm, so you cannot lose a session by mis-tapping."),
+    spacer(),
+    p("If you get interrupted — a phone call, the screen locking, closing the tab by accident — just reopen the workout. It picks up at the exact next set, because it works that out from what you have already logged rather than remembering where you were. The one thing that does not survive is a running rest timer; you will simply see the next set ready to go."),
+    p("The rest timer also stays accurate if you switch apps, so backgrounding your phone will not make it drift."),
 
     h1("Looking back at what you have done"),
-    pending("Workout History (Epic I)"),
-    p("Will cover: finding past workouts, comparing how you did over time, and saving a copy of your history to a file.", { muted: true }),
+    p("The History tab lists every session, most recent first. Anything you left unfinished links back so you can resume it."),
+    bullet("Open a session to see every set you logged, exercise by exercise."),
+    bullet("Once you have more than a week of training, a chart shows your total volume week by week."),
+    bullet("A muscle balance panel ranks which muscles you have trained most over the last four weeks. It reports what happened — it does not tell you what to do about it."),
+    bullet("Each exercise page gains a Your history panel showing how your top set has moved over time."),
+    bullet("Each workout shows the past sessions run from that particular workout."),
+    spacer(),
+    p("You can download your complete history as a spreadsheet (CSV) or a data file (JSON) — every set of every session, not a summary."),
+    callout(
+      "One thing to watch",
+      "Volume totals add up weights without converting between kilograms and pounds. As long as you log consistently in one unit that is fine. If you switch units partway through, any total spanning both will not mean much.",
+    ),
+    p("Editing a workout never changes your history. Each session records what you actually did at the time and is fixed from then on."),
+
+    h1("If you look after the site"),
+    p("There is an admin page at /admin for whoever runs the site. It lists every profile with its stats and can delete one without needing that profile's PIN. It asks for the site password plus a separate admin token."),
+    callout(
+      "Not yet safe to rely on",
+      "The admin page's protection is currently weak enough that anyone who already has the site password could get past it if they went looking. Since that is everyone you have shared the site with, do not treat the admin token as a real barrier between users, and do not put the site on the public internet until this is fixed. It is recorded as a known issue and is the next security job.",
+    ),
 
     h1("Common questions"),
     table(

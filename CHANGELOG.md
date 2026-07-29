@@ -9,6 +9,58 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Design system on the profile and admin surfaces (Epic N7). Violations
+  209 → 90, tests 263 → 273. Both destructive flows moved onto the
+  `ConfirmDialog` primitive — `/profile`'s PIN confirmation had been a
+  hand-rolled expanding panel and the admin table's an inline three-button
+  row, and neither kept the failure reason visible on a rejected action the
+  way the primitive does. The admin table moved onto `DataTable` with mono
+  tabular counts, its tiles onto `Stat`, its empty case onto `EmptyState`.
+  `profile-editor`'s level and goal pickers were unlabelled `div`s of buttons
+  with no radio semantics and a sub-44px target; they are now a real
+  `radiogroup` with `aria-checked` and a 44px floor.
+- Design system adoption, phases 0–6 (Epic N). `globals.css` rebuilt on a
+  four-role model per semantic colour — fill, on-fill text, on-surface text,
+  tinted surface, tinted border. The missing tinted-surface role was the
+  structural reason 49 hardcoded colours had accumulated: there was no token
+  for "a faint success-coloured panel", so screens invented one each time.
+  Ten new primitives (`page-header`, `field`, `callout`, `empty-state`,
+  `error-state`, `data-table`, `stat`, `confirm-dialog`, `number-stepper`,
+  `skeletons`); `Button` gains `destructive-quiet`, a 56px `workout` size and
+  a `loading` prop. `scripts/check-design-tokens.ts` is wired into
+  `npm run lint` as a ratchet baselined at 487 violations, so no phase can
+  regress an earlier one — currently 209, with the profile, admin, onboarding
+  and home surfaces still to convert.
+- `NumberStepper` in Workout Mode: a 56px field flanked by 56px +/- buttons
+  stepping by the plate increment for the active unit (2.5 kg / 5 lb), still
+  accepting direct typing. The style guide had required large +/- targets for
+  mid-workout numeric entry since Epic A; nothing had implemented it.
+- Content curation (Epic L1). 1,216 of 1,218 exercises had their placeholder
+  "Varies / Not specified" instructions and starting positions replaced with
+  real sourced content from muscleandstrength.com, via a rate-limited
+  (1/sec), locally-cached, transactionally-batched scraper tracked per
+  exercise in a new `curation_status` table. The run finished 99.84% in about
+  45 minutes with no manual intervention; 2 exercises are flagged
+  `needs_review` for parser edge cases. Content is written as global
+  (`profile_id = null`) rows in the existing `exercise_overrides` layer, so a
+  spreadsheet re-import cannot clobber it.
+- Exercise guidance (Epic L2), on a two-table pattern: `guidance_patterns`
+  (15 canonical rows = 3 experience levels × 5 training goals) plus
+  `exercise_guidance_overrides` (1,218 rows, one per exercise, FK to a
+  pattern plus optional per-exercise regressions, equipment alternatives,
+  mobility and contraindication flags, and form cues). This replaced an
+  abandoned single-table design that would have needed 18,270 rows to say the
+  same thing; changing guidance for a level/goal combination is now a
+  one-row update. See `docs/GUIDANCE_ARCHITECTURE.md`.
+- Onboarding, profiles and admin (Epic M). A four-step onboarding flow
+  (name → experience level → training goal → completion) writes
+  `experience_level` and `training_goal` onto the profile, which then select
+  which guidance pattern each exercise page shows. Home gains a profile
+  selector and creation; `/profile` gains an editor and a delete section.
+  Profile deletion is gated by a 4–6 digit PIN hashed with PBKDF2-SHA256 at
+  100k iterations. An `/admin` dashboard lists every profile with stats and
+  can delete one bypassing its PIN.
+- Personal records panel and weekly volume charts on `/history`.
 - Intelligence Foundation (Epic J) — substrate for future intelligence
   features, not the features themselves. `src/domain/training-metrics.ts`:
   volume per primary muscle group per week per profile, joining
@@ -171,6 +223,43 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `cn()` silently dropped every named type-scale class. `tailwind-merge` only
+  treats t-shirt sizes as font sizes, so `text-caption`, `text-body` and the
+  rest fell into its text-*colour* group: `cn("text-caption",
+  "text-muted-foreground")` discarded `text-caption` entirely. Every `Field`
+  label had been rendering at the inherited size, and `buttonVariants` lost
+  `text-primary-foreground` to `text-body`, leaving teal buttons with
+  unstyled labels. The scale is now registered under `font-size`. App-wide,
+  and invisible to every test that existed.
+- White-on-primary was 3.74:1 and failed WCAG AA, despite
+  VISUAL_STYLE_GUIDE.docx claiming compliance. Primary darkened teal-600 →
+  teal-700 (5.47:1); teal-600 demoted to hover, teal-800 to pressed.
+  `muted-foreground` darkened to `#5f6d82` (4.34:1 → 4.80:1). The dark theme
+  now has its own values rather than the light hex values copied verbatim.
+- `getActiveProfileId()` returned the raw cookie without checking the profile
+  still existed, and around 20 call sites branch on it. A cookie outliving
+  its profile made the app believe a deleted profile was active: `/onboarding`
+  redirected away, `/profile` rendered "no profile selected" so the delete
+  section never appeared, and profile-scoped queries returned empty instead
+  of erroring. Now returns null when the profile is gone.
+- Migrations 0005 and 0006 had SQL files but no journal entries, so Drizzle
+  had never run them. Both registered and made idempotent.
+- Scripts loaded only `.env` (local Postgres) while Next.js loads `.env.local`
+  (Neon), so script writes went to a different database than the app read
+  from. Added `scripts/load-env.ts` matching Next.js precedence. The same
+  mismatch in `playwright.config.ts` had caused a failed e2e run to orphan a
+  throwaway profile in the production database.
+- Two layout bugs found in a browser, not by tests: 44px controls no longer
+  fit beside the exercise name, collapsing the builder's `flex-1 min-w-0` name
+  box to zero so its children painted over the inputs; and `block-list`'s
+  `flex-1` div defaulted to `min-width: auto`, so a long exercise name pushed
+  a card to 527px inside a 375px viewport. Both now guarded by tests.
+- Recharts falls back to its own `#666`/`#ccc` defaults when an inline `fill`
+  does not resolve, so axis ticks and cursors are now set with Tailwind
+  classes rather than inline `var()` strings. Chart styling extracted to
+  `chart-theme.ts`.
+- Instruction formatting: numbered steps were being flattened, and
+  snake_case database fields were mismatched against camelCase override keys.
 - The spreadsheet's `"Not listed"` sentinel was being stored as literal text
   instead of SQL `NULL`, silently breaking `is not null` queries downstream.
   Normalised at import time.
@@ -187,8 +276,68 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `sessions.workoutId` specifically so deleting a workout template never
   deletes the history recorded against it.
 
+### Changed
+
+- The admin dashboard's green "✓ Secure Connection — protected by two-factor
+  authentication" panel and the admin login's security note were rewritten
+  rather than restyled during N7. Both asserted a protection that does not
+  exist; converting them to the `Callout` primitive while keeping the words
+  would have preserved a false claim in a nicer box. Both now state that the
+  session cookie is unsigned and the gate is bypassable.
+
+### Security
+
+- **The admin session cookie is unsigned and forgeable.** Its value is the
+  literal string `"authenticated"`, and `src/app/admin/page.tsx` admits anyone
+  presenting it — so setting one cookie by hand grants full admin access,
+  including deleting any profile and all of its training history, bypassing
+  `ADMIN_TOKEN` entirely. Not remotely exploitable (`/admin` sits behind the
+  site password gate in `src/proxy.ts`), but the shared site password is held
+  by every intended user, which is exactly the population the admin token
+  exists to exclude. The fix is to reuse the HMAC-signed cookie pattern
+  already correct in `src/lib/auth.ts`. **Blocks production deploy.**
+- **`ADMIN_TOKEN` is not set in `.env.local`**, so on the current
+  configuration the admin token is the literal string
+  `"change-me-in-production"`. Confirmed by checking whether the variable is
+  present, not by reading its value. This makes the item above concrete rather
+  than theoretical: the second factor is both bypassable and a publicly-known
+  constant. Set it, or make the code refuse to start without it the way
+  `src/proxy.ts` already refuses without `SESSION_SECRET`.
+- `SITE_PASSWORD` and `ADMIN_TOKEN` fall back to hardcoded defaults
+  (`"change-me"`, `"change-me-in-production"`) when unset, so a misconfigured
+  deployment is reachable with publicly-known credentials rather than failing
+  closed — unlike `src/proxy.ts`, which correctly 500s on a missing
+  `SESSION_SECRET`. Both are compared with `!==` rather than constant-time.
+- Profile PINs use a single hardcoded salt (`"exercise-partner-salt"`) shared
+  by every profile, so identical PINs produce identical hashes: anyone with
+  database read access can see which profiles share a PIN, and one
+  precomputed table covers the entire 4–6 digit keyspace. There is no attempt
+  limiting, so a 4-digit PIN is exhaustible in 10,000 requests, and
+  `verifyPin` compares with `===` rather than constant-time.
+
 ### Notes
 
+- Three `.sql` files sit directly in `drizzle/` (`0002_curation_tracking`,
+  `0003_remove_breathing_movement_pattern`, `0004_exercise_experience_guidance`)
+  rather than in `drizzle/migrations/`, and are absent from the journal.
+  Drizzle never runs them, and their indices collide with real migrations of
+  the same number. They should be deleted or archived.
+- Exercise-specific tips and common mistakes were hand-written for 20
+  representative exercises only; the other ~1,198 fall back to their guidance
+  pattern's generic cue. Deliberately partial rather than fabricated.
+- Guidance pattern routing currently assigns every exercise a `beginner_*`
+  pattern based on movement type, so 10 of the 15 patterns are reachable only
+  once a profile's own experience level selects them at read time.
+- The `profiles` schema comment still reads "Lightweight — no credentials",
+  which stopped being true when `pin_hash` was added.
+- 1,218 rendered muscle diagrams (133 MB of `.webp`, ~110 KB each) were
+  supplied on 29 July 2026 for the epic after the design system work.
+  Filenames map 1:1 onto exercise names — verified zero unmatched, zero
+  ambiguous, zero duplicates. They carry three problems worth deciding before
+  integration: text baked into the raster (so alt text must come from the
+  database), an orange/navy involvement palette that contradicts the style
+  guide's teal ramp and cannot be re-themed, and an opaque white card that
+  will not sit well in the dark theme.
 - The repository lives at `~/Code/exercise-partner`, deliberately outside Google
   Drive, so dependency and build output are not continuously synced.
 - Playwright end-to-end testing is deferred to Epic H, when Workout Mode provides a

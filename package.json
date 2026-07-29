@@ -14,6 +14,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "docs": "tsx scripts/generate-docs.ts",
+    "docs:web": "npm run docs && python3 scripts/docs/docx-to-web.py .docs-web",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:studio": "drizzle-kit studio",

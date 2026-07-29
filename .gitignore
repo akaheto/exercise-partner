@@ -43,3 +43,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# generated web copies of the Word deliverables (npm run docs:web)
+.docs-web/

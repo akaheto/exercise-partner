@@ -224,14 +224,88 @@ export async function generateProjectPlan() {
     ),
 
     h2("Epic K — QA & Hardening"),
+    p(
+      "Note: commit f380d6c labelled the content-curation work \"Epic K partial (K0)\". That was a mislabel — curation is Epic L below. Epic K remains QA & Hardening.",
+      { muted: true },
+    ),
     table(
       EPIC_COLS,
       [
-        ["K1", "Unit tests for core logic including unhappy paths", S.notStarted, "Generator, duration estimation, merge layer"],
-        ["K2", "Critical-path tests for each feature area", S.notStarted, "CRUD and session integrity"],
-        ["K3", "Accessibility and mobile pass", S.notStarted, "Keyboard, contrast, touch targets, one-handed use"],
+        ["K1", "Unit tests for core logic including unhappy paths", S.inProgress, "263 tests across 34 files, all passing (verified 29 July 2026). Generator, duration estimation, merge layer, session flow, history aggregation and export are covered; the profile/admin/onboarding surfaces added in Epic M are not"],
+        ["K2", "Critical-path tests for each feature area", S.inProgress, "Playwright covers the full Workout Mode path (Epic H6). No e2e coverage of onboarding, PIN-gated profile deletion, or the admin dashboard"],
+        ["K3", "Accessibility and mobile pass", S.inProgress, "Substantially advanced by Epic N rather than as a separate pass: AA contrast fixed at the token level (N0), 44px/56px touch targets enforced across exercises, workouts, builder, Workout Mode and history (N3-N6). Not yet done on the profile, admin, onboarding and home surfaces — those are N7/N8"],
         ["K4", "Manual QA against this plan before calling v1 done", S.notStarted, "Gaps listed explicitly rather than quietly closed"],
-        ["K5", "Deploy and verify in production", S.notStarted, "Vercel; verify against the real deployment, not localhost"],
+        ["K5", "Deploy and verify in production", S.notStarted, "Vercel; verify against the real deployment, not localhost. Blocked on section 4 item 36 — the admin session cookie must be signed before anything is exposed beyond localhost"],
+      ],
+      EPIC_WIDTHS,
+    ),
+
+    h2("Epic L — Content Curation & Guidance"),
+    p(
+      "Replacing the spreadsheet's placeholder text with real sourced content, and adding a prescription layer (sets/reps/RPE/tempo) that adapts to experience level and training goal.",
+      { muted: true },
+    ),
+    table(
+      EPIC_COLS,
+      [
+        ["L1", "Curate instructions and starting positions", S.done, "1,216 of 1,218 exercises populated from muscleandstrength.com via scripts/curate-exercises.ts — rate-limited to 1/sec, locally cached, transactional batches, tracked per-exercise in the curation_status table. 2 exercises left \"needs_review\" (parser edge cases). Written as global (profileId=null) rows in the existing exercise_overrides layer, so a re-import cannot clobber them"],
+        ["L2", "Guidance schema", S.done, "Two-table pattern: guidance_patterns (15 canonical rows = 3 levels × 5 goals) + exercise_guidance_overrides (1,218 rows, one per exercise, FK to a pattern plus optional per-exercise regressions, alternatives, mobility/contraindication flags and form cues). Replaced an abandoned single-table design that would have needed 18,270 redundant rows — see docs/GUIDANCE_ARCHITECTURE.md"],
+        ["L3", "Exercise-specific tips and common mistakes", S.done, "20 representative exercises hand-written; the remainder still fall back to pattern-level cues. Deliberately partial — see section 4, item 39"],
+        ["L4", "Curation as routine maintenance", S.notStarted, "The curation run was one-off. No scheduled re-check for dead source URLs or changed upstream content"],
+      ],
+      EPIC_WIDTHS,
+    ),
+
+    h2("Epic M — Profiles, Onboarding & Admin"),
+    p(
+      "Turning the Epic C profile picker into a real first-run experience, and adding an owner-only surface for managing other people's profiles.",
+      { muted: true },
+    ),
+    table(
+      EPIC_COLS,
+      [
+        ["M1", "Onboarding flow", S.done, "/onboarding — four steps (name → experience level → training goal → completion) writing experienceLevel and trainingGoal onto the profile, which then drive which guidance pattern an exercise page shows"],
+        ["M2", "Home and profile selection", S.done, "Home page profile selector and creation; /profile gains an editor and a delete section"],
+        ["M3", "Profile PINs", S.done, "A 4-6 digit PIN set at profile creation and required to delete a profile. Hashed with PBKDF2-SHA256, 100k iterations, never stored in plaintext. Two real weaknesses recorded in section 4, item 35 — the salt is hardcoded and shared, and there is no attempt limiting"],
+        ["M4", "Admin dashboard", S.done, "/admin — every profile with stats, and admin-side deletion that bypasses the PIN. Gated by site password + a separate ADMIN_TOKEN, 4-hour session. The gate is NOT sound as built — see section 4, item 36, and K5"],
+        ["M5", "Active-profile cookie validation", S.done, "getActiveProfileId() previously returned the raw cookie without checking the profile still existed, so a cookie outliving its profile made ~20 call sites believe a deleted profile was active (/onboarding redirected away, /profile hid the delete section, scoped queries returned empty instead of erroring). Now returns null when the profile is gone; 5 tests cover the stale-cookie path"],
+      ],
+      EPIC_WIDTHS,
+    ),
+
+    h2("Epic N — Design System Adoption"),
+    p(
+      "VISUAL_STYLE_GUIDE.docx existed from Epic A but had never been enforced — screens had drifted onto hand-picked colours, off-scale text and sub-44px controls. This epic makes the guide real: tokens and primitives first, then each surface moved onto them, with a lint-enforced ratchet so the count can only go down.",
+      { muted: true },
+    ),
+    table(
+      EPIC_COLS,
+      [
+        ["N0", "Design tokens", S.done, "Four-role model per semantic colour (fill, on-fill text, on-surface text, tinted surface, tinted border) — the missing tinted-surface token was the structural reason 49 hardcoded colours existed. Primary darkened teal-600 → teal-700: white-on-primary was 3.74:1 and failed AA despite the style guide claiming compliance; now 5.47:1. Dark theme given its own values rather than the light hexes copied verbatim. Explicit radii, two elevations, one focus ring, named type scale"],
+        ["N1", "UI primitives", S.done, "page-header, field, callout, empty-state, error-state, data-table, stat, confirm-dialog, number-stepper, skeletons; Button gains destructive-quiet, a 56px workout size and a loading prop; Input gains 36/44/56 sizes; Badge gains semantic variants"],
+        ["N2", "Token ratchet in lint", S.done, "scripts/check-design-tokens.ts, baselined at 487 violations and wired into npm run lint so a later phase cannot regress an earlier one. Currently 209"],
+        ["N3", "Exercises surface", S.done, "487 → 386. Table rebuilt on DataTable with whole-row link targets; instructional prose moved to 18px (was 14px, below the guide's floor); guidance-card rebuilt on Card + Stat + Callout"],
+        ["N4", "Workouts and builder", S.done, "386 → 306. Two real layout bugs found in the browser, not by tests: 44px controls collapsed the flex-1 min-w-0 name box to zero, and a long exercise name pushed a card to 527px inside a 375px viewport"],
+        ["N5", "Workout Mode", S.done, "306 → 274. NumberStepper (56px field + 56px +/- buttons, stepping by plate increment) implements a style-guide requirement that had never been built. Fixed an app-wide bug in cn(): tailwind-merge treated the named type scale as text-colour classes, so every Field label silently rendered at the inherited size"],
+        ["N6", "History and charts", S.done, "274 → 209. Recharts styling extracted to chart-theme.ts. Charts verified against real data for the first time, using a throwaway profile seeded with six weeks of sessions, then deleted"],
+        ["N7", "Profile and admin surfaces", S.done, "209 → 90. Both delete flows moved onto ConfirmDialog, which the primitive was designed for (its own docs name a PIN field as the example child) — the profile's PIN confirmation had been a hand-rolled expanding panel and the admin's an inline three-button row. Admin table rebuilt on DataTable with mono tabular counts; stat tiles onto Stat; a hand-rolled radio group in profile-editor given real radiogroup/radio semantics and a 44px target, having previously been unlabelled divs. 10 tests added (263 → 273), including a mutation check confirming the PIN-length test actually fails when the validation is removed"],
+        ["N8", "Onboarding and home", S.notStarted, "90 violations left — profile-selector (14), step-4-complete (18), step-1-profile (7), the other onboarding steps (12), home page (7), profile page (5), profile-switcher dialog (4), login form (3), plus app-shell stragglers. Clears the ratchet to zero"],
+      ],
+      EPIC_WIDTHS,
+    ),
+
+    h2("Epic O — Rendered Muscle Diagrams"),
+    p(
+      "Sequenced deliberately after Epic N: a supplied set of 1,218 anatomical renders replaces the custom SVG muscle diagram built in Epic D. Assets delivered 29 July 2026 to Images/Exercise_Muscle_Group_Diagrams_1218/ in the Drive folder.",
+      { muted: true },
+    ),
+    table(
+      EPIC_COLS,
+      [
+        ["O1", "Map filenames to exercise ids", S.done, "Verified 29 July 2026 ahead of the epic: all 1,218 filenames map 1:1 onto exercise names, zero unmatched, zero ambiguous, zero duplicate names in the database. Requires only case-folding, & → and, and collapsing non-alphanumerics. This was the main integration risk and it is not one"],
+        ["O2", "Decide asset hosting", S.notStarted, "133 MB total, ~110 KB per file. Too large to commit to /public — needs Vercel Blob or equivalent, which is the first time this project has needed object storage"],
+        ["O3", "Replace the SVG diagram on exercise pages", S.notStarted, "Swap the Epic D component; keep the SVG as fallback for any exercise without a render"],
+        ["O4", "Accessibility and dark theme", S.notStarted, "See section 4, items 42-44 — baked-in text, a fixed white background and a palette that contradicts the style guide are all real problems these images bring with them"],
       ],
       EPIC_WIDTHS,
     ),
@@ -276,6 +350,18 @@ export async function generateProjectPlan() {
         ["32", "Workout Mode steps through a superset or circuit block's exercises sequentially (all of exercise A's sets, then all of exercise B's) rather than interleaving rounds (A, B, A, B, ...) the way the block's rest-per-round data model implies. The manual builder (Epic E) and duration estimator (Epic E5) both already model true round-robin rest; only the guided runtime takes the simpler sequential path. Documented simplification, not a data model gap — src/domain/session-flow.ts.", "Assumed"],
         ["33", "Epic I's volume calculations (weight × reps, summed) are unit-naive: they add up the raw weight numbers regardless of the recorded weight_unit, on the assumption a profile logs consistently in one unit. Workout Mode's per-set kg/lb toggle (Epic H3) makes mixed units within one profile's history possible in principle; a chart or session total spanning both would be numerically meaningless without conversion. Not yet a real-world issue (weight_unit defaults to the profile's preference every set), but worth converting to a common unit before trusting a mixed-unit history — src/domain/session-history.ts.", "Assumed"],
         ["34", "Muscle balance (J3) uses a fixed 4-week window and counts only each exercise's primary muscle (secondary/stabilizer excluded) — both reasonable starting defaults, not derived from any spec requirement. A configurable window and/or secondary-muscle weighting would need real usage to know if they're worth the added complexity.", "Assumed"],
+        ["35", "Profile PINs (M3) are weaker than the feature implies, in two specific ways. (a) src/lib/pin.ts uses a single hardcoded salt (\"exercise-partner-salt\") shared by every profile, so identical PINs produce identical hashes: anyone with database read access can see which profiles share a PIN, and one precomputed table covers the entire 4-6 digit keyspace at once. A per-profile random salt stored alongside the hash is the fix. (b) There is no attempt limiting on PIN verification, so a 4-digit PIN is exhaustible in 10,000 requests. Both are acceptable only because the PIN guards profile deletion behind an already-shared site password, not because they are sound. verifyPin also compares with === rather than the constant-time helper the site gate uses.", "Open"],
+        ["36", "The admin dashboard (M4) is described in its own commit as a \"secure two-factor\" gate. It is not, and must be fixed before K5 (production deploy). The admin_session cookie's value is the literal string \"authenticated\" — it is unsigned, so anyone who can already reach the app can set that one cookie in devtools and get full admin access, including deleting any profile and all of its training history. The ADMIN_TOKEN is bypassed entirely. Two further problems: SITE_PASSWORD and ADMIN_TOKEN both fall back to hardcoded defaults (\"change-me\", \"change-me-in-production\") if the env vars are unset, and both are compared with !== rather than constant-time. Note this is not remotely exploitable today — /admin sits behind the site password gate in src/proxy.ts — but the shared site password is held by every intended user, which is exactly the population the admin token is meant to exclude. The fix is to reuse the HMAC-signed cookie pattern already implemented in src/lib/auth.ts, which the site gate has used correctly since Epic C. Also note \"two-factor\" is a misnomer: two static shared secrets submitted in the same form are two passwords, not two factors.", "Open"],
+        ["37", "Three .sql files sit directly in drizzle/ (0002_curation_tracking, 0003_remove_breathing_movement_pattern, 0004_exercise_experience_guidance) rather than in drizzle/migrations/, and are absent from the journal. They look like migrations and are not — Drizzle never runs them, and their numbers collide with real migrations of the same index. Related: migrations 0005 and 0006 genuinely had SQL files with no journal entries and so had never run; that was found and fixed in commit 1396bd1 by registering both and making them idempotent. The stray files should be deleted or moved to an archive/ folder.", "Open"],
+        ["38", "Scripts loaded only .env (local Postgres) while Next.js loads .env.local (Neon), so script writes went to a different database than the app read from. Fixed in 1396bd1 with scripts/load-env.ts, matching Next.js precedence. The same mismatch existed in playwright.config.ts and caused a failed e2e run to orphan a throwaway profile in the production database; fixed in 8dfb2dd.", "Resolved"],
+        ["39", "L3 is deliberately partial: exercise-specific tips and common mistakes were hand-written for 20 representative exercises only. The other ~1,198 fall back to their guidance pattern's generic cue. This is honest rather than fabricated — generating per-exercise coaching text at scale without review would violate the \"never present derived data as sourced fact\" rule — but it does mean the depth of an exercise page varies a lot depending on which one you land on.", "Decided"],
+        ["40", "The guidance system's pattern routing (seed-exercise-guidance-overrides.ts) assigns every exercise a beginner_* pattern based on movement type, and the intermediate/advanced patterns exist but are never assigned by the seeder. The level/goal personalisation is therefore wired end-to-end but currently exercises only 5 of its 15 patterns until a profile's own experienceLevel selects a different one at read time.", "Assumed"],
+        ["41", "The profiles table's schema comment still reads \"Lightweight — no credentials\", which stopped being true when pinHash was added in M3. Cosmetic, but it is the kind of stale comment that misleads someone auditing where credentials live.", "Open"],
+        ["42", "The supplied muscle diagrams (Epic O) have their text baked into the raster image — the \"MUSCLES WORKED\" heading, the exercise name, and a \"Primary: Chest / Secondary: Shoulders, Triceps\" legend are all pixels. That text is invisible to screen readers, unselectable and untranslatable, so each image needs alt text generated from the database rather than relying on what the picture says. It also means the image can silently disagree with the database if either changes; the database should stay the source of truth and the legend be treated as decoration.", "Open"],
+        ["43", "The diagrams use orange for primary and dark navy for secondary muscle involvement. VISUAL_STYLE_GUIDE.docx specifies a single-hue teal ramp for exactly this purpose, chosen so involvement reads as intensity rather than as unrelated categories. Being raster, the images cannot be re-themed. Either the style guide's muscle ramp is amended to match the supplied assets, or the app accepts one surface that visibly contradicts its own palette. This is a decision to make before O3, not after.", "Open"],
+        ["44", "The diagrams are rendered on an opaque white card with a dark navy header bar. The app supports a dark theme; dropping a white panel into a dark exercise page will look wrong. Options are a container treatment that frames them deliberately, a filter, or accepting it. Needs a real look in both themes before committing.", "Open"],
+        ["46", "ADMIN_TOKEN is not set in this project's .env.local (confirmed 29 July 2026 by checking for the variable's presence, not its value). Because src/app/admin/login/actions.ts falls back to a hardcoded default when the variable is missing, the admin token on this configuration is currently the literal string \"change-me-in-production\". This moves item 36 from a design weakness to a live one: the second factor is not merely bypassable via the unsigned cookie, it is also a publicly-known constant. Either set ADMIN_TOKEN or make the code refuse to start without it, the way src/proxy.ts already refuses without SESSION_SECRET.", "Open"],
+        ["45", "Epic O's assets are 133 MB across 1,218 files — the first thing in this project too large to live in the repository. /public would bloat every deployment and the git history permanently. Object storage (Vercel Blob) is the presumed answer but has not been set up or costed.", "Open"],
       ],
       [6, 79, 15],
     ),
@@ -286,6 +372,26 @@ export async function generateProjectPlan() {
       [
         [
           formatDate(),
+          "Epic N7 complete (design system on the profile and admin surfaces). Token violations 209 → 90; tests 263 → 273. Both destructive flows moved onto the ConfirmDialog primitive rather than staying hand-rolled: /profile's PIN confirmation had been an expanding inline panel and the admin table's an inline three-button row, and neither kept the failure reason visible the way the primitive does. The admin table moved onto DataTable with mono tabular counts, its stat tiles onto Stat, and its empty case onto EmptyState. profile-editor's level/goal pickers were unlabelled divs of buttons with no radio semantics and a sub-44px target; they are now a real radiogroup with aria-checked and a 44px floor. Two pieces of copy were corrected rather than restyled, because restyling them would have preserved something false: the admin dashboard's green \"✓ Secure Connection — protected by two-factor authentication\" panel now states plainly that the session cookie is unsigned and the gate is bypassable (section 4, item 36), and the admin login's security note now says what an attacker actually gets. 10 tests added, including a deliberate mutation check that confirmed the PIN-length test fails when the validation is removed rather than passing vacuously. Verified in a real browser at 1280px and 375px in both themes, via a new throwaway Playwright spec (e2e/n7-screenshots.spec.ts) that creates its own profile and asserts the cleanup actually removed it. The first run of that spec was itself wrong and produced twelve screenshots labelled with two themes but rendered in one: it toggled a data-theme attribute, while the app selects its theme with a dark class on <html> applied pre-hydration by NO_FLASH_THEME_SCRIPT. Corrected, then re-run. Confirmed with the real markup that a fixed bottom tab bar appearing over content in the full-page captures is a screenshot artifact, not a layout bug — the shell already reserves pb-20 md:pb-0.",
+        ],
+        [
+          formatDate(),
+          "Documentation brought current after 17 undocumented commits (the generators had not been touched since Epic J). Three epics added to reflect what was actually built: L (Content Curation & Guidance), M (Profiles, Onboarding & Admin) and N (Design System Adoption). Epic K's statuses corrected from Not Started to In Progress where later work had covered them incidentally. Verified against the code rather than the commit messages, which found three things the commits had overstated or missed: the admin dashboard's session cookie is unsigned and its \"secure two-factor\" claim is false (section 4, item 36 — now blocking K5); profile PINs share one hardcoded salt and have no attempt limiting (item 35); and three stray .sql files in drizzle/ are not migrations despite looking like them (item 37). Current verified state: 263 tests across 34 files passing, typecheck clean, lint clean apart from one unused-directive warning, 209 design-token violations remaining.",
+        ],
+        [
+          "29 July 2026",
+          "Epic N phases 0-6 complete (Design System Adoption). VISUAL_STYLE_GUIDE.docx had existed since Epic A but had never been enforced; this epic made it real. N0 rebuilt the colour tokens on a four-role model (fill, on-fill text, on-surface text, tinted surface, tinted border) and fixed a genuine accessibility failure — white-on-primary was 3.74:1 and failed AA despite the style guide claiming compliance, now 5.47:1 after darkening teal-600 to teal-700. N1 added ten new primitives. N2 wired scripts/check-design-tokens.ts into npm run lint as a ratchet baselined at 487 violations, so no later phase can regress an earlier one. N3-N6 then moved the exercises, workouts/builder, Workout Mode and history surfaces onto them, taking violations 487 → 209 and tests 166 → 263. Three real bugs were found by doing this that tests had not caught: cn() silently dropped every named type-scale class because tailwind-merge treated them as text-colour classes (so every Field label rendered at the wrong size); a 44px control collapsed the builder's flex-1 min-w-0 name box to zero width; and a long exercise name pushed a card to 527px inside a 375px viewport. Workout Mode's NumberStepper implements a 56px +/- requirement the style guide had always specified and no code had ever built. History's charts were verified against real data for the first time, using a throwaway six-week profile that was then deleted. Phases N7 (profile/admin, 84 violations) and N8 (onboarding/home, 30) remain.",
+        ],
+        [
+          "28 July 2026",
+          "Epic M complete (Profiles, Onboarding & Admin). A four-step onboarding flow (name → experience level → training goal → completion) writes experienceLevel and trainingGoal onto the profile, which then select which guidance pattern each exercise page shows. Home gains a profile selector and creation; /profile gains an editor and a delete section. Profile deletion is gated by a 4-6 digit PIN hashed with PBKDF2-SHA256 at 100k iterations. An /admin dashboard lists every profile with stats and can delete one bypassing its PIN. Two security weaknesses are recorded rather than glossed: the admin session cookie is unsigned and therefore forgeable (section 4, item 36), and the PIN salt is hardcoded and shared across profiles with no attempt limiting (item 35). Neither is remotely exploitable — /admin sits behind the site password gate — but item 36 blocks K5 (production deploy). Also fixed a real bug where getActiveProfileId() returned the raw cookie without checking the profile still existed, so a cookie outliving its profile made roughly 20 call sites believe a deleted profile was active.",
+        ],
+        [
+          "28 July 2026",
+          "Epic L complete apart from L4 (Content Curation & Guidance). 1,216 of 1,218 exercises had their placeholder \"Varies / Not specified\" instructions and starting positions replaced with real sourced content from muscleandstrength.com, via a rate-limited, locally-cached, transactionally-batched scraper tracked per-exercise in a new curation_status table; the run completed 99.84% in about 45 minutes with no manual intervention, leaving 2 exercises flagged needs_review. Content is written as global (profileId=null) rows in the existing exercise_overrides layer, so a spreadsheet re-import cannot clobber it — the Epic B separation rule doing exactly the job it was designed for. A guidance layer was added on a two-table pattern (15 canonical guidance_patterns + 1,218 exercise_guidance_overrides), replacing an abandoned single-table design that would have required 18,270 redundant rows to say the same thing; see docs/GUIDANCE_ARCHITECTURE.md. Exercise-specific tips and common mistakes were hand-written for 20 representative exercises only, with the rest falling back to pattern-level cues — deliberately partial rather than fabricated (section 4, item 39).",
+        ],
+        [
+          "27 July 2026",
           "Epic J complete (Intelligence Foundation) — substrate for future intelligence features, not the features themselves. J1: getMuscleVolumePoints() + groupMuscleVolumeByWeek() (src/domain/training-metrics.ts) derive volume per primary muscle group per week per profile, joining session_sets through exercise_muscles (primary role only, so a compound lift's volume isn't double-counted across every muscle it merely assists). J2: src/domain/progression.ts defines the contract a future \"suggest next weight\" feature would need (ProgressionInput/ProgressionSuggestion/ProgressionStrategy) with a NOT_IMPLEMENTED_PROGRESSION_STRATEGY that throws rather than fabricating a suggestion — deliberately no algorithm yet. J3: a \"Muscle balance\" panel on /history ranks primary-muscle volume over the last 4 weeks as a plain read-only bar list — verified against real logged sets (Quads 810 vs Chest 300, matching the hand-computed weight x reps) — with no interpretive text suggesting what, if anything, to do about the ranking. All J1/J3 aggregation is pure and unit-tested (8 tests, src/domain/training-metrics.ts).",
         ],
         [

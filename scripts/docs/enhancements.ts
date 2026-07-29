@@ -45,7 +45,27 @@ export async function generateEnhancements() {
         [
           "Deterministic workout assessment",
           "On the workout builder: which muscles the workout trains (and which body regions it doesn't touch), a weight-selection tip inferred from the rep ranges actually prescribed, and a recovery tip based on the muscle groups hit — all rule-based, no AI call",
-          formatDate(),
+          "26 July 2026",
+        ],
+        [
+          "Exercise content curation",
+          "Replaced the placeholder \"Varies / Not specified\" instructions and starting positions on 1,216 of 1,218 exercises with real sourced content, written into the override layer so a re-import cannot clobber it (Epic L1)",
+          "28 July 2026",
+        ],
+        [
+          "Level- and goal-aware prescriptions",
+          "Sets, reps, RPE and tempo on each exercise page adapt to the profile's experience level and training goal, via 15 canonical guidance patterns rather than per-exercise duplication (Epic L2)",
+          "28 July 2026",
+        ],
+        [
+          "Personal record detection",
+          "Moved up from \"Not Yet Implemented\" — a PR panel on /history flags the best performance per exercise",
+          "28 July 2026",
+        ],
+        [
+          "Design token lint ratchet",
+          "scripts/check-design-tokens.ts counts raw colours, off-scale text and spacing against a recorded baseline that may only decrease, wired into npm run lint so style drift fails CI instead of accumulating (Epic N2)",
+          "28 July 2026",
         ],
       ],
       [24, 56, 20],
@@ -65,7 +85,7 @@ export async function generateEnhancements() {
         [
           "Photorealistic exercise images",
           "Real photography or generated images showing each exercise's start and end position, exported in full, thumbnail, and mobile sizes; thumbnails would replace the current hotlinked source images in the library card list",
-          "The spreadsheet has only one static thumbnail per exercise (see TECHNICAL_SPEC.docx \"Media\" limitations) — this is the closest thing to the spec's original \"photorealistic visual\" requirement, but it's a production asset pipeline, not app code, and not worth doing more than once",
+          "The spreadsheet has only one static thumbnail per exercise (see TECHNICAL_SPEC.docx \"Media\" limitations) — this is the closest thing to the spec's original \"photorealistic visual\" requirement, but it's a production asset pipeline, not app code, and not worth doing more than once. Note this is still outstanding: the rendered muscle diagrams supplied on 29 July 2026 show which muscles a movement works, not how to perform it, so they do not cover this",
           "Large",
         ],
         [
@@ -88,7 +108,6 @@ export async function generateEnhancements() {
         ["Rest timer alerts", "Audio cue and vibration when rest ends, working with the screen off or the app backgrounded", "A silent timer is useless once the phone is in a pocket", "Small"],
         ["Warm-up set generation", "Auto-propose warm-up ramp sets from the first working set's load", "Standard practice for compound lifts; tedious to enter by hand every session", "Small"],
         ["Estimated 1RM", "Calculate and trend estimated one-rep max from logged sets (Epley / Brzycki)", "Turns raw set logs into a progress signal without needing a max-effort test", "Small"],
-        ["Personal record detection", "Automatically flag when a set beats the best previous performance for that exercise", "The single most motivating piece of feedback history can produce", "Medium"],
         ["Previous performance inline", "Show last session's weight and reps next to each set input during a workout", "Answers \"what did I do last time?\" without leaving Workout Mode", "Small"],
       ],
       WIDTHS,

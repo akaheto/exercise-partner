@@ -85,7 +85,10 @@ export async function generateTechnicalSpec() {
       "Server Actions are reachable directly by request, independent of Proxy's route matching, so a matcher change or route refactor could silently stop protecting one without the other — this is called out in Next's own Proxy docs. Every Server Action that writes app data calls requireSiteSession() (src/lib/require-site-session.ts) itself rather than trusting Proxy alone.",
     ),
     p(
-      "A separate httpOnly cookie (active_profile_id) scopes the UI to one profile at a time; switching profiles is a Server Action that overwrites the cookie and revalidates the layout. This is a data-scoping convenience, not a security boundary — see the Key Decisions table below.",
+      "A separate httpOnly cookie (active_profile_id) scopes the UI to one profile at a time; switching profiles is a Server Action that overwrites the cookie and revalidates the layout. This is a data-scoping convenience, not a security boundary — see the Key Decisions table below. As of Epic M5 the cookie is validated against the database before it is trusted: getActiveProfileId() returns null when the referenced profile no longer exists, because a cookie outliving its profile previously made roughly 20 call sites believe a deleted profile was active.",
+    ),
+    rich(
+      "Two further gates were added in Epic M, and **neither is as strong as its feature name suggests.** Profile deletion requires a 4-6 digit PIN (PBKDF2-SHA256, 100k iterations) — but the salt is hardcoded and shared across all profiles, and there is no attempt limiting. The /admin dashboard requires the site password plus a separate ADMIN_TOKEN — but the session cookie it issues is unsigned, so the token can be bypassed by setting one cookie by hand. Both are detailed in section 6; the admin one blocks production deployment.",
     ),
 
     h1("3. Tech Stack"),
@@ -142,8 +145,11 @@ export async function generateTechnicalSpec() {
     table(
       ["Table", "Key columns", "Notes"],
       [
-        ["profiles", "id, display_name, avatar, preferred_weight_unit, created_at", "Lightweight; no credentials"],
-        ["exercise_overrides", "exercise_id, profile_id (nullable = global), field, value, updated_at", "Sparse per-field overrides layered over source at read time"],
+        ["profiles", "id, display_name, avatar, preferred_weight_unit, experience_level, training_goal, pin_hash, created_at", "No longer credential-free: experience_level and training_goal were added in Epic M1 (they select the guidance pattern an exercise page shows), and pin_hash in M3 (PBKDF2-SHA256, 100k iterations, gates profile deletion). The schema comment in src/db/schema/app.ts still reads \"Lightweight — no credentials\" and is stale"],
+        ["exercise_overrides", "exercise_id, profile_id (nullable = global), field, value, updated_at", "Sparse per-field overrides layered over source at read time. Epic L1's 2,432 curated instruction/starting-position rows are stored here as global (profile_id = null) overrides, so a spreadsheet re-import cannot clobber them"],
+        ["curation_status", "exercise_id, status, source, fetched_at, error", "Per-exercise progress tracking for the Epic L1 curation run — which exercises succeeded, which need review, and why"],
+        ["guidance_patterns", "id (PK, e.g. beginner_strength), experience_level, training_goal, recommended_sets, recommended_reps_min, recommended_reps_max, target_rpe, tempo, breathing_cue, form_cue", "15 canonical rows = 3 experience levels × 5 training goals. Updating guidance for a level/goal combination is a one-row update that every exercise using it inherits through the FK join"],
+        ["exercise_guidance_overrides", "id, exercise_id (UNIQUE FK), pattern_id (FK), regression_tier_1..3_exercise_id + notes, alternative_1..2_exercise_id + notes, required_mobility, contraindicated_for, minimum_experience_level, exercise_specific_form_cue, beginner_safety_cue", "1,218 rows, one per exercise: which pattern it follows, plus optional exercise-specific customisations. All override columns are nullable — null means inherit the pattern"],
         ["equipment_inventory", "profile_id, equipment_id, status, notes", "What each person actually has — drives generator filtering"],
         ["workouts", "id, profile_id, name, description, version, parent_workout_id, archived_at, created_at, updated_at", "Templates. Editing creates a new version rather than mutating in place"],
         ["workout_blocks", "id, workout_id, position, kind (single | superset | circuit), rest_seconds", "Grouping layer that Workout Mode understands"],
@@ -177,6 +183,9 @@ export async function generateTechnicalSpec() {
         ["Workout versioning over in-place edits", "History must stay truthful about what was actually prescribed", "More rows, and UI must make 'which version' legible"],
         ["Custom SVG muscle diagrams", "The spreadsheet has no diagram assets; a body map is the clearest way to show involvement", "Real build effort, and accuracy is approximate at muscle-group granularity"],
         ["Generator as pure functions", "Judgement logic must be testable without a database", "Requires threading candidate data in explicitly rather than querying inline"],
+        ["Guidance as patterns + overrides, not one wide table", "15 canonical rows plus 1,218 mappings say what 18,270 redundant rows would have said; changing guidance for a level/goal combination becomes a one-row update", "Every guidance read is a join, and per-exercise customisation has to be modelled as explicit nullable override columns"],
+        ["Curated content written into the existing override layer", "Epic B's rule that imported and app-owned data never share a table means 2,432 scraped instruction rows survive a spreadsheet re-import for free", "Curation is invisible in source_exercises; anything inspecting the source tables directly sees the old placeholder text"],
+        ["Design tokens enforced by a lint ratchet", "The style guide had existed since Epic A and was being ignored; a baselined counter that can only decrease makes drift fail CI instead of accumulating", "A hand-maintained baseline file, and the check is textual — it catches raw hex and off-scale classes, not visual wrongness"],
       ],
       [24, 38, 38],
     ),
@@ -200,7 +209,15 @@ export async function generateTechnicalSpec() {
     bullet("Estimated workout duration is a model, not a measurement. It should be calibrated against real recorded session durations once history exists."),
     bullet("Profiles do not isolate data securely; anyone with the site password can view or switch to any profile."),
 
+    h3("Security — found by auditing the code against its own commit messages, 29 July 2026"),
+    bullet("The admin session cookie is unsigned and therefore forgeable. Its value is the literal string \"authenticated\", and src/app/admin/page.tsx admits anyone presenting it. Setting one cookie in devtools grants full admin access, including deletion of any profile and all of its training history, bypassing ADMIN_TOKEN entirely. Not remotely exploitable — /admin sits behind the site password gate in src/proxy.ts — but the shared site password is held by every intended user, which is precisely the population the admin token exists to exclude. The fix is to reuse the HMAC-signed cookie pattern already correct in src/lib/auth.ts. This blocks Epic K5 (production deploy)."),
+    bullet("SITE_PASSWORD and ADMIN_TOKEN both fall back to hardcoded defaults (\"change-me\", \"change-me-in-production\") when their env vars are unset, so a misconfigured deployment is silently reachable with publicly-known credentials rather than failing closed. Contrast src/proxy.ts, which correctly returns a 500 when SESSION_SECRET is missing."),
+    bullet("The admin gate is described in its commit as \"two-factor\". It is not — two static shared secrets submitted through the same form are two passwords. Both are compared with !== rather than the constant-time helper the site gate uses."),
+    bullet("Profile PINs use one hardcoded salt (\"exercise-partner-salt\") shared by every profile, so identical PINs yield identical hashes. Anyone with database read access can see which profiles share a PIN, and one precomputed table covers the whole 4-6 digit keyspace. A per-profile random salt stored beside the hash is the fix. There is also no attempt limiting, so a 4-digit PIN is exhaustible in 10,000 requests, and verifyPin compares with === rather than constant-time."),
+
     h3("Technical"),
+    bullet("Three .sql files sit directly in drizzle/ (0002_curation_tracking, 0003_remove_breathing_movement_pattern, 0004_exercise_experience_guidance) instead of drizzle/migrations/, and are not in the journal. Drizzle never runs them, and their indices collide with real migrations of the same number. Related: migrations 0005 and 0006 genuinely had SQL files with no journal entries and had therefore never run — found and fixed in commit 1396bd1 by registering both and making them idempotent."),
+    bullet("Guidance pattern routing currently assigns every exercise a beginner_* pattern based on movement type, so 10 of the 15 patterns are reachable only once a profile's own experience level selects them at read time. The personalisation is wired end to end but lightly exercised."),
     bullet("12 npm audit advisories are dev-only transitive dependencies (ESLint toolchain, PostCSS). Not shipped to users; the only fix is a breaking ESLint 10 upgrade that eslint-config-next does not yet support."),
     bullet("exceljs (used to read the source spreadsheet in the import pipeline) pulls in further advisories via its zip-writer dependency chain, which reading a file never exercises. Chosen over xlsx/SheetJS, whose read-path prototype-pollution and ReDoS CVEs have no fix available."),
     bullet("Workout Mode autosave must survive backgrounded mobile tabs, which browsers may suspend aggressively. This needs real device testing, not just desktop."),
