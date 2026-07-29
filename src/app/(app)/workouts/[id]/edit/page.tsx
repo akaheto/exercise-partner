@@ -6,6 +6,7 @@ import { BlockList } from "@/components/workout-builder/block-list";
 import { WorkoutMetaForm } from "@/components/workout-builder/workout-meta-form";
 import { WorkoutAssessmentPanel } from "@/components/workout-assessment/workout-assessment-panel";
 import { WorkoutSessionHistoryPanel } from "@/components/history/workout-session-history-panel";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getWorkoutForEdit } from "@/db/queries/workouts";
 import { getSubstitutionCandidates, getExerciseGuidance } from "@/db/queries/exercises";
@@ -76,22 +77,25 @@ export default async function WorkoutBuilderPage({ params }: { params: Promise<{
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 md:px-6">
-      <Link href="/workouts" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="size-4" /> Back to workouts
+      <Link
+        href="/workouts"
+        className="mb-4 inline-flex min-h-11 items-center gap-2 text-small text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="size-4" aria-hidden="true" /> Back to workouts
       </Link>
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <WorkoutMetaForm workoutId={workout.id} name={workout.name} description={workout.description} />
         <div className="flex shrink-0 items-center gap-2">
           {minutes > 0 && (
-            <span className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground">
-              <Clock className="size-4" aria-hidden="true" /> ~{minutes} min
-            </span>
+            <Badge variant="muted" className="gap-1">
+              <Clock aria-hidden="true" /> ~{minutes} min
+            </Badge>
           )}
           {allItems.length > 0 && (
             <form action={startSession.bind(null, workout.id)}>
-              <Button type="submit" className="gap-1.5">
-                <Play className="size-4" /> Start workout
+              <Button type="submit" className="gap-2">
+                <Play className="size-4" aria-hidden="true" /> Start workout
               </Button>
             </form>
           )}

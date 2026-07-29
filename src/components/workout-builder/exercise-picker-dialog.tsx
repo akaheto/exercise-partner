@@ -2,7 +2,8 @@
 
 import { useState, useTransition, type ReactElement } from "react";
 import Image from "next/image";
-import { Dumbbell, Search } from "lucide-react";
+import { Dumbbell, Search, SearchX } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Dialog,
   DialogContent,
@@ -74,8 +75,22 @@ export function ExercisePickerDialog({
 
         <ul className="max-h-80 space-y-1 overflow-y-auto">
           {results.length === 0 && !isSearching && (
-            <li className="py-6 text-center text-sm text-muted-foreground">
-              {query ? "No exercises match." : "Start typing to search."}
+            <li>
+              {query ? (
+                <EmptyState
+                  size="compact"
+                  icon={SearchX}
+                  title="No exercises match that search"
+                  description={`Nothing in the library is named like “${query}”. Try a shorter word, or part of the equipment name.`}
+                />
+              ) : (
+                <EmptyState
+                  size="compact"
+                  icon={Search}
+                  title="Search the library"
+                  description="Type an exercise name to see matches from the library."
+                />
+              )}
             </li>
           )}
           {results.map((r) => (
@@ -96,8 +111,8 @@ export function ExercisePickerDialog({
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-foreground">{r.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="truncate text-body font-medium text-foreground">{r.name}</p>
+                  <p className="truncate text-small text-muted-foreground">
                     {[r.primaryMuscle, r.equipment].filter(Boolean).join(" · ")}
                   </p>
                 </div>

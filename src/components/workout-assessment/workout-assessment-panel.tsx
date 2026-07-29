@@ -1,6 +1,18 @@
-import { Dumbbell, Moon, Scale } from "lucide-react";
+import type { ReactNode } from "react";
+import { Dumbbell, Moon, Scale, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import type { WorkoutAssessment } from "@/domain/workout-assessment";
+
+/** Sentence-case section label. D4 reserves the uppercase caption treatment
+ * for form field labels and Stat labels. */
+function SectionHeading({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
+  return (
+    <h2 className="flex items-center gap-2 text-caption font-semibold text-foreground">
+      <Icon className="size-4 text-primary-text" aria-hidden="true" /> {children}
+    </h2>
+  );
+}
 
 /**
  * Deterministic, rule-based — computed from what's actually in the workout
@@ -11,12 +23,10 @@ export function WorkoutAssessmentPanel({ assessment }: { assessment: WorkoutAsse
   if (assessment.primaryMuscles.length === 0 && assessment.secondaryMuscles.length === 0) return null;
 
   return (
-    <div className="space-y-4 rounded-2xl border border-border bg-card p-4">
-      <div>
-        <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground">
-          <Dumbbell className="size-4 text-primary" aria-hidden="true" /> Muscles worked
-        </h2>
-        <div className="flex flex-wrap gap-1.5">
+    <Card>
+      <CardContent className="space-y-2">
+        <SectionHeading icon={Dumbbell}>Muscles worked</SectionHeading>
+        <div className="flex flex-wrap gap-2">
           {assessment.primaryMuscles.map((m) => (
             <Badge key={m}>{m}</Badge>
           ))}
@@ -27,29 +37,28 @@ export function WorkoutAssessmentPanel({ assessment }: { assessment: WorkoutAsse
           ))}
         </div>
         {assessment.missingRegions.length > 0 && (
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="text-small text-muted-foreground">
             Not covered: {assessment.missingRegions.join(", ")}.
           </p>
         )}
-      </div>
+      </CardContent>
 
-      <div>
-        <h2 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-foreground">
-          <Scale className="size-4 text-primary" aria-hidden="true" /> Choosing weight
-        </h2>
-        <p className="text-sm text-muted-foreground">{assessment.weightRepTip}</p>
-      </div>
+      <CardContent className="space-y-1">
+        <SectionHeading icon={Scale}>Choosing weight</SectionHeading>
+        <p className="text-body text-muted-foreground">{assessment.weightRepTip}</p>
+      </CardContent>
 
-      <div>
-        <h2 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-foreground">
-          <Moon className="size-4 text-primary" aria-hidden="true" /> Recovery
-        </h2>
-        <p className="text-sm text-muted-foreground">{assessment.recoveryTip}</p>
-      </div>
+      <CardContent className="space-y-1">
+        <SectionHeading icon={Moon}>Recovery</SectionHeading>
+        <p className="text-body text-muted-foreground">{assessment.recoveryTip}</p>
+      </CardContent>
 
-      <p className="text-xs text-muted-foreground">
-        Rule-based, generated from this workout&apos;s exercises and rep ranges — not personalised medical or training advice.
-      </p>
-    </div>
+      <CardContent>
+        <p className="text-caption text-muted-foreground">
+          Rule-based, generated from this workout&apos;s exercises and rep ranges — not personalised
+          medical or training advice.
+        </p>
+      </CardContent>
+    </Card>
   );
 }

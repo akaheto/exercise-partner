@@ -3,6 +3,8 @@
 import { useActionState, useState } from "react";
 import { ArrowLeft, ArrowRight, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Callout } from "@/components/ui/callout";
+import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
 import { generateWorkoutAction, type GenerateWorkoutState } from "@/app/(app)/build/generate/actions";
 import {
@@ -55,12 +57,14 @@ function OptionCard({
       onClick={onClick}
       aria-pressed={selected}
       className={cn(
-        "w-full rounded-xl border p-3 text-left transition-colors",
+        // min-h-11 keeps every option at the 44px touch minimum; the option
+        // cards are the only control on most steps of the wizard.
+        "focus-ring flex min-h-11 w-full flex-col justify-center rounded-xl border p-3 text-left transition-colors",
         selected ? "border-primary bg-accent text-accent-foreground" : "border-border hover:bg-muted",
       )}
     >
-      <p className="text-sm font-medium">{title}</p>
-      {description && <p className="text-xs text-muted-foreground">{description}</p>}
+      <p className="text-body font-medium">{title}</p>
+      {description && <p className="text-small text-muted-foreground">{description}</p>}
     </button>
   );
 }
@@ -95,17 +99,24 @@ export function GeneratorWizard({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-foreground">Generate a workout</h1>
-        <p className="text-sm text-muted-foreground">
-          Step {step + 1} of {STEPS.length}: {STEPS[step]}
-        </p>
-        <div className="mt-2 flex gap-1">
+      <PageHeader
+        title="Generate a workout"
+        description={`Step ${step + 1} of ${STEPS.length}: ${STEPS[step]}`}
+        className="mb-6"
+      >
+        <div
+          className="flex gap-1"
+          role="progressbar"
+          aria-label="Wizard progress"
+          aria-valuenow={step + 1}
+          aria-valuemin={1}
+          aria-valuemax={STEPS.length}
+        >
           {STEPS.map((s, i) => (
             <div key={s} className={cn("h-1 flex-1 rounded-full", i <= step ? "bg-primary" : "bg-muted")} />
           ))}
         </div>
-      </div>
+      </PageHeader>
 
       {step === 0 && (
         <div className="space-y-2">
@@ -147,7 +158,9 @@ export function GeneratorWizard({
 
       {step === 4 && (
         <div>
-          <p className="mb-3 text-sm text-muted-foreground">What do you have access to? This is saved to your profile.</p>
+          <p className="mb-3 text-body text-muted-foreground">
+            What do you have access to? This is saved to your profile.
+          </p>
           <div className="grid max-h-80 grid-cols-2 gap-2 overflow-y-auto">
             {equipmentOptions.map((eq) => (
               <OptionCard key={eq.equipmentId} selected={haveIds.has(eq.equipmentId)} onClick={() => toggleEquipment(eq.equipmentId)} title={eq.name} />
@@ -157,18 +170,18 @@ export function GeneratorWizard({
       )}
 
       {state.error && (
-        <p role="alert" className="mt-4 text-sm text-destructive">
+        <Callout tone="danger" className="mt-4">
           {state.error}
-        </p>
+        </Callout>
       )}
       {state.warnings?.map((w, i) => (
-        <p key={i} className="mt-2 text-sm text-muted-foreground">
+        <Callout key={i} tone="warning" className="mt-2">
           {w}
-        </p>
+        </Callout>
       ))}
 
       <div className="mt-6 flex items-center justify-between">
-        <Button type="button" variant="outline" disabled={step === 0} onClick={() => setStep((s) => s - 1)} className="gap-1.5">
+        <Button type="button" variant="outline" disabled={step === 0} onClick={() => setStep((s) => s - 1)} className="gap-2">
           <ArrowLeft className="size-4" /> Back
         </Button>
 
@@ -187,12 +200,12 @@ export function GeneratorWizard({
             {equipmentOptions.filter((eq) => haveIds.has(eq.equipmentId)).map((eq) => (
               <input key={eq.equipmentId} type="hidden" name="equipmentName" value={eq.name} />
             ))}
-            <Button type="submit" disabled={isPending} className="gap-1.5">
-              <Wand2 className="size-4" /> {isPending ? "Generating…" : "Generate workout"}
+            <Button type="submit" loading={isPending} loadingLabel="Generating your workout" className="gap-2">
+              <Wand2 className="size-4" /> Generate workout
             </Button>
           </form>
         ) : (
-          <Button type="button" onClick={() => setStep((s) => s + 1)} className="gap-1.5">
+          <Button type="button" onClick={() => setStep((s) => s + 1)} className="gap-2">
             Next <ArrowRight className="size-4" />
           </Button>
         )}

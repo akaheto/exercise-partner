@@ -26,28 +26,28 @@ export function SelectionBar() {
 
   return (
     <div className="fixed inset-x-0 bottom-16 z-30 flex justify-center px-4 md:bottom-4">
-      <div className="flex w-full max-w-xl items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-lg">
-        <Dumbbell className="size-4 shrink-0 text-primary" aria-hidden="true" />
-        <span className="text-sm font-medium text-foreground">
+      <div className="flex w-full max-w-xl items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-overlay">
+        <Dumbbell className="size-4 shrink-0 text-primary-text" aria-hidden="true" />
+        <span className="text-body font-medium text-foreground">
           {selected.length} exercise{selected.length === 1 ? "" : "s"} selected
         </span>
-        <span className="flex items-center gap-1 text-sm text-muted-foreground">
-          <Clock className="size-3.5" aria-hidden="true" /> ~{minutes} min
+        <span className="flex items-center gap-1 text-small text-muted-foreground">
+          <Clock className="size-4" aria-hidden="true" /> ~{minutes} min
         </span>
 
         <div className="ml-auto flex items-center gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={clear} aria-label="Clear selection">
-            <X className="size-3.5" />
+          <Button type="button" variant="ghost" size="icon" onClick={clear} aria-label="Clear selection">
+            <X aria-hidden="true" />
           </Button>
           <Button
             type="button"
-            size="sm"
-            disabled={isPending}
+            loading={isPending}
+            loadingLabel="Creating the workout"
             onClick={() =>
               startTransition(() => createWorkoutFromSelection(selected.map((s) => s.exerciseId)))
             }
           >
-            {isPending ? "Creating…" : "Add to workout"}
+            Add to workout
           </Button>
         </div>
       </div>

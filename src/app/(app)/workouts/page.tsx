@@ -1,7 +1,9 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { ListChecks } from "lucide-react";
+import { Archive, ListChecks, UserRound } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
 import { WorkoutCard } from "@/components/workout-library/workout-card";
 import { WorkoutSearchBar } from "@/components/workout-library/workout-search-bar";
@@ -24,31 +26,65 @@ export default async function WorkoutsPage({
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 md:px-6">
-      <h1 className="mb-4 text-xl font-semibold text-foreground">Workouts</h1>
+      <PageHeader
+        title="Workouts"
+        description="Everything you've saved. Open one to edit it, or start it from here."
+        className="mb-4"
+      />
 
       <Suspense>
         <WorkoutSearchBar showArchived={showArchived} />
       </Suspense>
 
       {!profileId ? (
-        <p className="text-sm text-muted-foreground">Choose a profile to see its workouts.</p>
+        <EmptyState
+          icon={UserRound}
+          title="No profile selected"
+          description="Workouts belong to a profile. Choose one and its workouts show up here."
+          action={
+            <Link href="/profile" className={cn(buttonVariants({ variant: "default" }))}>
+              Choose a profile
+            </Link>
+          }
+        />
       ) : workouts.length === 0 ? (
-        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center">
-          <ListChecks className="size-10 text-muted-foreground" aria-hidden="true" />
-          <h2 className="text-lg font-semibold text-foreground">
-            {q || showArchived ? "No workouts match that." : "No workouts yet"}
-          </h2>
-          {!q && !showArchived && (
-            <>
-              <p className="max-w-sm text-sm text-muted-foreground">
-                Build one by hand, generate one, or select exercises from the library.
-              </p>
-              <Link href="/build" className={cn(buttonVariants({ variant: "default" }), "mt-2")}>
+        q ? (
+          <EmptyState
+            icon={ListChecks}
+            title="No workouts match that search"
+            description={`Nothing ${showArchived ? "in the archive" : "in your workouts"} matches “${q}”. Try a shorter word, or clear the search.`}
+            action={
+              <Link
+                href={showArchived ? "/workouts?archived=1" : "/workouts"}
+                className={cn(buttonVariants({ variant: "outline" }))}
+              >
+                Clear search
+              </Link>
+            }
+          />
+        ) : showArchived ? (
+          <EmptyState
+            icon={Archive}
+            title="Nothing archived"
+            description="Workouts you archive land here. You haven't archived any yet."
+            action={
+              <Link href="/workouts" className={cn(buttonVariants({ variant: "outline" }))}>
+                Back to your workouts
+              </Link>
+            }
+          />
+        ) : (
+          <EmptyState
+            icon={ListChecks}
+            title="No workouts yet"
+            description="Build one by hand, generate one, or select exercises from the library."
+            action={
+              <Link href="/build" className={cn(buttonVariants({ variant: "default" }))}>
                 Build a workout
               </Link>
-            </>
-          )}
-        </div>
+            }
+          />
+        )
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {workouts.map((w) => (

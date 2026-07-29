@@ -36,7 +36,7 @@ export function WorkoutMetaForm({
           value={nameValue}
           onChange={(e) => setNameValue(e.target.value)}
           onBlur={save}
-          className="h-auto border-none px-0 text-2xl font-semibold shadow-none focus-visible:ring-0"
+          className="h-auto min-h-11 border-none px-0 font-heading text-h1 shadow-none focus-visible:ring-0"
           placeholder="Workout name"
         />
       </div>
@@ -50,10 +50,14 @@ export function WorkoutMetaForm({
           onChange={(e) => setDescriptionValue(e.target.value)}
           onBlur={save}
           placeholder="Optional description"
-          className="h-9 border-none px-0 text-sm text-muted-foreground shadow-none focus-visible:ring-0"
+          className="border-none px-0 text-small text-muted-foreground shadow-none focus-visible:ring-0"
         />
       </div>
-      {isSaving && <p className="text-xs text-muted-foreground">Saving…</p>}
+      {isSaving && (
+        <p role="status" className="text-caption text-muted-foreground">
+          Saving…
+        </p>
+      )}
     </div>
   );
 }

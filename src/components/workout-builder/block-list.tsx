@@ -18,7 +18,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical } from "lucide-react";
+import { GripVertical, ListPlus } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { BlockCard } from "./block-card";
 import { reorderBlocks, type PickerExercise } from "@/app/(app)/workouts/[id]/edit/actions";
 import type { WorkoutBlockForEdit } from "@/db/queries/workouts";
@@ -50,11 +51,15 @@ function SortableBlock({
         {...attributes}
         {...listeners}
         aria-label="Drag to reorder"
-        className="mt-4 cursor-grab touch-none rounded p-1 text-muted-foreground hover:bg-muted active:cursor-grabbing"
+        // size-11 is the 44px touch minimum. The drag listeners are unchanged;
+        // only the hit area grew, so dnd-kit behaves exactly as before.
+        className="focus-ring flex size-11 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-muted-foreground hover:bg-muted active:cursor-grabbing"
       >
-        <GripVertical className="size-4" />
+        <GripVertical className="size-5" aria-hidden="true" />
       </button>
-      <div className="flex-1">
+      {/* min-w-0: a flex item defaults to min-width:auto, which lets a long
+          exercise name push the card past the viewport instead of truncating. */}
+      <div className="min-w-0 flex-1">
         <BlockCard
           block={block}
           substitutionCandidates={substitutionCandidates}
@@ -110,9 +115,13 @@ export function BlockList({
 
   if (ordered.length === 0) {
     return (
-      <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-        No exercises yet — add one below to get started.
-      </p>
+      <EmptyState
+        size="compact"
+        icon={ListPlus}
+        title="No exercises in this workout"
+        description="Add one below. You can group exercises into a superset or circuit once there is more than one."
+        className="rounded-xl border border-dashed border-border"
+      />
     );
   }
 

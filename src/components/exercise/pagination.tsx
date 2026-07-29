@@ -16,7 +16,7 @@ export function Pagination({ filters, pageCount }: { filters: ExerciseFilters; p
         aria-disabled={prevDisabled}
         tabIndex={prevDisabled ? -1 : undefined}
         className={cn(
-          buttonVariants({ variant: "outline", size: "sm" }),
+          buttonVariants({ variant: "outline" }),
           prevDisabled && "pointer-events-none opacity-50",
         )}
       >
@@ -30,7 +30,7 @@ export function Pagination({ filters, pageCount }: { filters: ExerciseFilters; p
         aria-disabled={nextDisabled}
         tabIndex={nextDisabled ? -1 : undefined}
         className={cn(
-          buttonVariants({ variant: "outline", size: "sm" }),
+          buttonVariants({ variant: "outline" }),
           nextDisabled && "pointer-events-none opacity-50",
         )}
       >

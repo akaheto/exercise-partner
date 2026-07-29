@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ExercisePickerDialog } from "./exercise-picker-dialog";
 import { ItemRow } from "./item-row";
@@ -36,7 +37,9 @@ export function BlockCard({
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card">
+    // gap-0/py-0 flushes Card's internal rhythm so the block keeps its own
+    // divided header / rows / footer layout on the standard card surface.
+    <Card className="gap-0 py-0">
       <div className="flex flex-wrap items-center gap-3 border-b border-border p-3">
         <Badge variant={block.kind === "single" ? "outline" : "default"}>{KIND_LABEL[block.kind] ?? block.kind}</Badge>
 
@@ -46,7 +49,6 @@ export function BlockCard({
               <Button
                 key={kind}
                 type="button"
-                size="sm"
                 variant={block.kind === kind ? "secondary" : "ghost"}
                 className="rounded-none border-0"
                 disabled={isChangingKind}
@@ -58,7 +60,7 @@ export function BlockCard({
           </div>
         )}
 
-        <label className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
+        <label className="ml-auto flex items-center gap-2 text-caption text-muted-foreground">
           Rest between rounds (s)
           <Input
             type="number"
@@ -66,9 +68,9 @@ export function BlockCard({
             step={5}
             defaultValue={block.restSeconds ?? 60}
             onBlur={(e) => saveRest(e.target.value)}
-            className="h-9 w-16"
+            className="w-20"
           />
-          {isSavingRest && <span>Saving…</span>}
+          {isSavingRest && <span role="status">Saving…</span>}
         </label>
       </div>
 
@@ -88,8 +90,8 @@ export function BlockCard({
       <div className="border-t border-border p-2">
         <ExercisePickerDialog
           trigger={
-            <Button type="button" variant="ghost" size="sm" className="gap-1.5">
-              <Plus className="size-3.5" /> Add to this block
+            <Button type="button" variant="ghost" className="gap-2">
+              <Plus className="size-4" aria-hidden="true" /> Add to this block
             </Button>
           }
           title="Add exercise to block"
@@ -97,6 +99,6 @@ export function BlockCard({
           onSelect={(exerciseId) => addExerciseToBlock(block.id, exerciseId)}
         />
       </div>
-    </div>
+    </Card>
   );
 }
