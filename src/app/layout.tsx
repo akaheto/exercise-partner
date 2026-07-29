@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import { NO_FLASH_THEME_SCRIPT } from "@/lib/theme";
@@ -17,6 +17,19 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Exercise Partner",
   description: "A personal exercise knowledge base and workout platform.",
+  manifest: "/manifest.webmanifest",
+  // manifest.ts's display:"standalone" covers Android/Chrome; iOS Safari
+  // needs these separate classic meta tags for the same "opens without
+  // browser chrome" behaviour when saved to the home screen.
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Exercise Partner",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0f766e", // teal-700, matches manifest.ts and the top bar
 };
 
 export default function RootLayout({

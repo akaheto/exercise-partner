@@ -27,7 +27,13 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Skip Next.js internals and common static file extensions; every actual
-  // page and Server Action goes through the check.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  // Skip Next.js internals, common static file extensions, and the PWA
+  // manifest; every actual page and Server Action goes through the check.
+  // manifest.webmanifest (src/app/manifest.ts) was missing here until found
+  // in a real browser check: a phone fetches it to build the "Add to Home
+  // Screen" prompt, gated or not, and it carries no sensitive data (name,
+  // icon paths, theme colour) — same posture as favicon.ico already had.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };

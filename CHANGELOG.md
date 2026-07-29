@@ -9,6 +9,13 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Real app icons, replacing the untouched default Next.js scaffold favicon.
+  `scripts/generate-app-icons.mjs` rasterizes the exact top-bar Dumbbell mark
+  (lucide-react's own path data, teal-700 background) via `sharp`: the
+  browser favicon, the iOS "Add to Home Screen" icon (full-bleed, no corner
+  radius — iOS applies its own mask), and Android/PWA manifest icons (new
+  `src/app/manifest.ts`, `display: "standalone"`). `src/app/favicon.ico`
+  removed.
 - Epic P (started): a restricted `/my-profile` route — the current profile's
   own card, training-level/goal editor and delete section, with no
   "All profiles" switcher and no "Add a profile" form. Redirects to `/` when
@@ -276,6 +283,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `src/proxy.ts`'s matcher didn't exempt `/manifest.webmanifest`, so it was
+  gated behind the site login — found while verifying the new PWA manifest
+  with a real HTTP request, not assumed. Would have made "Add to Home
+  Screen" install prompts fail silently on a real phone, since a manifest
+  fetch that redirects to a login page isn't treated as a valid manifest.
 - `MuscleDiagram`'s SVG `<title>` elements passed two JSX children
   (`{region.muscle}{role...}`) where React 19 requires exactly one — a real,
   previously-dormant bug, found while verifying Epic O rather than caused by
