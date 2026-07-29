@@ -287,27 +287,38 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
-- **The admin session cookie is unsigned and forgeable.** Its value is the
-  literal string `"authenticated"`, and `src/app/admin/page.tsx` admits anyone
-  presenting it — so setting one cookie by hand grants full admin access,
-  including deleting any profile and all of its training history, bypassing
-  `ADMIN_TOKEN` entirely. Not remotely exploitable (`/admin` sits behind the
-  site password gate in `src/proxy.ts`), but the shared site password is held
-  by every intended user, which is exactly the population the admin token
-  exists to exclude. The fix is to reuse the HMAC-signed cookie pattern
-  already correct in `src/lib/auth.ts`. **Blocks production deploy.**
-- **`ADMIN_TOKEN` is not set in `.env.local`**, so on the current
-  configuration the admin token is the literal string
-  `"change-me-in-production"`. Confirmed by checking whether the variable is
-  present, not by reading its value. This makes the item above concrete rather
-  than theoretical: the second factor is both bypassable and a publicly-known
-  constant. Set it, or make the code refuse to start without it the way
-  `src/proxy.ts` already refuses without `SESSION_SECRET`.
-- `SITE_PASSWORD` and `ADMIN_TOKEN` fall back to hardcoded defaults
-  (`"change-me"`, `"change-me-in-production"`) when unset, so a misconfigured
-  deployment is reachable with publicly-known credentials rather than failing
-  closed — unlike `src/proxy.ts`, which correctly 500s on a missing
-  `SESSION_SECRET`. Both are compared with `!==` rather than constant-time.
+- **Fixed: the admin session cookie was unsigned and forgeable.** Its value
+  was the literal string `"authenticated"`, so setting one cookie by hand
+  granted full admin access — including deleting any profile and all of its
+  training history — with `ADMIN_TOKEN` bypassed entirely. The same check also
+  guarded `deleteProfileAsAdmin`, the Server Action that performs the
+  deletion; Server Actions are reachable by direct request regardless of which
+  page rendered the button, so the page's guard never protected it.
+  `src/lib/admin-auth.ts` now signs the session with HMAC-SHA256 over
+  `SESSION_SECRET`, the pattern `src/lib/auth.ts` has used since Epic C, under
+  a distinct message so a site token cannot be replayed as an admin one. The
+  4-hour expiry moved inside the signed payload, so it is enforced by the
+  server rather than by a cookie `maxAge` the client is free to ignore. The
+  Server Action now verifies the session itself. Covered by 15 unit tests and
+  4 Playwright tests, the first of which replays the original attack and
+  asserts it now lands on the login page.
+- **Fixed: the gate now fails closed.** `SITE_PASSWORD` and `ADMIN_TOKEN` fell
+  back to `"change-me"` and `"change-me-in-production"` when unset — and
+  `ADMIN_TOKEN` was in fact unset on this project, making the second secret a
+  constant published in this repository. All three secrets are now required,
+  and a missing one yields a configuration error instead of an admitted
+  request, matching `src/proxy.ts`. Both are compared in constant time, and a
+  wrong password and a wrong token return the same message so the response
+  cannot be used to determine which half was right.
+  **`ADMIN_TOKEN` must now be set** — `/admin` reports a configuration error
+  until it is. See `.env.example`.
+- Still open: profile PINs use a single hardcoded salt
+  (`"exercise-partner-salt"`) shared by every profile, so identical PINs
+  produce identical hashes. Anyone with database read access can see which
+  profiles share a PIN, and one precomputed table covers the entire 4–6 digit
+  keyspace. There is no attempt limiting, so a 4-digit PIN is exhaustible in
+  10,000 requests, and `verifyPin` compares with `===` rather than
+  constant-time.
 - Profile PINs use a single hardcoded salt (`"exercise-partner-salt"`) shared
   by every profile, so identical PINs produce identical hashes: anyone with
   database read access can see which profiles share a PIN, and one

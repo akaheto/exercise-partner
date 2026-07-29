@@ -55,7 +55,7 @@ async function shoot(page: Page, name: string) {
   await page.setViewportSize({ width: 1280, height: 900 });
 }
 
-test("profile and admin surfaces render at both widths in both themes", async ({ page, context }) => {
+test("profile and admin surfaces render at both widths in both themes", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Password").fill(process.env.SITE_PASSWORD!);
   await page.getByRole("button", { name: "Continue" }).click();
@@ -78,23 +78,18 @@ test("profile and admin surfaces render at both widths in both themes", async ({
   await shoot(page, "profile-confirm");
   await page.keyboard.press("Escape");
 
-  // The admin session cookie is an unsigned literal — setting it here is the
-  // bypass recorded as PROJECT_PLAN section 4 item 36, and is the only reason
-  // this spec can reach /admin without ADMIN_TOKEN being configured at all.
-  await context.addCookies([
-    {
-      name: "admin_session",
-      value: "authenticated",
-      domain: "localhost",
-      path: "/admin",
-    },
-  ]);
-
-  await page.goto("/admin");
-  await expect(page.getByRole("heading", { name: "Profiles" })).toBeVisible();
-  await shoot(page, "admin");
-
   await page.goto("/admin/login");
   await expect(page.getByText("Admin access")).toBeVisible();
   await shoot(page, "admin-login");
+
+  // An earlier version of this spec reached /admin by setting
+  // admin_session="authenticated" by hand. That bypass is now closed (see
+  // e2e/admin-auth.spec.ts), so the admin screenshots need a real sign-in.
+  test.skip(!process.env.ADMIN_TOKEN, "ADMIN_TOKEN is not set");
+  await page.getByLabel("Site password").fill(process.env.SITE_PASSWORD!);
+  await page.getByLabel("Admin token").fill(process.env.ADMIN_TOKEN!);
+  await page.getByRole("button", { name: /sign in to admin/i }).click();
+
+  await expect(page.getByRole("heading", { name: "Profiles" })).toBeVisible();
+  await shoot(page, "admin");
 });

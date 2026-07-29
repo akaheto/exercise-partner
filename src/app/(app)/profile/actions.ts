@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { getAdminSessionStatus } from "@/app/admin/login/actions";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -153,13 +154,23 @@ export async function deleteProfile(
   }
 }
 
-/** Admin-only deletion — bypasses the PIN check. Callers must already have
- * verified the admin session. */
+/**
+ * Admin-only deletion — bypasses the PIN check.
+ *
+ * This verifies the admin session itself rather than trusting the page that
+ * rendered the button: a Server Action is reachable by direct request,
+ * independent of which route tree it lives under, so the /admin page's own
+ * guard protects the page and not this. It previously compared the cookie
+ * against the literal string "authenticated", which meant anyone who could
+ * reach the app could delete any profile and all of its history by setting
+ * one cookie. Now checks a real signature — see src/lib/admin-auth.ts.
+ */
 export async function deleteProfileAsAdmin(profileId: string): Promise<{ success: boolean; error?: string }> {
-  const cookieStore = await cookies();
-  if (cookieStore.get("admin_session")?.value !== "authenticated") {
+  if (!(await getAdminSessionStatus())) {
     return { success: false, error: "Not authorized" };
   }
+
+  const cookieStore = await cookies();
 
   try {
     const activeProfileId = await getActiveProfileId();

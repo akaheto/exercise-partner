@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { Users } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,12 +14,11 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Stat } from "@/components/ui/stat";
+import { getAdminSessionStatus } from "@/app/admin/login/actions";
 import { getActiveProfileId } from "@/lib/active-profile";
 import { getAllProfilesWithStats } from "@/db/queries/admin";
 import { ProfileDeleteButton } from "@/components/admin/profile-delete-button";
 import { AdminLogoutButton } from "@/components/admin/admin-logout-button";
-
-const ADMIN_SESSION_COOKIE = "admin_session";
 
 const DATE_FORMAT: Intl.DateTimeFormatOptions = {
   month: "short",
@@ -29,11 +27,7 @@ const DATE_FORMAT: Intl.DateTimeFormatOptions = {
 };
 
 export default async function AdminPage() {
-  // Check admin session cookie
-  const cookieStore = await cookies();
-  const adminSession = cookieStore.get(ADMIN_SESSION_COOKIE);
-
-  if (!adminSession || adminSession.value !== "authenticated") {
+  if (!(await getAdminSessionStatus())) {
     redirect("/admin/login");
   }
 
@@ -146,11 +140,9 @@ export default async function AdminPage() {
           </CardContent>
         </Card>
 
-        <Callout tone="warning" title="This gate is weaker than it looks">
-          The admin session cookie is not signed, so anyone who can already reach the site can grant
-          themselves access here without the admin token. Treat it as a convenience for the site
-          owner, not as a barrier between users, and do not expose this deployment publicly until
-          that is fixed. Your session expires 4 hours after sign-in.
+        <Callout tone="info" title="About this session">
+          Your admin session is signed and expires 4 hours after sign-in. Deleting a profile here
+          skips its PIN and cannot be undone.
         </Callout>
       </div>
     </div>

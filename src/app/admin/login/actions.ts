@@ -2,50 +2,77 @@
 
 import { cookies } from "next/headers";
 
-const SITE_PASSWORD = process.env.SITE_PASSWORD || "change-me";
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "change-me-in-production";
-const ADMIN_SESSION_COOKIE = "admin_session";
+import {
+  ADMIN_SESSION_COOKIE,
+  ADMIN_SESSION_MAX_AGE_SECONDS,
+  adminTokenExpiry,
+  constantTimeEqual,
+  signAdminToken,
+  verifyAdminToken,
+} from "@/lib/admin-auth";
+
+/**
+ * Reads a required secret, or throws.
+ *
+ * These used to fall back to "change-me" / "change-me-in-production", so a
+ * deployment with the variables unset was reachable with publicly-known
+ * credentials instead of failing closed — and ADMIN_TOKEN was in fact unset
+ * on this project. src/proxy.ts already refuses to serve without
+ * SESSION_SECRET; this is the same stance for the admin gate.
+ */
+function requireSecret(name: "SITE_PASSWORD" | "ADMIN_TOKEN" | "SESSION_SECRET"): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} is not set — the admin gate refuses to run without it`);
+  }
+  return value;
+}
 
 export async function validateAdminAccess(
   sitePassword: string,
   adminToken: string
 ): Promise<{ success: boolean; error?: string }> {
+  let expectedPassword: string;
+  let expectedToken: string;
+  let sessionSecret: string;
+
   try {
-    // Verify site password
-    if (sitePassword !== SITE_PASSWORD) {
-      return { success: false, error: "Invalid site password" };
-    }
-
-    // Verify admin token
-    if (adminToken !== ADMIN_TOKEN) {
-      return { success: false, error: "Invalid admin token" };
-    }
-
-    // Both valid - set admin session cookie
-    const cookieStore = await cookies();
-    cookieStore.set(ADMIN_SESSION_COOKIE, "authenticated", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 4, // 4 hours
-      path: "/admin",
-    });
-
-    return { success: true };
+    expectedPassword = requireSecret("SITE_PASSWORD");
+    expectedToken = requireSecret("ADMIN_TOKEN");
+    sessionSecret = requireSecret("SESSION_SECRET");
   } catch (error) {
-    console.error("Admin auth error:", error);
-    return { success: false, error: "Authentication failed" };
+    console.error("Admin gate misconfigured:", error);
+    return { success: false, error: "Admin access is not configured on this server" };
   }
+
+  // Both compared in constant time, and the same message either way: telling
+  // the caller which of the two was wrong halves the work of guessing them.
+  const passwordOk = constantTimeEqual(sitePassword, expectedPassword);
+  const tokenOk = constantTimeEqual(adminToken, expectedToken);
+  if (!passwordOk || !tokenOk) {
+    return { success: false, error: "Invalid credentials" };
+  }
+
+  const expiresAt = adminTokenExpiry();
+  const cookieStore = await cookies();
+  cookieStore.set(ADMIN_SESSION_COOKIE, await signAdminToken(sessionSecret, expiresAt), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
+    path: "/",
+  });
+
+  return { success: true };
 }
 
+/** True only for a live, correctly-signed admin session. */
 export async function getAdminSessionStatus(): Promise<boolean> {
-  try {
-    const cookieStore = await cookies();
-    const session = cookieStore.get(ADMIN_SESSION_COOKIE);
-    return session?.value === "authenticated";
-  } catch {
-    return false;
-  }
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) return false;
+
+  const cookieStore = await cookies();
+  return verifyAdminToken(cookieStore.get(ADMIN_SESSION_COOKIE)?.value, secret);
 }
 
 export async function logoutAdmin(): Promise<void> {
