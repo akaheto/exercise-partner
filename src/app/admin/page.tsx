@@ -1,14 +1,32 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { Users, LogOut } from "lucide-react";
+import { Users } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Callout } from "@/components/ui/callout";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeader,
+  DataTableRow,
+} from "@/components/ui/data-table";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { Stat } from "@/components/ui/stat";
 import { getActiveProfileId } from "@/lib/active-profile";
 import { getAllProfilesWithStats } from "@/db/queries/admin";
 import { ProfileDeleteButton } from "@/components/admin/profile-delete-button";
 import { AdminLogoutButton } from "@/components/admin/admin-logout-button";
 
 const ADMIN_SESSION_COOKIE = "admin_session";
+
+const DATE_FORMAT: Intl.DateTimeFormatOptions = {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+};
 
 export default async function AdminPage() {
   // Check admin session cookie
@@ -23,133 +41,117 @@ export default async function AdminPage() {
   const profiles = await getAllProfilesWithStats();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted">
-      <div className="mx-auto max-w-6xl px-4 py-12">
-        {/* Header */}
-        <div className="mb-8 space-y-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-              <p className="mt-2 text-muted-foreground">Manage profiles and user data</p>
-            </div>
-            <div className="flex flex-col items-end gap-3">
-              <div className="text-right text-xs text-muted-foreground">
-                <p>Authenticated ✓</p>
-              </div>
-              <AdminLogoutButton />
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-muted">
+      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-12">
+        <PageHeader
+          eyebrow="Admin"
+          title="Profiles"
+          description="Every profile on this site, and the data belonging to it."
+          actions={<AdminLogoutButton />}
+        />
 
-        {/* Stats Overview */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-3">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Profiles</CardTitle>
-              <Users className="size-4 text-teal-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{profiles.length}</div>
+            <CardContent className="pt-6">
+              <Stat label="Profiles" value={profiles.length} />
             </CardContent>
           </Card>
-
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-              <LogOut className="size-4 text-teal-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{profiles.filter((p) => p.lastActivityDate).length}</div>
-              <p className="text-xs text-muted-foreground">with recent activity</p>
+            <CardContent className="pt-6">
+              <Stat
+                label="With activity"
+                value={profiles.filter((p) => p.lastActivityDate).length}
+                caveat="Have logged at least one session"
+              />
             </CardContent>
           </Card>
-
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Workouts</CardTitle>
-              <Users className="size-4 text-teal-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{profiles.reduce((sum, p) => sum + p.workoutCount, 0)}</div>
+            <CardContent className="pt-6">
+              <Stat
+                label="Workouts"
+                value={profiles.reduce((sum, p) => sum + p.workoutCount, 0)}
+                caveat="Across all profiles"
+              />
             </CardContent>
           </Card>
         </div>
 
-        {/* Profiles Table */}
         <Card>
           <CardHeader>
-            <CardTitle>User Profiles</CardTitle>
-            <CardDescription>Manage all profiles and their data</CardDescription>
+            <CardTitle>All profiles</CardTitle>
+            <CardDescription>
+              Deleting a profile here does not require its PIN, and takes every workout and session
+              with it.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {profiles.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-8 text-center">
-                <p className="text-sm text-muted-foreground">No profiles created yet</p>
-              </div>
+              <EmptyState
+                icon={Users}
+                title="No profiles yet"
+                description="Profiles appear here once someone creates one from the home page."
+              />
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="border-b border-border">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-medium text-foreground">Name</th>
-                      <th className="px-4 py-3 text-left font-medium text-foreground">Level</th>
-                      <th className="px-4 py-3 text-left font-medium text-foreground">Goal</th>
-                      <th className="px-4 py-3 text-center font-medium text-foreground">Workouts</th>
-                      <th className="px-4 py-3 text-center font-medium text-foreground">Sessions</th>
-                      <th className="px-4 py-3 text-left font-medium text-foreground">Last Activity</th>
-                      <th className="px-4 py-3 text-right font-medium text-foreground">Created</th>
-                      <th className="px-4 py-3 text-right font-medium text-foreground">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {profiles.map((profile) => (
-                      <tr key={profile.id} className="hover:bg-muted/50">
-                        <td className="px-4 py-3">
-                          <div className="font-medium text-foreground">{profile.displayName}</div>
+              <DataTable minWidth={860}>
+                <DataTableHead>
+                  <DataTableRow>
+                    <DataTableHeader>Name</DataTableHeader>
+                    <DataTableHeader>Level</DataTableHeader>
+                    <DataTableHeader>Goal</DataTableHeader>
+                    <DataTableHeader align="center">Workouts</DataTableHeader>
+                    <DataTableHeader align="center">Sessions</DataTableHeader>
+                    <DataTableHeader>Last activity</DataTableHeader>
+                    <DataTableHeader align="end">Created</DataTableHeader>
+                    <DataTableHeader align="end">Actions</DataTableHeader>
+                  </DataTableRow>
+                </DataTableHead>
+                <DataTableBody>
+                  {profiles.map((profile) => (
+                    <DataTableRow key={profile.id}>
+                      <DataTableCell className="text-foreground">
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium">{profile.displayName}</span>
                           {profile.id === activeProfileId && (
-                            <Badge className="mt-1 bg-teal-600 text-white">Active</Badge>
+                            <Badge>Active</Badge>
                           )}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">{profile.experienceLevel}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{profile.trainingGoal}</td>
-                        <td className="px-4 py-3 text-center text-muted-foreground">{profile.workoutCount}</td>
-                        <td className="px-4 py-3 text-center text-muted-foreground">{profile.sessionCount}</td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          {profile.lastActivityDate
-                            ? profile.lastActivityDate.toLocaleDateString(undefined, {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })
-                            : "No activity"}
-                        </td>
-                        <td className="px-4 py-3 text-right text-muted-foreground">
-                          {profile.createdAt.toLocaleDateString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <ProfileDeleteButton profileId={profile.id} profileName={profile.displayName} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </span>
+                      </DataTableCell>
+                      <DataTableCell>{profile.experienceLevel}</DataTableCell>
+                      <DataTableCell>{profile.trainingGoal}</DataTableCell>
+                      <DataTableCell align="center" numeric>
+                        {profile.workoutCount}
+                      </DataTableCell>
+                      <DataTableCell align="center" numeric>
+                        {profile.sessionCount}
+                      </DataTableCell>
+                      <DataTableCell>
+                        {profile.lastActivityDate
+                          ? profile.lastActivityDate.toLocaleDateString(undefined, DATE_FORMAT)
+                          : "No activity"}
+                      </DataTableCell>
+                      <DataTableCell align="end">
+                        {profile.createdAt.toLocaleDateString(undefined, DATE_FORMAT)}
+                      </DataTableCell>
+                      <DataTableCell align="end">
+                        <ProfileDeleteButton
+                          profileId={profile.id}
+                          profileName={profile.displayName}
+                        />
+                      </DataTableCell>
+                    </DataTableRow>
+                  ))}
+                </DataTableBody>
+              </DataTable>
             )}
           </CardContent>
         </Card>
 
-        {/* Security Note */}
-        <div className="mt-8 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/30">
-          <p className="text-sm font-semibold text-green-900 dark:text-green-100">✓ Secure Connection</p>
-          <p className="mt-2 text-sm text-green-800 dark:text-green-200">
-            This admin page is protected by two-factor authentication (site password + admin token). Your session will expire
-            in 4 hours. Always logout when finished.
-          </p>
-        </div>
+        <Callout tone="warning" title="This gate is weaker than it looks">
+          The admin session cookie is not signed, so anyone who can already reach the site can grant
+          themselves access here without the admin token. Treat it as a convenience for the site
+          owner, not as a barrier between users, and do not expose this deployment publicly until
+          that is fixed. Your session expires 4 hours after sign-in.
+        </Callout>
       </div>
     </div>
   );

@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, Key, Loader } from "lucide-react";
+import { Lock, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Callout } from "@/components/ui/callout";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { validateAdminAccess } from "./actions";
@@ -36,82 +38,56 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center px-4">
+    <div className="flex min-h-screen items-center justify-center bg-muted px-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-2 text-center">
-          <div className="flex justify-center">
-            <div className="rounded-full bg-red-100 p-3 dark:bg-red-900/30">
-              <Lock className="size-6 text-red-600 dark:text-red-400" />
-            </div>
-          </div>
-          <CardTitle>Admin Access</CardTitle>
+        <CardHeader className="items-center text-center">
+          <span
+            className="mb-2 flex size-12 items-center justify-center rounded-full bg-destructive-subtle"
+            aria-hidden="true"
+          >
+            <Lock className="size-6 text-destructive-text" />
+          </span>
+          <CardTitle>Admin access</CardTitle>
           <CardDescription>
-            Enter both the site password and admin token to access the admin dashboard
+            Both the site password and the admin token are required.
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            {/* Site Password */}
-            <div className="space-y-2">
-              <label htmlFor="sitePassword" className="text-sm font-medium text-foreground">
-                Site Password
-              </label>
+        <CardContent className="flex flex-col gap-6">
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            <Field label="Site password">
               <Input
                 id="sitePassword"
                 type="password"
-                placeholder="Enter site password"
+                autoComplete="current-password"
                 value={sitePassword}
                 onChange={(e) => setSitePassword(e.target.value)}
                 disabled={isLoading}
-                className="h-11"
               />
-            </div>
+            </Field>
 
-            {/* Admin Token */}
-            <div className="space-y-2">
-              <label htmlFor="adminToken" className="text-sm font-medium text-foreground">
-                Admin Token
-              </label>
+            <Field label="Admin token">
               <Input
                 id="adminToken"
                 type="password"
-                placeholder="Enter admin token"
+                autoComplete="off"
                 value={adminToken}
                 onChange={(e) => setAdminToken(e.target.value)}
                 disabled={isLoading}
-                className="h-11"
               />
-            </div>
+            </Field>
 
-            {/* Error Message */}
-            {error && (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">
-                {error}
-              </div>
-            )}
+            {error && <Callout tone="danger">{error}</Callout>}
 
-            {/* Submit Button */}
-            <Button type="submit" disabled={isLoading} className="w-full gap-2" size="lg">
-              {isLoading ? (
-                <>
-                  <Loader className="size-4 animate-spin" />
-                  Verifying...
-                </>
-              ) : (
-                <>
-                  <Key className="size-4" />
-                  Access Admin Dashboard
-                </>
-              )}
+            <Button type="submit" loading={isLoading} loadingLabel="Verifying" className="w-full">
+              <Key data-icon="inline-start" />
+              Sign in to admin
             </Button>
           </form>
 
-          {/* Security Note */}
-          <div className="mt-6 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-xs text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-200">
-            <p className="font-semibold">Security Notice</p>
-            <p className="mt-1">Never share your admin token or site password. This page requires both for protection.</p>
-          </div>
+          <Callout tone="warning" title="Keep these secret">
+            Anyone holding both values can delete any profile and its entire training history.
+          </Callout>
         </CardContent>
       </Card>
     </div>
