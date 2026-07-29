@@ -18,17 +18,18 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   proceed on any mismatch, and verifies the result against the live store
   afterward (paginated — the first run's un-paginated check under-reported by
   218 and looked like a real failure; it was `list()`'s 1000-item page cap).
-  New `MuscleDiagramPhoto` component adds an "Anatomical reference" plate to
-  the exercise detail page, **alongside** the existing hand-built
-  `MuscleDiagram`, not replacing it — the render's orange/navy legend is
-  baked in and can't be re-themed to the app's teal ramp, so the ramp stays
-  as-is and the render is framed as a distinct, captioned "inserted
-  photograph" instead. Alt text is built from `primary_muscle`/
-  `secondary_muscles` in the database, never from the image's own baked-in
-  (and screen-reader-invisible) legend. Fails silent — renders nothing —
-  if the base URL is unset or the specific image fails to load, since the
-  existing diagram already covers that exercise. 6 unit tests,
-  mutation-checked.
+  New `MuscleDiagramPhoto` component **replaces** the hand-built `MuscleDiagram`
+  on the exercise detail page (initially shipped alongside it, then swapped in
+  fully by request once coverage was confirmed complete) — a plain framed
+  plate, no heading or caption. `MuscleDiagram` itself is kept, unchanged, in
+  Workout Mode, where a full photographic plate would compete for space a
+  mid-set screen needs for logging; that usage is what keeps the style
+  guide's teal involvement ramp meaningful even though this page no longer
+  uses it. Alt text is built from `primary_muscle`/`secondary_muscles` in the
+  database, never from the image's own baked-in (and screen-reader-invisible)
+  legend. Now the only muscle-visual on this page, so a failed image load
+  shows a compact "Image unavailable" state instead of silently disappearing.
+  6 unit tests, mutation-checked.
 - `profiles.pin_salt`, `pin_failed_attempts`, `pin_locked_until` (migration
   0008). `generatePinSalt()` produces a genuinely random per-profile salt;
   `nextPinAttemptState()`/`isPinLocked()` lock deletion out for 15 minutes

@@ -58,8 +58,9 @@ describe("MuscleDiagramPhoto", () => {
     expect(screen.getByRole("img").getAttribute("alt")).not.toContain("Secondary:");
   });
 
-  // Unhappy path: no base URL configured (e.g. Blob not provisioned in this
-  // environment). Renders nothing rather than a broken-looking plate.
+  // Unhappy path: no base URL configured at all (e.g. Blob not provisioned
+  // in this environment) — a deployment gap, not something to show an
+  // end-user error card for. Renders nothing.
   it("renders nothing when no base URL is configured", () => {
     vi.stubEnv("NEXT_PUBLIC_MUSCLE_DIAGRAM_BASE_URL", "");
     const { container } = render(
@@ -74,12 +75,13 @@ describe("MuscleDiagramPhoto", () => {
   });
 
   // Unhappy path: the specific image 404s or the store is briefly
-  // unreachable. Must fail silent, not show a broken-image icon — the
-  // hand-built MuscleDiagram elsewhere on the page already covers this
-  // exercise, so there is a real fallback, not just an empty gap.
-  it("hides itself if the image fails to load", () => {
+  // unreachable. This is now the only muscle-visual on the exercise detail
+  // page (MuscleDiagram was removed from it by request once photo coverage
+  // was confirmed complete), so a failure has to say something rather than
+  // leave a silent, unexplained gap.
+  it("shows an error state, not a broken image, if loading fails", () => {
     vi.stubEnv("NEXT_PUBLIC_MUSCLE_DIAGRAM_BASE_URL", "https://example.blob.vercel-storage.com/muscle-diagrams");
-    const { container } = render(
+    render(
       <MuscleDiagramPhoto
         exerciseId="EX-0042"
         exerciseName="Barbell Back Squat"
@@ -89,7 +91,9 @@ describe("MuscleDiagramPhoto", () => {
     );
 
     fireEvent.error(screen.getByRole("img"));
-    expect(container).toBeEmptyDOMElement();
+
+    expect(screen.getByText("Image unavailable")).toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
 
   it("strips a trailing slash from the base URL before joining", () => {

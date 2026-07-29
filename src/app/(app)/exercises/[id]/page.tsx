@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { GuidanceCard } from "@/components/exercise/guidance-card";
-import { MuscleDiagram } from "@/components/exercise/muscle-diagram";
 import { MuscleDiagramPhoto } from "@/components/exercise/muscle-diagram-photo";
 import { RelatedExercises } from "@/components/exercise/related-exercises";
 import { VideoEmbed } from "@/components/exercise/video-embed";
@@ -157,7 +156,6 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
         </div>
 
         <div className="space-y-6">
-          <MuscleDiagram primaryMuscle={exercise.primaryMuscle} secondaryMuscles={secondaryMuscles} />
           <MuscleDiagramPhoto
             exerciseId={exercise.exerciseId}
             exerciseName={exercise.name}

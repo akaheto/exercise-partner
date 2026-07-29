@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { ErrorState } from "@/components/ui/error-state";
 
 /**
  * The supplied anatomical render (Epic O) — a real photographic-style body
- * map, distinct from the app's own hand-built MuscleDiagram (which stays in
- * place and keeps using the style guide's teal involvement ramp everywhere
- * else). By design, per PROJECT_PLAN.docx section 4 item 43: the render's
- * orange/navy legend contradicts the app's palette and can't be re-themed
- * (it's baked into the raster), so this is framed as a distinct, deliberately
- * "inserted photograph" rather than blended into the app's own visual
- * language — its own bordered plate, its own caption, own legend.
+ * map. Originally shown alongside the app's own hand-built MuscleDiagram;
+ * by request, this replaced it on the exercise detail page once coverage was
+ * confirmed complete (1,218/1,218). MuscleDiagram itself is not deleted — it
+ * still renders in Workout Mode (src/components/session/session-runner.tsx),
+ * where a full photographic plate would compete for space a mid-set screen
+ * needs for logging — so the style guide's teal involvement ramp still has
+ * something to colour; see VISUAL_STYLE_GUIDE.docx "Fixed-Light Plates".
  *
  * Always a light plate, in both themes (PROJECT_PLAN.docx item 44's chosen
  * treatment) — the alternative, an invert/hue-rotate filter, risks turning a
@@ -37,10 +38,9 @@ export function MuscleDiagramPhoto({
   const [failed, setFailed] = useState(false);
   const base = baseUrl();
 
-  // No base URL configured, or the specific image failed to load (dead link,
-  // blob store issue) — fail silent rather than showing a broken-image icon.
-  // The hand-built MuscleDiagram above already covers this exercise.
-  if (!base || failed) return null;
+  // No base URL configured at all — a deployment/environment gap, not
+  // something an end user should see an error card for on every visit.
+  if (!base) return null;
 
   const src = `${base}/${exerciseId}.webp`;
 
@@ -58,31 +58,34 @@ export function MuscleDiagramPhoto({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-caption font-semibold tracking-wide text-muted-foreground uppercase">
-          Anatomical reference
-        </CardTitle>
-      </CardHeader>
       <CardContent>
-        <div className="overflow-hidden rounded-lg border border-border bg-white shadow-flat">
-          {/* eslint-disable-next-line @next/next/no-img-element -- external
-              host varies per environment/store; next/image would need every
-              store hostname allow-listed in next.config.ts for something that
-              is otherwise a plain <img>. */}
-          <img
-            src={src}
-            alt={alt}
-            width={1536}
-            height={1024}
-            loading="lazy"
-            className="h-auto w-full"
-            onError={() => setFailed(true)}
+        {failed ? (
+          // This is now the only muscle-visual on the page (MuscleDiagram no
+          // longer renders here), so a failed load has to say something
+          // rather than leave a silent, unexplained gap where the section
+          // used to be.
+          <ErrorState
+            size="compact"
+            title="Image unavailable"
+            description="This exercise's reference diagram couldn't be loaded."
           />
-        </div>
-        <p className="mt-2 text-caption text-muted-foreground">
-          Supplied anatomical render — its colour legend (primary/secondary) is its own, separate
-          from the diagram above.
-        </p>
+        ) : (
+          <div className="overflow-hidden rounded-lg border border-border bg-white shadow-flat">
+            {/* eslint-disable-next-line @next/next/no-img-element -- external
+                host varies per environment/store; next/image would need every
+                store hostname allow-listed in next.config.ts for something that
+                is otherwise a plain <img>. */}
+            <img
+              src={src}
+              alt={alt}
+              width={1536}
+              height={1024}
+              loading="lazy"
+              className="h-auto w-full"
+              onError={() => setFailed(true)}
+            />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

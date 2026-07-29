@@ -274,7 +274,7 @@ export async function generateVisualStyleGuide() {
       { muted: true },
     ),
     bullet("Use this pattern only for an asset that is genuinely theme-invariant by nature (a real photograph, a scanned document, a supplied render with its own baked-in colour language) — never as a shortcut to skip theming a component that could be themed."),
-    bullet("Always pair it with a caption naming the source and, if the asset's own colour legend could be confused with the app's own semantic colours nearby, saying so explicitly (MuscleDiagramPhoto's caption: \"its colour legend is its own, separate from the diagram above\")."),
+    bullet("A caption naming the source, and disambiguating the asset's own colour legend from the app's semantic colours if the two could be confused nearby, is a reasonable default — but not a hard rule. MuscleDiagramPhoto shipped with one, then had it removed by explicit request once it was the only muscle-visual on the page and the ambiguity it guarded against (a second, differently-coloured diagram on the same screen) no longer applied. Judge each case: a caption exists to resolve confusion, not to decorate."),
     bullet("bg-white in this one component is a deliberate literal, not a missed token — see the comment in src/components/exercise/muscle-diagram-photo.tsx. It will not and should not appear anywhere else; scripts/check-design-tokens.ts does not special-case it, so a second instance would need the same explicit justification, not a silent copy-paste."),
 
     h1("5. Tone & Voice"),
