@@ -17,11 +17,11 @@ export function LoginForm() {
   return (
     <form
       action={formAction}
-      className="w-full max-w-sm space-y-6 rounded-2xl border border-border bg-card p-8 shadow-sm"
+      className="w-full max-w-sm space-y-6 rounded-xl border border-border bg-card p-8 shadow-flat"
     >
       <div className="space-y-1 text-center">
-        <h1 className="text-xl font-semibold text-foreground">Exercise Partner</h1>
-        <p className="text-sm text-muted-foreground">Enter the site password to continue.</p>
+        <h1 className="text-h2 font-semibold text-foreground">Exercise Partner</h1>
+        <p className="text-small text-muted-foreground">Enter the site password to continue.</p>
       </div>
 
       <input type="hidden" name="next" value={next} />
@@ -40,7 +40,7 @@ export function LoginForm() {
       </div>
 
       {state.error && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-small text-destructive">
           {state.error}
         </p>
       )}

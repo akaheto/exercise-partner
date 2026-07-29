@@ -2,8 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Plus, Loader } from "lucide-react";
+import { Search, Plus, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Callout } from "@/components/ui/callout";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { createProfile } from "@/app/(app)/profile/actions";
@@ -93,114 +97,109 @@ export function ProfileSelector({ profiles }: ProfileSelectorProps) {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Existing Profiles */}
+    <div className="flex flex-col gap-8">
       {profiles.length > 0 && (
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">Your Profiles</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Select an existing profile or create a new one
-            </p>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-h2 text-foreground">Your profiles</h2>
+            <p className="text-small text-muted-foreground">Pick yours, or add one below.</p>
           </div>
 
-          {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search
+              className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
             <Input
-              type="text"
-              placeholder="Search profiles..."
+              type="search"
+              aria-label="Search profiles"
+              placeholder="Search profiles…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
 
-          {/* Profile Grid */}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {filteredProfiles.length > 0 ? (
               filteredProfiles.map((profile) => (
                 <button
                   key={profile.id}
+                  type="button"
                   onClick={() => handleSelectProfile(profile.id)}
-                  className="flex items-center gap-3 rounded-xl border-2 border-border bg-card p-4 text-left transition-all hover:border-teal-600 hover:bg-teal-50 dark:hover:bg-teal-950/30"
+                  className="focus-ring flex min-h-11 items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary-border hover:bg-primary-subtle"
                 >
                   <Avatar>
                     <AvatarFallback>{initials(profile.displayName)}</AvatarFallback>
                   </Avatar>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-foreground">{profile.displayName}</p>
-                    <p className="text-xs text-muted-foreground">Click to select</p>
-                  </div>
+                  <span className="min-w-0 flex-1 truncate text-body font-medium text-foreground">
+                    {profile.displayName}
+                  </span>
                 </button>
               ))
             ) : (
-              <div className="col-span-full rounded-lg border border-dashed border-border bg-muted/30 px-4 py-8 text-center">
-                <p className="text-sm text-muted-foreground">No profiles matching &quot;{searchTerm}&quot;</p>
+              <div className="col-span-full">
+                <EmptyState
+                  icon={UserRound}
+                  title="No profiles match that search"
+                  description="Clear the search to see everyone, or add a new profile below."
+                />
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Create New Profile */}
-      <div className="space-y-4 rounded-2xl border border-border bg-card p-6">
-        <div className="flex items-center gap-2">
-          <Plus className="size-5 text-teal-600" />
-          <h2 className="text-lg font-semibold text-foreground">Create New Profile</h2>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Set up a new profile to get personalized exercise guidance
-        </p>
+      <Card>
+        <CardHeader>
+          <CardTitle>Add a profile</CardTitle>
+          <CardDescription>
+            You&apos;ll set your experience level and training goal on the next screen.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleCreateProfile} className="flex flex-col gap-4">
+            <Field label="Name">
+              <Input
+                type="text"
+                placeholder="Enter your name"
+                value={newProfileName}
+                onChange={(e) => setNewProfileName(e.target.value)}
+                disabled={isCreating}
+                autoFocus={profiles.length === 0}
+              />
+            </Field>
 
-        <form onSubmit={handleCreateProfile} className="space-y-3">
-          <div>
-            <Input
-              type="text"
-              placeholder="Enter your name..."
-              value={newProfileName}
-              onChange={(e) => setNewProfileName(e.target.value)}
-              disabled={isCreating}
-              className="h-11"
-              autoFocus={profiles.length === 0}
-            />
-          </div>
+            <Field
+              label="PIN"
+              description="Needed to delete this profile later. There is no way to reset it, so keep it somewhere safe."
+            >
+              <Input
+                type="password"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="4-6 digits"
+                value={newProfilePin}
+                onChange={(e) => setNewProfilePin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                disabled={isCreating}
+              />
+            </Field>
 
-          <div>
-            <Input
-              type="password"
-              inputMode="numeric"
-              placeholder="Choose a 4-6 digit PIN..."
-              value={newProfilePin}
-              onChange={(e) => setNewProfilePin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              disabled={isCreating}
-              className="h-11"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              You&apos;ll need this PIN to delete your profile later. Keep it somewhere safe.
-            </p>
-            {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-          </div>
+            {error && <Callout tone="danger">{error}</Callout>}
 
-          <Button type="submit" disabled={isCreating} className="w-full gap-2" size="lg">
-            {isCreating ? (
-              <>
-                <Loader className="size-4 animate-spin" />
-                Creating profile...
-              </>
-            ) : (
-              <>
-                <Plus className="size-4" />
-                Create & Continue
-              </>
-            )}
-          </Button>
-        </form>
-
-        <p className="text-xs text-muted-foreground">
-          You&apos;ll set your experience level and training goal on the next screen
-        </p>
-      </div>
+            <Button
+              type="submit"
+              loading={isCreating}
+              loadingLabel="Creating profile"
+              size="lg"
+              className="w-full"
+            >
+              <Plus data-icon="inline-start" />
+              Create and continue
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

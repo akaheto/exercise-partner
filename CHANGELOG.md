@@ -9,6 +9,15 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Design system on onboarding, home and the remaining surfaces (Epic N8).
+  Violations 90 → **0**: the ratchet baseline is now zero on every rule, so any
+  new raw palette colour, off-scale text size, half-step spacing, stray shadow,
+  off-scale radius or gradient fails `npm run lint`. New `OptionCard` primitive
+  for the large icon-plus-description choices in onboarding steps 2 and 3;
+  `Field`, `Callout` and `EmptyState` adopted across the home profile selector,
+  the login form and onboarding step 1. The progress rail gained a text
+  "Step N of 4" so progress is not conveyed by colour and position alone, with
+  the dots marked decorative.
 - Design system on the profile and admin surfaces (Epic N7). Violations
   209 → 90, tests 263 → 273. Both destructive flows moved onto the
   `ConfirmDialog` primitive — `/profile`'s PIN confirmation had been a
@@ -223,6 +232,16 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `/onboarding` failed to render at all: the page is a Server Component and
+  passed an `onComplete` function to the `OnboardingFlow` Client Component,
+  which throws "Event handlers cannot be passed to Client Component props".
+  The flow now owns its own completion navigation.
+- The onboarding progress rail drew incomplete steps and connectors in
+  `bg-muted` while the page ground had just moved from a gradient to a flat
+  `bg-muted`, so steps 3 and 4 rendered as bare numerals with no circle and the
+  connectors between them were invisible. Second time in this epic that
+  flattening a gradient made a same-coloured element vanish, and not something
+  a token check can catch — both classes were legal.
 - `cn()` silently dropped every named type-scale class. `tailwind-merge` only
   treats t-shirt sizes as font sizes, so `text-caption`, `text-body` and the
   rest fell into its text-*colour* group: `cn("text-caption",
@@ -328,6 +347,19 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Notes
 
+- **Onboarding steps 2-4 are unreachable, and have been since Epic M1.**
+  `createProfile()` calls `revalidatePath("/", "layout")`, re-running the
+  `/onboarding` server component, which redirects to `/exercises` whenever an
+  active profile exists — and step 1 has just created one. A new user completes
+  step 1 and lands in the exercise library, never choosing an experience level
+  or training goal, so both keep their defaults. Combined with the pattern
+  routing note below, the personalisation Epic L exists to serve has
+  effectively never varied. Confirmed by driving the flow and logging the URL,
+  and verified as the cause by disabling the redirect (all four steps then run;
+  the guard was restored). **Not fixed** — the fix is a product decision:
+  dropping the guard lets anyone revisit onboarding, whereas an explicit
+  completion flag needs a schema change, since `experience_level` cannot
+  distinguish "chose Beginner" from "never asked".
 - Three `.sql` files sit directly in `drizzle/` (`0002_curation_tracking`,
   `0003_remove_breathing_movement_pattern`, `0004_exercise_experience_guidance`)
   rather than in `drizzle/migrations/`, and are absent from the journal.

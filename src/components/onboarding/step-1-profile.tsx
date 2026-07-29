@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, Loader } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Callout } from "@/components/ui/callout";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
 import { createProfile } from "@/app/(app)/profile/actions";
 
 interface Step1ProfileProps {
@@ -59,19 +62,14 @@ export function OnboardingStep1Profile({ onNext }: Step1ProfileProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Welcome to Exercise Partner</h1>
-        <p className="mt-2 text-muted-foreground">
-          Let&apos;s set up your profile to personalize your workouts and guidance.
-        </p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Welcome to Exercise Partner"
+        description="Two answers now, and the guidance on every exercise is tuned to you."
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="name" className="mb-2 block text-sm font-semibold text-foreground">
-            What&apos;s your name?
-          </label>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <Field label="What's your name?">
           <Input
             id="name"
             type="text"
@@ -79,50 +77,37 @@ export function OnboardingStep1Profile({ onNext }: Step1ProfileProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={isLoading}
-            className="h-11"
             autoFocus
           />
-        </div>
+        </Field>
 
-        <div>
-          <label htmlFor="pin" className="mb-2 block text-sm font-semibold text-foreground">
-            Choose a PIN
-          </label>
+        <Field
+          label="Choose a PIN"
+          description="Needed to delete your profile later. There's no way to reset it, so keep it somewhere safe."
+        >
           <Input
             id="pin"
             type="password"
             inputMode="numeric"
+            autoComplete="off"
             placeholder="4-6 digits"
             value={pin}
             onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
             disabled={isLoading}
-            className="h-11"
           />
-          <p className="mt-1 text-xs text-muted-foreground">
-            You&apos;ll need this to delete your profile later. Keep it somewhere safe.
-          </p>
-          {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-        </div>
+        </Field>
 
-        <div className="pt-4">
-          <Button type="submit" disabled={isLoading} className="w-full gap-2" size="lg">
-            {isLoading ? (
-              <>
-                <Loader className="size-4 animate-spin" />
-                Creating profile...
-              </>
-            ) : (
-              <>
-                Next: Your Experience Level
-                <ChevronRight className="size-4" />
-              </>
-            )}
-          </Button>
-        </div>
+        {error && <Callout tone="danger">{error}</Callout>}
+
+        <Button type="submit" loading={isLoading} loadingLabel="Creating profile" size="lg" className="w-full">
+          Next: your experience level
+          <ChevronRight data-icon="inline-end" />
+        </Button>
       </form>
 
-      <p className="text-center text-xs text-muted-foreground">
-        Everyone shares this site. Your profile keeps your workouts private.
+      <p className="text-center text-caption text-muted-foreground">
+        Everyone shares one password for this site. Your profile keeps your workouts and history
+        separate from theirs — it is not a lock between you.
       </p>
     </div>
   );

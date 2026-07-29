@@ -25,8 +25,8 @@ export default async function ProfilePage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-8">
       <div>
-        <h1 className="text-xl font-semibold text-foreground">Profile</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-h2 font-semibold text-foreground">Profile</h1>
+        <p className="text-small text-muted-foreground">
           Everyone shares this site; each profile keeps its own workouts and history separate.
         </p>
       </div>
@@ -47,7 +47,7 @@ export default async function ProfilePage() {
 
               <form action={updatePreferredWeightUnit} className="flex items-center gap-3">
                 <input type="hidden" name="profileId" value={activeProfile.id} />
-                <span className="text-sm text-muted-foreground">Weight unit</span>
+                <span className="text-small text-muted-foreground">Weight unit</span>
                 <div className="flex gap-1">
                   {(["kg", "lb"] as const).map((unit) => (
                     <Button
@@ -101,13 +101,13 @@ export default async function ProfilePage() {
                       <button
                         type="submit"
                         disabled={isActive}
-                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-muted disabled:cursor-default disabled:bg-accent disabled:text-accent-foreground"
+                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-small font-medium transition-colors hover:bg-muted disabled:cursor-default disabled:bg-accent disabled:text-accent-foreground"
                       >
                         <Avatar size="sm">
                           <AvatarFallback>{initials(profile.displayName)}</AvatarFallback>
                         </Avatar>
                         {profile.displayName}
-                        {isActive && <span className="ml-auto text-xs text-muted-foreground">Current</span>}
+                        {isActive && <span className="ml-auto text-caption text-muted-foreground">Current</span>}
                       </button>
                     </form>
                   </li>

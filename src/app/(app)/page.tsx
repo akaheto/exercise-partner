@@ -13,18 +13,19 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted">
+    <div className="min-h-screen bg-muted">
       <div className="mx-auto max-w-3xl px-4 py-12 sm:py-16">
         {/* Header */}
-        <div className="mb-12 space-y-4 text-center">
-          <div className="flex justify-center">
-            <div className="rounded-full bg-teal-100 p-3 dark:bg-teal-900/30">
-              <Dumbbell className="size-8 text-teal-600 dark:text-teal-400" />
-            </div>
-          </div>
-          <h1 className="text-4xl font-bold text-foreground">Exercise Partner</h1>
-          <p className="mx-auto max-w-lg text-lg text-muted-foreground">
-            Personalized workout guidance tailored to your experience level and training goals.
+        <div className="mb-12 flex flex-col items-center gap-4 text-center">
+          <span
+            className="flex size-14 items-center justify-center rounded-full bg-primary-subtle"
+            aria-hidden="true"
+          >
+            <Dumbbell className="size-8 text-primary-text" />
+          </span>
+          <h1 className="text-display text-foreground">Exercise Partner</h1>
+          <p className="max-w-lg text-body-lg text-muted-foreground">
+            Workout guidance tuned to your experience level and training goal.
           </p>
         </div>
 
@@ -33,7 +34,7 @@ export default async function HomePage() {
 
         {/* Footer */}
         <div className="mt-12 border-t border-border pt-6 text-center">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-caption text-muted-foreground">
             Everyone shares this site. Each profile keeps its workouts and history separate.
           </p>
         </div>

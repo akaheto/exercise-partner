@@ -2,6 +2,8 @@
 
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { OptionCard } from "@/components/ui/option-card";
+import { PageHeader } from "@/components/ui/page-header";
 
 interface Step3GoalProps {
   profileName: string;
@@ -45,35 +47,27 @@ const GOALS = [
 
 export function OnboardingStep3Goal({ profileName, level, onNext, onBack }: Step3GoalProps) {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">What&apos;s your primary goal?</h1>
-        <p className="mt-2 text-muted-foreground">
-          {profileName} ({level}): Choose your main focus. You can always change this later.
-        </p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="What's your primary goal?"
+        description={`${profileName} · ${level}. Choose your main focus — you can change it later.`}
+      />
 
       <div className="grid gap-3 sm:grid-cols-2">
         {GOALS.map((goal) => (
-          <button
+          <OptionCard
             key={goal.id}
+            icon={goal.icon}
+            label={goal.label}
+            description={goal.description}
             onClick={() => onNext(goal.id)}
-            className="rounded-xl border-2 border-border bg-card p-4 text-left transition-all hover:border-teal-600 hover:bg-teal-50 dark:hover:bg-teal-950/30"
-          >
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">{goal.icon}</span>
-              <div>
-                <h3 className="font-semibold text-foreground">{goal.label}</h3>
-                <p className="text-xs text-muted-foreground">{goal.description}</p>
-              </div>
-            </div>
-          </button>
+          />
         ))}
       </div>
 
-      <div className="flex gap-3 pt-4">
-        <Button variant="outline" onClick={onBack} className="gap-2">
-          <ChevronLeft className="size-4" />
+      <div>
+        <Button variant="outline" onClick={onBack}>
+          <ChevronLeft data-icon="inline-start" />
           Back
         </Button>
       </div>

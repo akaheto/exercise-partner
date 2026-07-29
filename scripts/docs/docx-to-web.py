@@ -127,6 +127,8 @@ def render(blocks, key, title, tagline):
         body.pop(0)
 
     for kind, val in body:
+        if kind.startswith("h"):
+            val = re.sub(r"</?strong>", "", val)
         if kind == "h1":
             s = slug(val)
             toc.append((s, re.sub(r"<[^>]+>", "", val)))
@@ -163,9 +165,9 @@ def render(blocks, key, title, tagline):
                 + "</tbody></table></div>"
             )
 
-    nav = "".join(
-        f'<li><a href="#{s}">{html.escape(t)}</a></li>' for s, t in toc
-    )
+    # `t` came through runs(), so it is already escaped — escaping again is
+    # what turned "Decisions & Tradeoffs" into "Decisions &amp;amp; Tradeoffs".
+    nav = "".join(f'<li><a href="#{s}">{t}</a></li>' for s, t in toc)
     others = "".join(
         f'<li><span>{html.escape(t)}</span></li>' if k == key else f"<li><span>{html.escape(t)}</span></li>"
         for k, t, _ in DOCS

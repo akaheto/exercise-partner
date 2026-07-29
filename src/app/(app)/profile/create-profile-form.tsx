@@ -30,7 +30,7 @@ export function CreateProfileForm() {
           required
           maxLength={6}
         />
-        <p className="text-xs text-muted-foreground">Needed to delete this profile later.</p>
+        <p className="text-caption text-muted-foreground">Needed to delete this profile later.</p>
       </div>
 
       <Button type="submit" disabled={isPending}>
@@ -38,7 +38,7 @@ export function CreateProfileForm() {
       </Button>
 
       {state.error && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-small text-destructive">
           {state.error}
         </p>
       )}

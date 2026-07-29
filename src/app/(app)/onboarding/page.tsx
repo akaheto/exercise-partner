@@ -10,14 +10,7 @@ export default async function OnboardingPage() {
     redirect("/exercises");
   }
 
-  // Show onboarding flow for new users
-  // The flow will create a profile and set it as active
-  return (
-    <OnboardingFlow
-      onComplete={() => {
-        // This will be a client-side redirect after profile creation
-        // The redirect happens in step 1 after profile is created
-      }}
-    />
-  );
+  // Step 1 creates the profile and makes it active; the flow navigates to
+  // /exercises itself once the last step is confirmed.
+  return <OnboardingFlow />;
 }

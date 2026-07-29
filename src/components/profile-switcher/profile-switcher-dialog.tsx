@@ -50,10 +50,10 @@ export function ProfileSwitcherDialog({
           <Button variant="ghost" className="gap-2 px-2">
             <Avatar size="sm">
               <AvatarFallback>
-                {activeProfile ? initials(activeProfile.displayName) : <UserPlus className="size-3.5" />}
+                {activeProfile ? initials(activeProfile.displayName) : <UserPlus className="size-4" />}
               </AvatarFallback>
             </Avatar>
-            <span className="hidden text-sm font-medium sm:inline">
+            <span className="hidden text-small font-medium sm:inline">
               {activeProfile?.displayName ?? "Choose profile"}
             </span>
           </Button>
@@ -83,13 +83,13 @@ export function ProfileSwitcherDialog({
                     <button
                       type="submit"
                       disabled={isActive}
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-muted disabled:cursor-default disabled:bg-accent disabled:text-accent-foreground"
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-small font-medium transition-colors hover:bg-muted disabled:cursor-default disabled:bg-accent disabled:text-accent-foreground"
                     >
                       <Avatar size="sm">
                         <AvatarFallback>{initials(profile.displayName)}</AvatarFallback>
                       </Avatar>
                       {profile.displayName}
-                      {isActive && <span className="ml-auto text-xs text-muted-foreground">Current</span>}
+                      {isActive && <span className="ml-auto text-caption text-muted-foreground">Current</span>}
                     </button>
                   </form>
                 </li>
@@ -109,7 +109,7 @@ export function ProfileSwitcherDialog({
             </Button>
           </div>
           {createState.error && (
-            <p role="alert" className="text-sm text-destructive">
+            <p role="alert" className="text-small text-destructive">
               {createState.error}
             </p>
           )}

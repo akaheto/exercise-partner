@@ -2,6 +2,8 @@
 
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { OptionCard } from "@/components/ui/option-card";
+import { PageHeader } from "@/components/ui/page-header";
 
 interface Step2LevelProps {
   profileName: string;
@@ -32,37 +34,27 @@ const LEVELS = [
 
 export function OnboardingStep2Level({ profileName, onNext, onBack }: Step2LevelProps) {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">
-          {profileName}, what&apos;s your experience level?
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          This helps us suggest appropriate exercises and rep ranges.
-        </p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title={`${profileName}, what's your experience level?`}
+        description="This sets the exercises and rep ranges suggested to you. You can change it later."
+      />
 
-      <div className="space-y-3">
+      <div className="flex flex-col gap-3">
         {LEVELS.map((level) => (
-          <button
+          <OptionCard
             key={level.id}
+            icon={level.icon}
+            label={level.label}
+            description={level.description}
             onClick={() => onNext(level.id)}
-            className="w-full rounded-xl border-2 border-border bg-card p-4 text-left transition-all hover:border-teal-600 hover:bg-teal-50 dark:hover:bg-teal-950/30"
-          >
-            <div className="flex items-start gap-4">
-              <span className="text-3xl">{level.icon}</span>
-              <div>
-                <h3 className="font-semibold text-foreground">{level.label}</h3>
-                <p className="text-sm text-muted-foreground">{level.description}</p>
-              </div>
-            </div>
-          </button>
+          />
         ))}
       </div>
 
-      <div className="flex gap-3 pt-4">
-        <Button variant="outline" onClick={onBack} className="gap-2">
-          <ChevronLeft className="size-4" />
+      <div>
+        <Button variant="outline" onClick={onBack}>
+          <ChevronLeft data-icon="inline-start" />
           Back
         </Button>
       </div>
