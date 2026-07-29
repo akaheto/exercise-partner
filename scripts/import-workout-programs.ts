@@ -154,18 +154,42 @@ function extractDays(doc: Document): ParsedDay[] {
 
   const days: ParsedDay[] = [];
   let sequential = 0;
-  // <h4>Day N - Focus</h4> and <h3>Workout N: Focus Day</h3> both appear
-  // across real pages ("3 Day PPL for Beginners" uses h3 + "Workout N",
-  // unlike the other three programs checked) — both heading levels are
-  // tried, not just one.
-  const headings = [...doc.querySelectorAll("h3, h4")];
+  // <h4>Day N - Focus</h4>, <h3>Workout N: Focus Day</h3> and
+  // <h2>Workout N: Focus</h2> all appear across real pages ("3 Day PPL for
+  // Beginners" uses h3 + "Workout N"; "8 Week Mass Building Hypertrophy
+  // Workout" uses h2 + "Workout N") — all three heading levels are tried.
+  const headings = [...doc.querySelectorAll("h2, h3, h4")];
 
   for (const heading of headings) {
-    const table = heading.nextElementSibling;
-    if (!table || table.tagName !== "TABLE") continue;
+    // The table isn't always the heading's immediate next sibling — some
+    // pages (e.g. bodyweight/EMOM programs) put a one-line description
+    // paragraph in between. Look ahead a few siblings, but stop at the next
+    // heading so a day with no table of its own doesn't pick up a later
+    // day's table.
+    let table: Element | null = null;
+    let sibling = heading.nextElementSibling;
+    for (let hops = 0; sibling && hops < 4; hops += 1) {
+      if (["H2", "H3", "H4"].includes(sibling.tagName)) break;
+      if (sibling.tagName === "TABLE") {
+        table = sibling;
+        break;
+      }
+      sibling = sibling.nextElementSibling;
+    }
+    if (!table) continue;
+    // Looking ahead past intervening elements risks landing on an unrelated
+    // table under a generic section heading (e.g. "The Workouts" followed by
+    // an intro paragraph and then a weight-progression chart, not a day's
+    // exercises — seen on the real site). Only accept a table that actually
+    // looks like an exercise table: every one seen across all pages checked
+    // has an "Exercise" column header.
+    const candidateHeaderCells = [...table.querySelectorAll("tr:first-child th")].map((th) =>
+      th.textContent?.trim().toLowerCase(),
+    );
+    if (!candidateHeaderCells.some((h) => h === "exercise")) continue;
 
     const text = heading.textContent?.replace(/\s+/g, " ").trim() ?? "";
-    const explicitDay = text.match(/(?:Day|Workout)\s*(\d+)/i);
+    const explicitDay = text.match(/(?:Day|Workout)\s*#?\s*(\d+)/i);
     const weekdayMatch = text.match(
       /\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b/i,
     );
@@ -175,7 +199,7 @@ function extractDays(doc: Document): ParsedDay[] {
     const focusText =
       text
         .replace(
-          /^(?:(?:Day|Workout)\s*\d+|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s*[-:]\s*/i,
+          /^(?:(?:Day|Workout)\s*#?\s*\d+|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s*[-:]\s*/i,
           "",
         )
         .trim() || null;
@@ -189,9 +213,16 @@ function extractDays(doc: Document): ParsedDay[] {
 
     const exercises: ParsedExercise[] = [];
     let position = 0;
-    const headerCells = [...table.querySelectorAll("tr:first-child th")].map((th) =>
-      th.textContent?.trim().toLowerCase(),
-    );
+    const headerCells = candidateHeaderCells;
+    // Column position isn't reliable across page variants — some tables
+    // (e.g. EMOM/circuit-style pages) have no Sets column at all, just
+    // Exercise/Reps/Rest. Read by header label where a header row exists;
+    // only fall back to the historical fixed positions (1=sets, 2=reps) for
+    // the rare table with no <th> row to read labels from at all, so a
+    // genuinely absent column reads as null instead of another column's data.
+    const hasHeaderRow = headerCells.length > 0;
+    const setsColIndex = headerCells.findIndex((h) => h === "sets");
+    const repsColIndex = headerCells.findIndex((h) => h === "reps");
     const restColIndex = headerCells.findIndex((h) => h === "rest");
 
     for (const row of table.querySelectorAll("tbody tr, tr")) {
@@ -212,8 +243,14 @@ function extractDays(doc: Document): ParsedDay[] {
         position,
         exerciseUrlRaw: link ? new URL(link.getAttribute("href")!, "https://www.muscleandstrength.com").href : null,
         exerciseNameRaw: linkText || fullCellText,
-        sets: cells[1]?.textContent?.replace(/\s+/g, " ").trim() || null,
-        reps: cells[2]?.textContent?.replace(/\s+/g, " ").trim() || null,
+        sets:
+          (hasHeaderRow ? setsColIndex : 1) >= 0
+            ? cells[hasHeaderRow ? setsColIndex : 1]?.textContent?.replace(/\s+/g, " ").trim() || null
+            : null,
+        reps:
+          (hasHeaderRow ? repsColIndex : 2) >= 0
+            ? cells[hasHeaderRow ? repsColIndex : 2]?.textContent?.replace(/\s+/g, " ").trim() || null
+            : null,
         rest: restColIndex >= 0 ? cells[restColIndex]?.textContent?.replace(/\s+/g, " ").trim() || null : null,
         notes,
       });
@@ -354,6 +391,18 @@ const PROGRAMS: { id: string; url: string }[] = [
   { id: "WP-0002", url: "https://muscleandstrength.com/workouts/upper-lower-4-day-gym-bodybuilding-workout" },
   { id: "WP-0003", url: "https://muscleandstrength.com/workouts/3-day-PPL-workout-for-beginners" },
   { id: "WP-0004", url: "https://muscleandstrength.com/workouts/12-week-fat-destroyer" },
+  { id: "WP-0005", url: "https://muscleandstrength.com/workouts/phul-workout" },
+  { id: "WP-0006", url: "https://muscleandstrength.com/workouts/5-day-muscle-and-strength-building-workout-split" },
+  { id: "WP-0007", url: "https://muscleandstrength.com/workouts/jason-blaha-ice-cream-fitness-5x5-novice-workout" },
+  { id: "WP-0008", url: "https://muscleandstrength.com/workouts/8-week-super-strength-workout" },
+  { id: "WP-0009", url: "https://muscleandstrength.com/workouts/the-ultimate-bro-split" },
+  { id: "WP-0010", url: "https://muscleandstrength.com/workouts/8-week-hypertrophy-workout" },
+  { id: "WP-0011", url: "https://muscleandstrength.com/workouts/8-week-womens-beginner-fat-loss-workout" },
+  { id: "WP-0012", url: "https://muscleandstrength.com/workouts/8-week-womens-workout-routine" },
+  { id: "WP-0013", url: "https://muscleandstrength.com/workouts/6-week-bodyweight-only-workout" },
+  { id: "WP-0014", url: "https://muscleandstrength.com/workouts/limited-equipment-home-workout" },
+  { id: "WP-0015", url: "https://muscleandstrength.com/workouts/the-complete-squat-program" },
+  { id: "WP-0016", url: "https://muscleandstrength.com/workouts/deadlift-specialization-program" },
 ];
 
 async function main() {

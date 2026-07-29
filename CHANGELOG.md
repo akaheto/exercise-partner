@@ -9,6 +9,16 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Workout Library expanded from 4 to 16 imported programs (64 training
+  days, 408 exercise rows). Found and fixed four more real page-structure
+  variants: h2-level day headings, a description paragraph between a
+  heading and its table, a literal "#" in "Workout #1", and tables with no
+  Sets column — sets/reps are now read by matching the header row's own
+  labels instead of a fixed column position. Also fixed a false positive
+  the broadened heading search introduced (grabbing an unrelated table,
+  like a weight-progression chart, under a generic section heading) by
+  requiring a candidate table's header row to contain an "Exercise"
+  column.
 - Workout Library: "Add to my workouts" (Epic Q3). Turns a library program
   into real saved workouts, one per training day, via a new pure conversion
   layer (`src/domain/workout-program-conversion.ts`) that maps the source's
