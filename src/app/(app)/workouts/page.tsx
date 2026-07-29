@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { Archive, ListChecks, UserRound } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { Callout } from "@/components/ui/callout";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,8 @@ export default async function WorkoutsPage({
   const profileId = await getActiveProfileId();
   const q = typeof params.q === "string" ? params.q : "";
   const showArchived = params.archived === "1";
+  const added = typeof params.added === "string" ? Number(params.added) : null;
+  const skipped = typeof params.skipped === "string" ? params.skipped : null;
 
   const workouts = profileId
     ? await listWorkoutSummaries(profileId, { search: q, includeArchived: showArchived })
@@ -31,6 +34,19 @@ export default async function WorkoutsPage({
         description="Everything you've saved. Open one to edit it, or start it from here."
         className="mb-4"
       />
+
+      {added !== null && added > 0 && (
+        <Callout tone="success" title={`Added ${added} workout${added === 1 ? "" : "s"}`} className="mb-4">
+          <p>From the Workout Library, one per training day.</p>
+        </Callout>
+      )}
+      {skipped && (
+        <Callout tone="warning" title="Some exercises weren't included" className="mb-4">
+          <p>
+            Not yet in the exercise library, so they were left out: {skipped}.
+          </p>
+        </Callout>
+      )}
 
       <Suspense>
         <WorkoutSearchBar showArchived={showArchived} />

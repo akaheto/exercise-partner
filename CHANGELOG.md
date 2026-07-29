@@ -9,6 +9,15 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Workout Library: "Add to my workouts" (Epic Q3). Turns a library program
+  into real saved workouts, one per training day, via a new pure conversion
+  layer (`src/domain/workout-program-conversion.ts`) that maps the source's
+  free-text sets/reps/rest onto the app's structured fields — falling back
+  to 1 set / open reps with the original text kept as a note for timed
+  burnout sets ("5 Minutes" / "Burn") rather than fabricating a set count.
+  Exercises the scraper couldn't match to a real library exercise are
+  skipped and named back to the user via a warning banner on `/workouts`,
+  alongside a success banner confirming how many workouts were created.
 - Workout Library (Epic Q evaluation checkpoint): a read-only browser for
   packaged multi-day workout programs scraped from muscleandstrength.com.
   Three new source tables (`source_workout_programs`,

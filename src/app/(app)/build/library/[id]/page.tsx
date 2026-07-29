@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
+import { addWorkoutProgramToWorkouts } from "./actions";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DataTable,
@@ -25,6 +27,7 @@ export default async function WorkoutLibraryProgramPage({
 
   const { program, days } = result;
   const trainingDays = days.filter((d) => !d.isRestDay);
+  const addProgram = addWorkoutProgramToWorkouts.bind(null, program.programId);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 md:px-6">
@@ -40,6 +43,14 @@ export default async function WorkoutLibraryProgramPage({
         title={program.name}
         description={program.description ?? undefined}
         className="mb-4"
+        actions={
+          <form action={addProgram}>
+            <Button type="submit">
+              <Plus className="size-4" aria-hidden="true" />
+              Add to my workouts
+            </Button>
+          </form>
+        }
       />
 
       <div className="mb-8 flex flex-wrap gap-2">

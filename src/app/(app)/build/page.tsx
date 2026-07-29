@@ -63,14 +63,14 @@ export default function BuildPage() {
           <CardHeader>
             <CardTitle>Choose from the library</CardTitle>
             <CardDescription>
-              Browse packaged multi-day programs. Currently for review only — adding one to your
-              saved workouts isn&apos;t built yet.
+              Browse packaged multi-day programs and add one to your saved workouts — one workout
+              per training day.
             </CardDescription>
           </CardHeader>
           <CardContent className="mt-auto">
             <Link
               href="/build/library"
-              className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+              className={cn(buttonVariants({ variant: "default" }), "w-full")}
             >
               Browse programs
             </Link>
