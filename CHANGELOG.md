@@ -9,6 +9,19 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Epic P (started): a restricted `/my-profile` route — the current profile's
+  own card, training-level/goal editor and delete section, with no
+  "All profiles" switcher and no "Add a profile" form. Redirects to `/` when
+  no profile is active rather than offering creation. Added to navigation as
+  a 6th destination alongside the existing `/profile`, which for now still
+  shows everyone the full switcher and creation form; the intent (not yet
+  built — see PROJECT_PLAN.docx assumption 51) is for `/my-profile` to
+  eventually replace `/profile` in navigation for non-administrator users,
+  once there's a real answer for what "administrator" means at the profile
+  level, which doesn't exist in the data model today. `CurrentProfileCard`
+  extracted as a shared component so both routes render the identical card
+  from one source; `initials()` moved to `src/lib/utils.ts`, removing one of
+  its three prior duplicates.
 - Epic O: the 1,218 supplied anatomical muscle-diagram renders, uploaded to a
   new public Vercel Blob store (`exercise-partner-images`) at
   `muscle-diagrams/<exercise_id>.webp` — a deterministic pathname, so no

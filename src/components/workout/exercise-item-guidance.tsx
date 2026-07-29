@@ -63,7 +63,7 @@ export function ExerciseItemGuidance({
         <div className="text-caption text-muted-foreground">
           <p>
             Personalized for <strong>{userLevel}</strong> experience level with <strong>{userGoal}</strong> training goal.{" "}
-            <a href="/profile" className="underline hover:text-foreground">
+            <a href="/my-profile" className="underline hover:text-foreground">
               Update your profile
             </a>{" "}
             to change guidance.

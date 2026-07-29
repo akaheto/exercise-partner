@@ -1,22 +1,14 @@
 import { UserPlus } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CurrentProfileCard } from "@/components/profile/current-profile-card";
 import { ProfileEditor } from "@/components/profile/profile-editor";
 import { DeleteProfileSection } from "@/components/profile/delete-profile-section";
 import { listProfiles } from "@/db/queries/profiles";
 import { getActiveProfileId } from "@/lib/active-profile";
-import { selectProfile, updatePreferredWeightUnit } from "./actions";
+import { initials } from "@/lib/utils";
+import { selectProfile } from "./actions";
 import { CreateProfileForm } from "./create-profile-form";
-
-function initials(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
-}
 
 export default async function ProfilePage() {
   const [profiles, activeProfileId] = await Promise.all([listProfiles(), getActiveProfileId()]);
@@ -33,38 +25,7 @@ export default async function ProfilePage() {
 
       {activeProfile ? (
         <>
-          <Card>
-            <CardHeader>
-              <CardTitle>Current profile</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Avatar size="lg">
-                  <AvatarFallback>{initials(activeProfile.displayName)}</AvatarFallback>
-                </Avatar>
-                <span className="font-medium text-foreground">{activeProfile.displayName}</span>
-              </div>
-
-              <form action={updatePreferredWeightUnit} className="flex items-center gap-3">
-                <input type="hidden" name="profileId" value={activeProfile.id} />
-                <span className="text-small text-muted-foreground">Weight unit</span>
-                <div className="flex gap-1">
-                  {(["kg", "lb"] as const).map((unit) => (
-                    <Button
-                      key={unit}
-                      type="submit"
-                      name="unit"
-                      value={unit}
-                      size="sm"
-                      variant={activeProfile.preferredWeightUnit === unit ? "default" : "outline"}
-                    >
-                      {unit}
-                    </Button>
-                  ))}
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+          <CurrentProfileCard profile={activeProfile} />
 
           <ProfileEditor
             profileId={activeProfile.id}
