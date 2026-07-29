@@ -26,11 +26,11 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
         ) : (
           <XCircle className="size-12 text-muted-foreground" aria-hidden="true" />
         )}
-        <h1 className="text-xl font-semibold text-foreground">
+        <h1 className="text-display text-foreground">
           {session.status === "completed" ? "Workout complete" : "Workout ended"}
         </h1>
-        <p className="text-sm text-muted-foreground">{session.snapshot.name}</p>
-        <Link href="/workouts" className={cn(buttonVariants({ size: "lg" }), "mt-2")}>
+        <p className="text-body text-muted-foreground">{session.snapshot.name}</p>
+        <Link href="/workouts" className={cn(buttonVariants({ size: "workout" }), "mt-2")}>
           Back to workouts
         </Link>
       </div>
@@ -44,8 +44,8 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
     return (
       <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-4 text-center">
         <CheckCircle2 className="size-12 text-success" aria-hidden="true" />
-        <h1 className="text-xl font-semibold text-foreground">All sets logged</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-display text-foreground">All sets logged</h1>
+        <p className="text-body text-muted-foreground">
           {session.snapshot.name} — {session.loggedSets.length} set{session.loggedSets.length === 1 ? "" : "s"} recorded.
         </p>
         <SessionFinishButton sessionId={session.id} />
@@ -88,7 +88,7 @@ function SessionFinishButton({ sessionId }: { sessionId: string }) {
         await completeSession(sessionId);
       }}
     >
-      <Button type="submit" size="lg" className="mt-2">
+      <Button type="submit" size="workout" className="mt-2">
         Finish workout
       </Button>
     </form>

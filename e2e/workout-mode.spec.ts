@@ -30,6 +30,10 @@ test("build a workout, run it with resume, finish it, then abandon a second sess
 
   await page.goto("/profile");
   await page.getByLabel("Name").fill(PROFILE_NAME);
+  // Profile creation gained a required PIN in 1396bd1, after this spec was
+  // written; without it the form never submits and setup fails before
+  // Workout Mode is ever reached.
+  await page.getByLabel("PIN").fill("1234");
   await page.getByRole("button", { name: "Add" }).click();
   await expect(page.getByText(PROFILE_NAME).first()).toBeVisible();
 
@@ -60,8 +64,11 @@ test("build a workout, run it with resume, finish it, then abandon a second sess
   await expect(page).toHaveURL(/\/session\/.+/);
 
   await expect(page.getByText("Set 1 of 2")).toBeVisible();
-  await page.getByLabel("Weight").fill("20");
-  await page.getByLabel("Reps").fill("12");
+  // `exact` because weight and reps are now steppers: the +/- buttons are
+  // named "Increase Weight" / "Decrease Weight" for screen readers, so a
+  // substring match on "Weight" would hit three controls.
+  await page.getByLabel("Weight", { exact: true }).fill("20");
+  await page.getByLabel("Reps", { exact: true }).fill("12");
   await page.getByRole("button", { name: "Log set 1" }).click();
 
   // Resume: reload immediately, before the 1s rest timer would naturally
@@ -71,8 +78,16 @@ test("build a workout, run it with resume, finish it, then abandon a second sess
   await expect(page.getByText("Set 2 of 2")).toBeVisible();
   await expect(page.getByRole("button", { name: "Undo last set" })).toBeVisible();
 
-  await page.getByLabel("Weight").fill("20");
-  await page.getByLabel("Reps").fill("10");
+  // Set 2 goes in through the steppers rather than the keyboard — the other
+  // half of "steppers with large +/- targets alongside direct entry", and the
+  // path a user takes mid-set without unlocking a keyboard.
+  const increaseWeight = page.getByRole("button", { name: "Increase Weight" });
+  await increaseWeight.click();
+  await increaseWeight.click();
+  await expect(page.getByLabel("Weight", { exact: true })).toHaveValue("5");
+  const increaseReps = page.getByRole("button", { name: "Increase Reps" });
+  for (let i = 0; i < 10; i++) await increaseReps.click();
+  await expect(page.getByLabel("Reps", { exact: true })).toHaveValue("10");
   await page.getByRole("button", { name: "Log set 2" }).click();
 
   await expect(page.getByText("All sets logged")).toBeVisible();

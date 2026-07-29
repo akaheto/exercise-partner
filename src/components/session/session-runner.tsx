@@ -3,18 +3,9 @@
 import { useEffect, useState, useTransition } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { NumberStepper } from "@/components/ui/number-stepper";
 import { VideoEmbed } from "@/components/exercise/video-embed";
 import { MuscleDiagram } from "@/components/exercise/muscle-diagram";
 import { splitIntoSentences } from "@/domain/text";
@@ -28,6 +19,17 @@ interface ExerciseDetail {
   sourceUrl: string | null;
   secondaryMuscles: string[];
 }
+
+/**
+ * Stepper increments for weight, per unit.
+ *
+ * VISUAL_STYLE_GUIDE.docx section 4: "Numeric entry during a workout uses
+ * steppers with large +/− targets alongside direct entry." The step only
+ * earns its keep if it matches how plates actually load, so it follows the
+ * unit rather than being a fixed 1: 2.5kg is the smallest common pair of
+ * plates, 5lb its imperial equivalent. Reps step by 1.
+ */
+const WEIGHT_STEP: Record<"kg" | "lb", number> = { kg: 2.5, lb: 5 };
 
 function formatRestTime(ms: number): string {
   const totalSeconds = Math.ceil(ms / 1000);
@@ -55,8 +57,8 @@ export function SessionRunner({
 }) {
   const step: SessionStep = steps[currentStepIndex];
   const [isPending, startTransition] = useTransition();
-  const [weight, setWeight] = useState("");
-  const [reps, setReps] = useState("");
+  const [weight, setWeight] = useState<number | null>(null);
+  const [reps, setReps] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [weightUnit, setWeightUnit] = useState<"kg" | "lb">(defaultWeightUnit);
   const [restUntil, setRestUntil] = useState<number | null>(null);
@@ -77,12 +79,14 @@ export function SessionRunner({
       await logSet(sessionId, {
         exerciseId: step.exerciseId,
         setNumber: nextSetNumber,
-        weight: weight.trim() ? Number(weight) : null,
-        weightUnit: weight.trim() ? weightUnit : null,
-        reps: reps.trim() ? Number(reps) : null,
+        weight,
+        // A unit without a weight would be meaningless on the row.
+        weightUnit: weight === null ? null : weightUnit,
+        reps,
         notes: notes.trim() || null,
       });
-      setReps("");
+      // Weight deliberately carries over to the next set; reps do not.
+      setReps(null);
       setNotes("");
       if (restSeconds > 0) {
         const start = Date.now();
@@ -99,47 +103,33 @@ export function SessionRunner({
     });
   }
 
-  function handleAbandon() {
-    startTransition(async () => {
-      await abandonSession(sessionId);
-    });
-  }
-
   const setsDone = nextSetNumber - 1;
+  const otherUnit = weightUnit === "kg" ? "lb" : "kg";
   const instructionSentences = splitIntoSentences(exercise?.instructions ?? null);
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col px-4 pb-8">
       <header className="flex items-center justify-between gap-3 py-4">
         <div className="min-w-0">
-          <p className="truncate text-xs text-muted-foreground">{workoutName}</p>
-          <p className="text-xs font-medium text-muted-foreground">
+          <p className="truncate text-caption text-muted-foreground">{workoutName}</p>
+          <p className="text-caption font-medium text-muted-foreground">
             Exercise {currentStepIndex + 1} of {steps.length}
           </p>
         </div>
-        <Dialog>
-          <DialogTrigger
-            render={
-              <Button variant="ghost" size="icon" aria-label="End workout">
-                <X />
-              </Button>
-            }
-          />
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>End this workout?</DialogTitle>
-              <DialogDescription>
-                Sets you&apos;ve already logged stay saved. You can&apos;t resume this session once it&apos;s ended.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <DialogClose render={<Button variant="outline">Keep going</Button>} />
-              <Button variant="destructive" disabled={isPending} onClick={handleAbandon}>
-                End workout
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Leaving Workout Mode is confirmed, never a single tap — the exit
+            sits next to controls used mid-set with sweaty hands. */}
+        <ConfirmDialog
+          trigger={
+            <Button variant="ghost" size="icon" aria-label="End workout">
+              <X />
+            </Button>
+          }
+          title="End this workout?"
+          description="Sets you've already logged stay saved. You can't resume this session once it's ended."
+          confirmLabel="End workout"
+          cancelLabel="Keep going"
+          onConfirm={() => abandonSession(sessionId)}
+        />
       </header>
 
       <div className="mb-1 flex gap-1">
@@ -147,83 +137,115 @@ export function SessionRunner({
           <div
             key={s.itemId}
             className={
-              "h-1.5 flex-1 rounded-full " +
+              "h-2 flex-1 rounded-full " +
               (i < currentStepIndex ? "bg-primary" : i === currentStepIndex ? "bg-primary/50" : "bg-muted")
             }
           />
         ))}
       </div>
 
-      <h1 className="mt-4 text-3xl font-bold text-foreground">{step.exerciseName}</h1>
-      {step.exercisePrimaryMuscle && <p className="mt-1 text-sm text-muted-foreground">{step.exercisePrimaryMuscle}</p>}
+      <h1 className="mt-4 text-display text-foreground">{step.exerciseName}</h1>
+      {step.exercisePrimaryMuscle && <p className="mt-1 text-body text-muted-foreground">{step.exercisePrimaryMuscle}</p>}
 
-      <p className="mt-4 font-mono text-lg text-foreground">
+      <p className="mt-4 text-metric text-foreground">
         Set {nextSetNumber} of {step.sets}
         {step.repsMin !== null && step.repsMax !== null && (
-          <span className="text-muted-foreground"> · {step.repsMin}–{step.repsMax} reps</span>
+          <span className="text-body font-normal tracking-normal text-muted-foreground">
+            {" "}
+            · {step.repsMin}–{step.repsMax} reps
+          </span>
         )}
       </p>
 
       {isResting ? (
-        <div className="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-6">
-          <p className="text-sm text-muted-foreground">Resting</p>
-          <p className="font-mono text-5xl font-semibold tabular-nums text-foreground">{formatRestTime(remainingRestMs)}</p>
-          <Button variant="outline" size="lg" onClick={() => setRestUntil(null)}>
-            Skip rest
-          </Button>
-        </div>
+        <Card className="mt-6">
+          <CardContent className="flex flex-col items-center gap-4">
+            <p className="text-body text-muted-foreground">Resting</p>
+            <p role="timer" className="text-timer text-foreground">
+              {formatRestTime(remainingRestMs)}
+            </p>
+            <Button variant="outline" size="workout" className="w-full" onClick={() => setRestUntil(null)}>
+              Skip rest
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="mt-6 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="weight" className="mb-1.5 block text-xs text-muted-foreground">
-                Weight
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  id="weight"
-                  inputMode="decimal"
-                  value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
-                  placeholder="0"
-                  className="h-14 font-mono text-xl"
-                />
+        <Card className="mt-6">
+          <CardContent className="space-y-4">
+            {/* Steppers rather than bare fields: the failure case being
+                designed against is tapping a small field and fighting the
+                phone keyboard between sets. Typing still works — the field
+                commits on blur or Enter. */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <label
+                  htmlFor="weight"
+                  className="text-caption font-semibold tracking-wide text-muted-foreground uppercase"
+                >
+                  Weight
+                </label>
                 <Button
                   type="button"
                   variant="outline"
-                  size="lg"
-                  className="shrink-0 px-3 font-mono"
+                  className="font-mono"
+                  aria-label={`Weight unit is ${weightUnit}. Switch to ${otherUnit}.`}
                   onClick={() => setWeightUnit((u) => (u === "kg" ? "lb" : "kg"))}
                 >
                   {weightUnit}
                 </Button>
               </div>
-            </div>
-            <div>
-              <Label htmlFor="reps" className="mb-1.5 block text-xs text-muted-foreground">
-                Reps
-              </Label>
-              <Input
-                id="reps"
-                inputMode="numeric"
-                value={reps}
-                onChange={(e) => setReps(e.target.value)}
-                placeholder="0"
-                className="h-14 font-mono text-xl"
+              <NumberStepper
+                id="weight"
+                label="Weight"
+                size="workout"
+                value={weight}
+                onValueChange={setWeight}
+                min={0}
+                step={WEIGHT_STEP[weightUnit]}
+                className="w-full"
+                inputClassName="w-full flex-1 text-metric"
               />
             </div>
-          </div>
 
-          <Button size="lg" className="h-14 w-full text-base" disabled={isPending} onClick={handleLogSet}>
-            Log set {nextSetNumber}
-          </Button>
+            <div className="space-y-2">
+              <label
+                htmlFor="reps"
+                className="block text-caption font-semibold tracking-wide text-muted-foreground uppercase"
+              >
+                Reps
+              </label>
+              <NumberStepper
+                id="reps"
+                label="Reps"
+                size="workout"
+                value={reps}
+                onValueChange={setReps}
+                min={0}
+                step={1}
+                className="w-full"
+                inputClassName="w-full flex-1 text-metric"
+              />
+            </div>
 
-          {setsDone > 0 && (
-            <Button variant="ghost" size="sm" disabled={isPending} onClick={handleUndo} className="w-full">
-              Undo last set
+            <Button
+              size="workout"
+              className="w-full"
+              loading={isPending}
+              loadingLabel={`Logging set ${nextSetNumber}`}
+              onClick={handleLogSet}
+            >
+              Log set {nextSetNumber}
             </Button>
-          )}
-        </div>
+
+            {/* A recovery action reached mid-workout, so it sits at the 44px
+                minimum rather than the 36px dense-row size. */}
+            {setsDone > 0 && (
+              <Button variant="outline" disabled={isPending} onClick={handleUndo} className="w-full">
+                Undo last set
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {exercise && (
@@ -231,8 +253,10 @@ export function SessionRunner({
           <VideoEmbed videoUrl={exercise.videoUrl} sourceUrl={exercise.sourceUrl} />
           {instructionSentences.length > 0 && (
             <section>
-              <h2 className="mb-2 text-sm font-semibold text-foreground">Instructions</h2>
-              <ul className="list-disc space-y-1.5 pl-5 text-sm text-foreground">
+              <h2 className="mb-2 text-h3 text-foreground">Instructions</h2>
+              {/* Never below 16px for anything read during a workout —
+                  VISUAL_STYLE_GUIDE.docx section 2. */}
+              <ul className="list-disc space-y-2 pl-5 text-body-lg text-foreground">
                 {instructionSentences.map((s, i) => (
                   <li key={i}>{s}</li>
                 ))}
