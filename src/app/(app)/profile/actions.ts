@@ -78,11 +78,15 @@ export async function createProfile(
         .set({ pinFailedAttempts: next.failedAttempts, pinLockedUntil: next.lockedUntil })
         .where(eq(profiles.id, existingProfile.id));
 
-      return {
-        error: next.lockedUntil
-          ? `Too many incorrect attempts. Try again in ${PIN_LOCKOUT_MINUTES} minutes.`
-          : "Incorrect PIN",
-      };
+      if (next.lockedUntil) {
+        return {
+          error: `Profile "${result.data}" exists. Too many incorrect PIN attempts. Try again in ${PIN_LOCKOUT_MINUTES} minutes.`,
+        };
+      } else {
+        return {
+          error: `A profile named "${result.data}" already exists. Enter its PIN to log in, or choose a different name.`,
+        };
+      }
     }
 
     // PIN is correct — select this profile
