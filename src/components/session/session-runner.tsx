@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { NumberStepper } from "@/components/ui/number-stepper";
+import { RepToggle, WeightToggle } from "@/components/session/rep-weight-toggle";
 import { VideoEmbed } from "@/components/exercise/video-embed";
 import { MuscleDiagram } from "@/components/exercise/muscle-diagram";
 import { splitIntoSentences } from "@/domain/text";
@@ -20,16 +20,6 @@ interface ExerciseDetail {
   secondaryMuscles: string[];
 }
 
-/**
- * Stepper increments for weight, per unit.
- *
- * VISUAL_STYLE_GUIDE.docx section 4: "Numeric entry during a workout uses
- * steppers with large +/− targets alongside direct entry." The step only
- * earns its keep if it matches how plates actually load, so it follows the
- * unit rather than being a fixed 1: 2.5kg is the smallest common pair of
- * plates, 5lb its imperial equivalent. Reps step by 1.
- */
-const WEIGHT_STEP: Record<"kg" | "lb", number> = { kg: 2.5, lb: 5 };
 
 function formatRestTime(ms: number): string {
   const totalSeconds = Math.ceil(ms / 1000);
@@ -58,7 +48,7 @@ export function SessionRunner({
   const step: SessionStep = steps[currentStepIndex];
   const [isPending, startTransition] = useTransition();
   const [weight, setWeight] = useState<number | null>(null);
-  const [reps, setReps] = useState<number | null>(null);
+  const [reps, setReps] = useState<number | "Max" | null>(null);
   const [notes, setNotes] = useState("");
   const [weightUnit, setWeightUnit] = useState<"kg" | "lb">(defaultWeightUnit);
   const [restUntil, setRestUntil] = useState<number | null>(null);
@@ -82,7 +72,7 @@ export function SessionRunner({
         weight,
         // A unit without a weight would be meaningless on the row.
         weightUnit: weight === null ? null : weightUnit,
-        reps,
+        reps: reps === "Max" ? null : reps,
         notes: notes.trim() || null,
       });
       // Weight deliberately carries over to the next set; reps do not.
@@ -172,18 +162,14 @@ export function SessionRunner({
       ) : (
         <Card className="mt-6">
           <CardContent className="space-y-4">
-            {/* Steppers rather than bare fields: the failure case being
-                designed against is tapping a small field and fighting the
-                phone keyboard between sets. Typing still works — the field
-                commits on blur or Enter. */}
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <label
-                  htmlFor="weight"
-                  className="text-caption font-semibold tracking-wide text-muted-foreground uppercase"
-                >
-                  Weight
-                </label>
+                <WeightToggle
+                  value={weight}
+                  onChange={setWeight}
+                  unit={weightUnit}
+                  label="Weight"
+                />
                 <Button
                   type="button"
                   variant="outline"
@@ -194,38 +180,15 @@ export function SessionRunner({
                   {weightUnit}
                 </Button>
               </div>
-              <NumberStepper
-                id="weight"
-                label="Weight"
-                size="workout"
-                value={weight}
-                onValueChange={setWeight}
-                min={0}
-                step={WEIGHT_STEP[weightUnit]}
-                className="w-full"
-                inputClassName="w-full flex-1 text-metric"
-              />
             </div>
 
-            <div className="space-y-2">
-              <label
-                htmlFor="reps"
-                className="block text-caption font-semibold tracking-wide text-muted-foreground uppercase"
-              >
-                Reps
-              </label>
-              <NumberStepper
-                id="reps"
-                label="Reps"
-                size="workout"
-                value={reps}
-                onValueChange={setReps}
-                min={0}
-                step={1}
-                className="w-full"
-                inputClassName="w-full flex-1 text-metric"
-              />
-            </div>
+            <RepToggle
+              value={reps}
+              onChange={setReps}
+              min={step.repsMin}
+              max={step.repsMax}
+              label="Reps"
+            />
 
             <Button
               size="workout"

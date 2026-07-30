@@ -52,14 +52,6 @@ function renderRunner({
   );
 }
 
-const weightField = () => screen.getByRole("textbox", { name: "Weight" });
-const repsField = () => screen.getByRole("textbox", { name: "Reps" });
-
-function typeAndCommit(field: HTMLElement, value: string) {
-  fireEvent.change(field, { target: { value } });
-  fireEvent.blur(field);
-}
-
 describe("SessionRunner set logging", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -68,64 +60,113 @@ describe("SessionRunner set logging", () => {
     abandonSession.mockResolvedValue(undefined);
   });
 
-  it("logs a weight and reps typed directly into the fields", async () => {
-    renderRunner();
+  it("logs weight and reps through toggle buttons", async () => {
+    renderRunner({ defaultWeightUnit: "kg" });
 
-    typeAndCommit(weightField(), "60");
-    typeAndCommit(repsField(), "10");
+    const weightBtn = screen.getByRole("button", { name: /Weight:/ });
+    const repsBtn = screen.getByRole("button", { name: /Reps:/ });
+
+    fireEvent.click(weightBtn);
+    fireEvent.click(weightBtn);
+    fireEvent.click(repsBtn);
+    fireEvent.click(repsBtn);
+    fireEvent.click(repsBtn);
+
     fireEvent.click(screen.getByRole("button", { name: "Log set 1" }));
 
     await waitFor(() => expect(logSet).toHaveBeenCalledTimes(1));
-    expect(logSet).toHaveBeenCalledWith("SESSION-1", {
+    expect(logSet.mock.calls[0][1]).toMatchObject({
       exerciseId: "EX-0001",
       setNumber: 1,
-      weight: 60,
+      weight: 5,
       weightUnit: "kg",
       reps: 10,
       notes: null,
     });
   });
 
-  it("steps weight by the plate increment for the active unit and reps by one", async () => {
+  it("cycles weight through kg increments when the unit is kg", async () => {
     renderRunner({ defaultWeightUnit: "kg" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Increase Weight" }));
-    fireEvent.click(screen.getByRole("button", { name: "Increase Weight" }));
-    expect(weightField()).toHaveValue("5");
+    const weightBtn = screen.getByRole("button", { name: /Weight:/ });
 
-    fireEvent.click(screen.getByRole("button", { name: "Increase Reps" }));
-    fireEvent.click(screen.getByRole("button", { name: "Increase Reps" }));
-    fireEvent.click(screen.getByRole("button", { name: "Increase Reps" }));
-    expect(repsField()).toHaveValue("3");
+    expect(weightBtn).toHaveTextContent("—");
 
-    fireEvent.click(screen.getByRole("button", { name: "Log set 1" }));
-    await waitFor(() => expect(logSet).toHaveBeenCalledTimes(1));
-    expect(logSet.mock.calls[0][1]).toMatchObject({ weight: 5, weightUnit: "kg", reps: 3 });
+    fireEvent.click(weightBtn);
+    expect(weightBtn).toHaveTextContent("2.5kg");
+
+    fireEvent.click(weightBtn);
+    expect(weightBtn).toHaveTextContent("5kg");
+
+    fireEvent.click(weightBtn);
+    expect(weightBtn).toHaveTextContent("7.5kg");
   });
 
-  it("switches the step to 5 when the unit is switched to lb", async () => {
-    renderRunner({ defaultWeightUnit: "kg" });
+  it("cycles weight through lb increments when the unit is lb", async () => {
+    renderRunner({ defaultWeightUnit: "lb" });
 
-    fireEvent.click(screen.getByRole("button", { name: /Weight unit is kg/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Increase Weight" }));
-    expect(weightField()).toHaveValue("5");
+    const weightBtn = screen.getByRole("button", { name: /Weight:/ });
 
-    fireEvent.click(screen.getByRole("button", { name: "Log set 1" }));
-    await waitFor(() => expect(logSet).toHaveBeenCalledTimes(1));
-    expect(logSet.mock.calls[0][1]).toMatchObject({ weight: 5, weightUnit: "lb" });
+    fireEvent.click(weightBtn);
+    expect(weightBtn).toHaveTextContent("5lb");
+
+    fireEvent.click(weightBtn);
+    expect(weightBtn).toHaveTextContent("10lb");
+
+    fireEvent.click(weightBtn);
+    expect(weightBtn).toHaveTextContent("15lb");
   });
 
-  it("never steps weight or reps below zero", () => {
+  it("cycles reps through the rep range", async () => {
     renderRunner();
 
-    typeAndCommit(weightField(), "2.5");
-    fireEvent.click(screen.getByRole("button", { name: "Decrease Weight" }));
-    expect(weightField()).toHaveValue("0");
-    expect(screen.getByRole("button", { name: "Decrease Weight" })).toBeDisabled();
+    const repsBtn = screen.getByRole("button", { name: /Reps:/ });
+
+    expect(repsBtn).toHaveTextContent("—");
+
+    fireEvent.click(repsBtn);
+    expect(repsBtn).toHaveTextContent("8");
+
+    fireEvent.click(repsBtn);
+    expect(repsBtn).toHaveTextContent("9");
+
+    fireEvent.click(repsBtn);
+    expect(repsBtn).toHaveTextContent("10");
   });
 
-  // Unhappy path: a bodyweight set logs nothing rather than a unit with no
-  // weight attached to it.
+  it("cycles reps to Max after reaching the max in the range", async () => {
+    renderRunner();
+
+    const repsBtn = screen.getByRole("button", { name: /Reps:/ });
+
+    for (let i = 0; i < 5; i++) {
+      fireEvent.click(repsBtn);
+    }
+
+    expect(repsBtn).toHaveTextContent("12");
+
+    fireEvent.click(repsBtn);
+    expect(repsBtn).toHaveTextContent("Max");
+
+    fireEvent.click(repsBtn);
+    expect(repsBtn).toHaveTextContent("8");
+  });
+
+  it("switches weight unit and maintains toggle cycling", async () => {
+    renderRunner({ defaultWeightUnit: "kg" });
+
+    const unitBtn = screen.getByRole("button", { name: /Weight unit is kg/ });
+    const weightBtn = screen.getByRole("button", { name: /Weight:/ });
+
+    fireEvent.click(weightBtn);
+    expect(weightBtn).toHaveTextContent("2.5kg");
+
+    fireEvent.click(unitBtn);
+
+    fireEvent.click(weightBtn);
+    expect(weightBtn).toHaveTextContent("5lb");
+  });
+
   it("logs nulls, and no unit, when nothing is entered", async () => {
     renderRunner({ defaultWeightUnit: "lb" });
 
@@ -135,29 +176,24 @@ describe("SessionRunner set logging", () => {
     expect(logSet.mock.calls[0][1]).toMatchObject({ weight: null, weightUnit: null, reps: null });
   });
 
-  // Unhappy path: the old bare inputs sent Number("abc") — NaN — straight at
-  // a numeric column.
-  it("keeps the last good weight when unparseable text is typed", async () => {
-    renderRunner();
-
-    typeAndCommit(weightField(), "60");
-    typeAndCommit(weightField(), "sixty");
-    expect(weightField()).toHaveValue("60");
-
-    fireEvent.click(screen.getByRole("button", { name: "Log set 1" }));
-    await waitFor(() => expect(logSet).toHaveBeenCalledTimes(1));
-    expect(logSet.mock.calls[0][1]).toMatchObject({ weight: 60 });
-  });
-
   it("carries the weight over to the next set but clears the reps", async () => {
     renderRunner({ stepOverrides: { restSeconds: 0 } });
 
-    typeAndCommit(weightField(), "60");
-    typeAndCommit(repsField(), "10");
+    let weightBtn = screen.getByRole("button", { name: /Weight:/ });
+    let repsBtn = screen.getByRole("button", { name: /Reps:/ });
+
+    fireEvent.click(weightBtn);
+    fireEvent.click(repsBtn);
+    fireEvent.click(repsBtn);
+
     fireEvent.click(screen.getByRole("button", { name: "Log set 1" }));
 
-    await waitFor(() => expect(repsField()).toHaveValue(""));
-    expect(weightField()).toHaveValue("60");
+    await waitFor(() => {
+      repsBtn = screen.getByRole("button", { name: /Reps:/ });
+      weightBtn = screen.getAllByRole("button").find((btn) => btn.textContent.includes("Weight:")) as HTMLElement;
+      expect(repsBtn).toHaveTextContent("—");
+      expect(weightBtn).toHaveTextContent("2.5kg");
+    });
   });
 
   it("shows the rest timer after a logged set and lets it be skipped", async () => {
@@ -232,15 +268,10 @@ describe("SessionRunner touch targets", () => {
       expect(screen.getByRole("button", { name }).className).toMatch(/\bh-14\b/);
     }
 
-    for (const name of ["Increase Weight", "Decrease Weight", "Increase Reps", "Decrease Reps"]) {
-      expect(screen.getByRole("button", { name }).className).toMatch(/\bsize-14\b/);
-    }
-
-    for (const field of [weightField(), repsField()]) {
-      expect(field.className).toMatch(/\bh-14\b/);
-      // The digits are the interface — 28px mono, not the 18px input default.
-      expect(field.className).toContain("text-metric");
-    }
+    const weightToggle = screen.getAllByRole("button").find((btn) => btn.textContent.includes("Weight:"));
+    const repsToggle = screen.getByRole("button", { name: /Reps:/ });
+    expect(weightToggle?.className).toMatch(/\b(size-14|h-14)\b/);
+    expect(repsToggle.className).toMatch(/\b(size-14|h-14)\b/);
 
     // 44px minimum, not the 36px dense-row size.
     for (const name of ["Undo last set", "End workout"]) {

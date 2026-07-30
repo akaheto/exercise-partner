@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { UserPlus } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,11 +7,17 @@ import { ProfileEditor } from "@/components/profile/profile-editor";
 import { DeleteProfileSection } from "@/components/profile/delete-profile-section";
 import { listProfiles } from "@/db/queries/profiles";
 import { getActiveProfileId } from "@/lib/active-profile";
+import { getAdminSessionStatus } from "@/app/admin/login/actions";
 import { initials } from "@/lib/utils";
 import { selectProfile } from "./actions";
 import { CreateProfileForm } from "./create-profile-form";
 
 export default async function ProfilePage() {
+  const isAdmin = await getAdminSessionStatus();
+  if (!isAdmin) {
+    redirect("/my-profile");
+  }
+
   const [profiles, activeProfileId] = await Promise.all([listProfiles(), getActiveProfileId()]);
   const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? null;
 
