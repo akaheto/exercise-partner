@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unmatched Exercises Report</title>
+  <style>
+    :root {
+      --bg-primary: #0f1419;
+      --bg-secondary: #1a1f2e;
+      --bg-tertiary: #252d3d;
+      --text-primary: #f0f2f5;
+      --text-secondary: #b0b8c1;
+      --accent-teal: #14b8a6;
+      --accent-orange: #f97316;
+      --status-match: #10b981;
+      --status-diff: #f59e0b;
+      --status-nomatch: #ef4444;
+      --border: #3f4754;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-primary: #ffffff;
+        --bg-secondary: #f9fafb;
+        --bg-tertiary: #f3f4f6;
+        --text-primary: #111827;
+        --text-secondary: #6b7280;
+        --border: #e5e7eb;
+      }
+    }
+
+    :root[data-theme="light"] {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f9fafb;
+      --bg-tertiary: #f3f4f6;
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --border: #e5e7eb;
+    }
+
+    :root[data-theme="dark"] {
+      --bg-primary: #0f1419;
+      --bg-secondary: #1a1f2e;
+      --bg-tertiary: #252d3d;
+      --text-primary: #f0f2f5;
+      --text-secondary: #b0b8c1;
+      --border: #3f4754;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      font-size: 1rem;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .summary-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .summary-card .number {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--accent-teal);
+      line-height: 1;
+    }
+
+    .summary-card .label {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      font-size: 0.875rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .legend-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: white;
+    }
+
+    .badge-match {
+      background: var(--status-match);
+    }
+
+    .badge-diff {
+      background: var(--status-diff);
+    }
+
+    .badge-nomatch {
+      background: var(--status-nomatch);
+    }
+
+    .filters {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: var(--bg-tertiary);
+      border-color: var(--accent-teal);
+    }
+
+    button.active {
+      background: var(--accent-teal);
+      border-color: var(--accent-teal);
+      color: white;
+    }
+
+    .exercises-grid {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .exercise-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .exercise-card:hover {
+      border-color: var(--accent-teal);
+    }
+
+    .exercise-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .exercise-name {
+      flex: 1;
+    }
+
+    .exercise-name h2 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .exercise-name .meta {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .exercise-name .meta span {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 0.75rem;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .status-badge.match {
+      background: var(--status-match);
+    }
+
+    .status-badge.diff {
+      background: var(--status-diff);
+    }
+
+    .status-badge.nomatch {
+      background: var(--status-nomatch);
+    }
+
+    .exercise-body {
+      padding: 1.5rem;
+    }
+
+    .replacement-section {
+      margin-bottom: 1rem;
+    }
+
+    .replacement-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .replacement-section h3 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    .replacement-item {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .replacement-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .replacement-name {
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+      font-size: 0.95rem;
+    }
+
+    .replacement-id {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-family: 'Courier New', monospace;
+    }
+
+    .equipment-comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+
+    .equipment-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .equipment-label {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      font-weight: 600;
+    }
+
+    .equipment-value {
+      font-weight: 500;
+    }
+
+    .no-match {
+      color: var(--status-nomatch);
+      font-style: italic;
+      font-size: 0.85rem;
+    }
+
+    .category-tag {
+      display: inline-block;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .visibility-none {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      .exercise-header {
+        flex-direction: column;
+      }
+
+      .equipment-comparison {
+        grid-template-columns: 1fr;
+      }
+
+      .summary {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Unmatched Imported Exercises</h1>
+    <p class="subtitle">Equipment comparison for 73 exercises from imported workout programs</p>
+
+    <div class="summary">
+      <div class="summary-card">
+        <div class="number">73</div>
+        <div class="label">Unmatched</div>
+      </div>
+      <div class="summary-card">
+        <div class="number">53</div>
+        <div class="label">With Suggestions</div>
+      </div>
+      <div class="summary-card">
+        <div class="number">20</div>
+        <div class="label">No Matches Found</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-badge badge-match">✓</div>
+        <span>Equipment matches</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-badge badge-diff">⚠</div>
+        <span>Equipment differs</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-badge badge-nomatch">✗</div>
+        <span>No suitable match</span>
+      </div>
+    </div>
+
+    <div class="filters">
+      <button class="active" data-filter="all">All</button>
+      <button data-filter="match">Equipment Match</button>
+      <button data-filter="diff">Equipment Differs</button>
+      <button data-filter="nomatch">No Match</button>
+    </div>
+
+    <div class="exercises-grid" id="exercises"></div>
+  </div>
+
+  <script>
+    const exercises = [
+      {
+        original: "Single Arm Lateral Machine Raise",
+        originalEquipment: "Machine",
+        sets: "5",
+        reps: "8",
+        suggestions: [
+          { name: "Lateral Raise Machine", id: "EX-0567", equipment: "Dumbbell" }
+        ]
+      },
+      {
+        original: "Partial Lateral Raise",
+        originalEquipment: "Dumbbell",
+        sets: "3",
+        reps: "Failure",
+        suggestions: [
+          { name: "Lateral Raise Partials", id: "EX-0568", equipment: "Dumbbell" }
+        ]
+      },
+      {
+        original: "Hammer Strength High Row Machine",
+        originalEquipment: "Machine",
+        sets: "5",
+        reps: "8",
+        suggestions: [
+          { name: "Seated High Cable Row", id: "EX-0925", equipment: "Cable" }
+        ]
+      },
+      {
+        original: "Rear Delt Fly Machine",
+        originalEquipment: "Machine",
+        sets: "5",
+        reps: "8",
+        suggestions: [
+          { name: "Alternating Incline Rear Delt Fly", id: "EX-0060", equipment: "Dumbbell" },
+          { name: "Alternating Lying Rear Delt Fly", id: "EX-0064", equipment: "Dumbbell" },
+          { name: "Alternating Rear Delt Fly", id: "EX-0068", equipment: "Dumbbell" }
+        ]
+      },
+      {
+        original: "Reverse Hack Squat",
+        originalEquipment: "Machine",
+        sets: "3",
+        reps: "12",
+        suggestions: [
+          { name: "Reverse Hack Squat", id: "EX-0841", equipment: "Machine" }
+        ]
+      },
+      {
+        original: "5 Second Isometric Bicep Contractions",
+        originalEquipment: "Machine or Cable",
+        sets: "3",
+        reps: "8",
+        suggestions: [
+          { name: "Machine Bicep Curl", id: "EX-0616", equipment: "Machine" },
+          { name: "Incline Cable Bicep Curl", id: "EX-0492", equipment: "Cable" }
+        ]
+      },
+      {
+        original: "Cable Pull Through w/Rope",
+        originalEquipment: "Cable",
+        sets: "3",
+        reps: "10-12",
+        suggestions: [
+          { name: "Cable Calf Raise", id: "EX-0213", equipment: "Cable" }
+        ]
+      },
+      {
+        original: "Cable Crossover",
+        originalEquipment: "Cable",
+        sets: "2-3",
+        reps: "8-12",
+        suggestions: [
+          { name: "Machine Fly", id: "N/A", equipment: "Machine" }
+        ]
+      },
+      {
+        original: "Barbell Static Hold",
+        originalEquipment: "Barbell",
+        sets: "5 Minutes",
+        reps: "Burn",
+        suggestions: []
+      },
+      {
+        original: "Calf Exercise",
+        originalEquipment: "Unknown",
+        sets: "4",
+        reps: "6-10",
+        suggestions: [
+          { name: "45 Degree Calf Raise (Toes In)", id: "EX-0029", equipment: "Machine" }
+        ]
+      },
+      {
+        original: "Do 20-30 minutes of Zone 2 cardio",
+        originalEquipment: "Cardio",
+        sets: "",
+        reps: "",
+        suggestions: []
+      },
+      {
+        original: "Burpees",
+        originalEquipment: "Bodyweight",
+        sets: "",
+        reps: "15",
+        suggestions: []
+      },
+      {
+        original: "Running in Place",
+        originalEquipment: "Bodyweight",
+        sets: "",
+        reps: "",
+        suggestions: []
+      }
+    ];
+
+    function getStatus(original, suggestion) {
+      if (!suggestion) return 'nomatch';
+      if (!suggestion.equipment) return 'nomatch';
+      if (original.originalEquipment.toLowerCase() === suggestion.equipment.toLowerCase()) return 'match';
+      return 'diff';
+    }
+
+    function renderExercises(filter = 'all') {
+      const container = document.getElementById('exercises');
+      container.innerHTML = '';
+
+      exercises.forEach(ex => {
+        const suggestion = ex.suggestions[0];
+        const status = getStatus(ex, suggestion);
+
+        if (filter !== 'all' && status !== filter) {
+          return;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'exercise-card';
+        card.innerHTML = `
+          <div class="exercise-header">
+            <div class="exercise-name">
+              <h2>${ex.original}</h2>
+              <div class="meta">
+                ${ex.sets ? `<span>Sets: ${ex.sets}</span>` : ''}
+                ${ex.reps ? `<span>Reps: ${ex.reps}</span>` : ''}
+              </div>
+            </div>
+            <div class="status-badge ${status}">${status === 'match' ? '✓' : status === 'diff' ? '⚠' : '✗'}</div>
+          </div>
+          <div class="exercise-body">
+            <div class="replacement-section">
+              <h3>Original Equipment</h3>
+              <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: 6px; border: 1px solid var(--border); font-weight: 500;">
+                ${ex.originalEquipment}
+              </div>
+            </div>
+            ${ex.suggestions.length > 0 ? `
+              <div class="replacement-section">
+                <h3>Suggested Replacement${ex.suggestions.length > 1 ? 's' : ''}</h3>
+                ${ex.suggestions.map(s => `
+                  <div class="replacement-item">
+                    <div class="replacement-name">${s.name}</div>
+                    <div class="replacement-id">${s.id}</div>
+                    <div class="equipment-comparison">
+                      <div class="equipment-col">
+                        <div class="equipment-label">Original</div>
+                        <div class="equipment-value">${ex.originalEquipment}</div>
+                      </div>
+                      <div class="equipment-col">
+                        <div class="equipment-label">Replacement</div>
+                        <div class="equipment-value">${s.equipment}</div>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            ` : `
+              <div class="replacement-section">
+                <h3>Status</h3>
+                <div class="no-match">No suitable match found in exercise library</div>
+              </div>
+            `}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Filter buttons
+    document.querySelectorAll('.filters button').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.filters button').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        renderExercises(e.target.dataset.filter);
+      });
+    });
+
+    // Initial render
+    renderExercises();
+  </script>
+</body>
+</html>
