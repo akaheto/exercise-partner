@@ -46,8 +46,70 @@ export async function createProfile(
     return { error: "PIN must be 4-6 digits." };
   }
 
+  // Check if a profile with this name already exists
+  const [existingProfile] = await db
+    .select()
+    .from(profiles)
+    .where(eq(profiles.displayName, result.data));
+
+  if (existingProfile) {
+    // Profile exists — verify PIN
+    const attemptState: PinAttemptState = {
+      failedAttempts: existingProfile.pinFailedAttempts,
+      lockedUntil: existingProfile.pinLockedUntil,
+    };
+
+    if (isPinLocked(attemptState)) {
+      const minutes = minutesUntil(attemptState.lockedUntil!);
+      return {
+        error: `Too many incorrect attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`,
+      };
+    }
+
+    const wasCorrect =
+      !!existingProfile.pinHash &&
+      !!existingProfile.pinSalt &&
+      verifyPin(pinResult.data, existingProfile.pinSalt, existingProfile.pinHash);
+
+    if (!wasCorrect) {
+      const next = nextPinAttemptState(attemptState, false);
+      await db
+        .update(profiles)
+        .set({ pinFailedAttempts: next.failedAttempts, pinLockedUntil: next.lockedUntil })
+        .where(eq(profiles.id, existingProfile.id));
+
+      return {
+        error: next.lockedUntil
+          ? `Too many incorrect attempts. Try again in ${PIN_LOCKOUT_MINUTES} minutes.`
+          : "Incorrect PIN",
+      };
+    }
+
+    // PIN is correct — select this profile
+    const cookieStore = await cookies();
+    cookieStore.set(ACTIVE_PROFILE_COOKIE, existingProfile.id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 365,
+      path: "/",
+    });
+
+    // Reset failed attempts on successful login
+    if (existingProfile.pinFailedAttempts > 0) {
+      await db
+        .update(profiles)
+        .set({ pinFailedAttempts: 0, pinLockedUntil: null })
+        .where(eq(profiles.id, existingProfile.id));
+    }
+
+    revalidatePath("/", "layout");
+    return {};
+  }
+
+  // Profile doesn't exist — create a new one
   const pinSalt = generatePinSalt();
-  const [profile] = await db
+  const [newProfile] = await db
     .insert(profiles)
     .values({
       displayName: result.data,
@@ -57,7 +119,7 @@ export async function createProfile(
     .returning();
 
   const cookieStore = await cookies();
-  cookieStore.set(ACTIVE_PROFILE_COOKIE, profile.id, {
+  cookieStore.set(ACTIVE_PROFILE_COOKIE, newProfile.id, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
