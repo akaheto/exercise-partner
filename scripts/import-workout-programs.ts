@@ -274,6 +274,70 @@ function parseIntOrNull(s: string | undefined): number | null {
   return match ? Number(match[0]) : null;
 }
 
+function categorizeProgram(name: string, meta: Record<string, string>): string {
+  const lower = name.toLowerCase();
+  const goal = (meta["Main Goal"] ?? "").toLowerCase();
+  const gender = (meta["Target Gender"] ?? "").toLowerCase();
+  const equipment = (meta["Equipment Required"] ?? "").toLowerCase();
+  const isWomenOnly = gender === "female" || (lower.includes("women") && (lower.includes("for women") || lower.includes("women's")));
+
+  // Check for equipment-specific programs first (high priority)
+  if (lower.includes("dumbbell") && lower.includes("only")) return "Dumbbell Only";
+  if (lower.includes("kettlebell")) return "Kettlebell";
+  if (lower.includes("bodyweight") || lower.includes("no equipment")) return "Bodyweight";
+  if ((lower.includes("home") || lower.includes("at home")) && !isWomenOnly) return "Home Workouts";
+  if (lower.includes("planet fitness")) return "Gym - Limited Equipment";
+
+  // Check for specialty programs
+  if (lower.includes("deload")) return "Recovery & Deload";
+  if (lower.includes("abs") || lower.includes("core")) return "Specialty - Core";
+  if (lower.includes("squat")) return "Specialty - Squat Focus";
+  if (lower.includes("deadlift")) return "Specialty - Deadlift Focus";
+  if (lower.includes("bench")) return "Specialty - Bench Press Focus";
+  if (lower.includes("hiit") || lower.includes("cardio")) return "Cardio & HIIT";
+  if (lower.includes("finisher")) return "Finisher Programs";
+
+  // Check for strength and hypertrophy
+  if (goal.includes("strength") || lower.includes("strength")) {
+    if (isWomenOnly) return "Strength Training - Women";
+    return "Strength Training";
+  }
+  if (goal.includes("hypertrophy") || lower.includes("hypertrophy") || lower.includes("mass")) {
+    if (isWomenOnly) return "Muscle Building - Women";
+    return "Muscle Building";
+  }
+  if (goal.includes("fat") || lower.includes("fat loss") || lower.includes("shred")) {
+    if (isWomenOnly) return "Fat Loss - Women";
+    return "Fat Loss";
+  }
+
+  // Check for split types
+  if (lower.includes("full body")) {
+    if (isWomenOnly) return "Full Body - Women";
+    return "Full Body";
+  }
+  if (lower.includes("upper") && lower.includes("lower")) return "Upper/Lower Split";
+  if (lower.includes("push pull leg") || lower.includes("ppl")) return "Push/Pull/Legs Split";
+  if (lower.includes("bro split")) return "Muscle Building";
+
+  // Default based on main goal
+  if (goal.includes("fat")) {
+    if (isWomenOnly) return "Fat Loss - Women";
+    return "Fat Loss";
+  }
+  if (goal.includes("strength")) {
+    if (isWomenOnly) return "Strength Training - Women";
+    return "Strength Training";
+  }
+  if (goal.includes("muscle") || goal.includes("build")) {
+    if (isWomenOnly) return "Muscle Building - Women";
+    return "Muscle Building";
+  }
+
+  // Catch-all
+  return "Mixed Programs";
+}
+
 async function loadExerciseUrlIndex(): Promise<Map<string, string>> {
   const rows = await db.select({ exerciseId: sourceExercises.exerciseId, url: sourceExercises.url }).from(sourceExercises);
   const index = new Map<string, string>();
@@ -291,6 +355,7 @@ async function importProgram(url: string, programId: string, exerciseIndex: Map<
   const meta = extractMetadata(doc);
   const name = doc.querySelector("h1")?.textContent?.trim() || meta["Name"] || slugFromUrl(url);
   const description = extractDescription(html);
+  const category = categorizeProgram(name, meta);
   const days = extractDays(doc);
 
   const totalExercises = days.reduce((n, d) => n + d.exercises.length, 0);
@@ -309,6 +374,7 @@ async function importProgram(url: string, programId: string, exerciseIndex: Map<
         name,
         url,
         description,
+        category,
         mainGoal: meta["Main Goal"] ?? null,
         workoutType: meta["Workout Type"] ?? null,
         trainingLevel: meta["Training Level"] ?? null,
@@ -324,6 +390,7 @@ async function importProgram(url: string, programId: string, exerciseIndex: Map<
         set: {
           name,
           description,
+          category,
           mainGoal: meta["Main Goal"] ?? null,
           workoutType: meta["Workout Type"] ?? null,
           trainingLevel: meta["Training Level"] ?? null,
@@ -403,14 +470,44 @@ const PROGRAMS: { id: string; url: string }[] = [
   { id: "WP-0014", url: "https://muscleandstrength.com/workouts/limited-equipment-home-workout" },
   { id: "WP-0015", url: "https://muscleandstrength.com/workouts/the-complete-squat-program" },
   { id: "WP-0016", url: "https://muscleandstrength.com/workouts/deadlift-specialization-program" },
+  { id: "WP-0017", url: "https://muscleandstrength.com/workouts/10-week-fat-torcher" },
+  { id: "WP-0018", url: "https://muscleandstrength.com/workouts/10-week-upper-lower-workout-for-women" },
+  { id: "WP-0019", url: "https://muscleandstrength.com/workouts/12-week-kettlebell-ab-workout" },
+  { id: "WP-0020", url: "https://muscleandstrength.com/workouts/12-week-military-workout-program" },
+  { id: "WP-0021", url: "https://muscleandstrength.com/workouts/12-week-push-pull-legs-for-women" },
+  { id: "WP-0022", url: "https://muscleandstrength.com/workouts/12-week-total-transformation-workout" },
+  { id: "WP-0023", url: "https://muscleandstrength.com/workouts/12-week-womens-bikini-prep-workout" },
+  { id: "WP-0024", url: "https://muscleandstrength.com/workouts/2-week-deload-program" },
+  { id: "WP-0025", url: "https://muscleandstrength.com/workouts/20-minute-at-home-full-body-workout" },
+  { id: "WP-0026", url: "https://muscleandstrength.com/workouts/20-minute-hiit-workout" },
+  { id: "WP-0027", url: "https://muscleandstrength.com/workouts/2014-minutes-better-body-fast-start-plan" },
+  { id: "WP-0028", url: "https://muscleandstrength.com/workouts/3-day-at-home-womens-workout" },
+  { id: "WP-0029", url: "https://muscleandstrength.com/workouts/3-day-dumbbell-only-workout-for-women" },
+  { id: "WP-0030", url: "https://muscleandstrength.com/workouts/3-day-full-body-dumbbell-workout" },
+  { id: "WP-0031", url: "https://muscleandstrength.com/workouts/3-day-full-body-kettlebell-workout" },
+  { id: "WP-0032", url: "https://muscleandstrength.com/workouts/3-day-full-body-planet-fitness-workout" },
+  { id: "WP-0033", url: "https://muscleandstrength.com/workouts/3-day-full-body-workout-for-tall-girls" },
+  { id: "WP-0034", url: "https://muscleandstrength.com/workouts/3-day-workout-routine-and-diet-for-beginners" },
+  { id: "WP-0035", url: "https://muscleandstrength.com/workouts/300-rise-new-you-workout-muscular-ripped" },
+  { id: "WP-0036", url: "https://muscleandstrength.com/workouts/4-5-day-workout-for-building-muscle-and-strength" },
 ];
 
 async function main() {
   const exerciseIndex = await loadExerciseUrlIndex();
   console.log(`Loaded ${exerciseIndex.size} existing exercise URLs for matching.\n`);
 
+  const failed: string[] = [];
   for (const p of PROGRAMS) {
-    await importProgram(p.url, p.id, exerciseIndex);
+    try {
+      await importProgram(p.url, p.id, exerciseIndex);
+    } catch (err) {
+      console.error(`Failed to import ${p.id}: ${err instanceof Error ? err.message : String(err)}`);
+      failed.push(p.id);
+    }
+  }
+
+  if (failed.length > 0) {
+    console.log(`\n⚠ ${failed.length} programs failed to import: ${failed.join(", ")}`);
   }
 }
 

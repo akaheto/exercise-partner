@@ -11,6 +11,26 @@ export function listWorkoutPrograms() {
   return db.select().from(sourceWorkoutPrograms).orderBy(asc(sourceWorkoutPrograms.name));
 }
 
+/** Get all programs grouped by category, for hierarchical display. */
+export async function listWorkoutProgramsByCategory() {
+  const programs = await db
+    .select()
+    .from(sourceWorkoutPrograms)
+    .orderBy(asc(sourceWorkoutPrograms.category), asc(sourceWorkoutPrograms.name));
+
+  const grouped = new Map<string, typeof programs>();
+  for (const prog of programs) {
+    const cat = prog.category ?? "Other";
+    if (!grouped.has(cat)) grouped.set(cat, []);
+    grouped.get(cat)!.push(prog);
+  }
+
+  // Return as array of categories with programs, sorted by category name
+  return Array.from(grouped.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([category, programs]) => ({ category, programs }));
+}
+
 /** A program with its full day-by-day breakdown, exercises in position
  * order, joined to source_exercises where a match was found (see
  * scripts/import-workout-programs.ts). Returns null for an unknown id. */

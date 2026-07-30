@@ -161,6 +161,7 @@ export const sourceWorkoutPrograms = pgTable("source_workout_programs", {
   name: text("name").notNull(),
   url: text("url").notNull().unique(),
   description: text("description"),
+  category: text("category"), // e.g. "Muscle Building", "Fat Loss", "Strength", "Home Workouts"
   mainGoal: text("main_goal"), // e.g. "Build Muscle", "Fat Loss", "Increase Strength"
   workoutType: text("workout_type"), // e.g. "Split", "Full Body"
   trainingLevel: text("training_level"), // "Beginner" | "Intermediate" | "Advanced"
