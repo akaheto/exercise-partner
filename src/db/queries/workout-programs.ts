@@ -1,4 +1,4 @@
-import { and, asc, eq, ilike, inArray, or } from "drizzle-orm";
+import { asc, eq, ilike, inArray, or } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
   sourceExercises,

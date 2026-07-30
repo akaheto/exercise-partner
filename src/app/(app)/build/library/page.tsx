@@ -54,7 +54,7 @@ export default async function WorkoutLibraryPage({
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           {/* Goal filter */}
           <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Main Goal</p>
+            <p className="text-caption font-medium text-muted-foreground">Main Goal</p>
             <div className="flex flex-wrap gap-2">
               {GOAL_OPTIONS.map((goal) => (
                 <Link key={goal} href={buildFilterUrl("goal", filters.goal === goal ? null : goal)}>
@@ -71,7 +71,7 @@ export default async function WorkoutLibraryPage({
 
           {/* Level filter */}
           <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Training Level</p>
+            <p className="text-caption font-medium text-muted-foreground">Training Level</p>
             <div className="flex flex-wrap gap-2">
               {LEVEL_OPTIONS.map((level) => (
                 <Link key={level} href={buildFilterUrl("level", filters.level === level ? null : level)}>
@@ -88,7 +88,7 @@ export default async function WorkoutLibraryPage({
 
           {/* Gender filter */}
           <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Target Gender</p>
+            <p className="text-caption font-medium text-muted-foreground">Target Gender</p>
             <div className="flex flex-wrap gap-2">
               {GENDER_OPTIONS.map((gender) => (
                 <Link key={gender} href={buildFilterUrl("gender", filters.gender === gender ? null : gender)}>
@@ -105,7 +105,7 @@ export default async function WorkoutLibraryPage({
 
           {/* Duration filter */}
           <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Duration (weeks)</p>
+            <p className="text-caption font-medium text-muted-foreground">Duration (weeks)</p>
             <div className="flex flex-wrap gap-2">
               {DURATION_OPTIONS.map((dur) => (
                 <Link key={dur} href={buildFilterUrl("duration", filters.duration === dur ? null : dur)}>
@@ -122,7 +122,7 @@ export default async function WorkoutLibraryPage({
 
           {/* Days per week filter */}
           <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Days/Week</p>
+            <p className="text-caption font-medium text-muted-foreground">Days/Week</p>
             <div className="flex flex-wrap gap-2">
               {DAYS_OPTIONS.map((days) => (
                 <Link key={days} href={buildFilterUrl("days", filters.days === days ? null : days)}>
@@ -140,7 +140,7 @@ export default async function WorkoutLibraryPage({
 
         {hasActiveFilters && (
           <Link href="/build/library">
-            <Button variant="ghost" size="sm" className="text-xs">
+            <Button variant="ghost" size="sm" className="text-caption">
               <X className="mr-1 size-3" />
               Clear filters
             </Button>
@@ -158,27 +158,27 @@ export default async function WorkoutLibraryPage({
         <div className="flex flex-col gap-8">
           {categories.map(({ category, programs }) => (
             <div key={category}>
-              <h2 className="mb-4 text-lg font-semibold text-foreground">{category}</h2>
+              <h2 className="mb-4 text-body-lg font-semibold text-foreground">{category}</h2>
               <div className="flex flex-col gap-3">
                 {programs.map((program) => (
                   <Link key={program.programId} href={`/build/library/${program.programId}`}>
                     <Card className="transition-colors hover:border-primary-border">
                       <CardHeader>
-                        <CardTitle className="text-base">{program.name}</CardTitle>
+                        <CardTitle className="text-body">{program.name}</CardTitle>
                         {program.description && (
-                          <CardDescription className="text-xs">{program.description}</CardDescription>
+                          <CardDescription className="text-caption">{program.description}</CardDescription>
                         )}
                       </CardHeader>
                       <CardContent className="flex flex-wrap gap-2">
-                        {program.mainGoal && <Badge variant="secondary" className="text-xs">{program.mainGoal}</Badge>}
-                        {program.trainingLevel && <Badge variant="outline" className="text-xs">{program.trainingLevel}</Badge>}
+                        {program.mainGoal && <Badge variant="secondary" className="text-caption">{program.mainGoal}</Badge>}
+                        {program.trainingLevel && <Badge variant="outline" className="text-caption">{program.trainingLevel}</Badge>}
                         {program.daysPerWeek && (
-                          <Badge variant="outline" className="text-xs">{program.daysPerWeek} days/week</Badge>
+                          <Badge variant="outline" className="text-caption">{program.daysPerWeek} days/week</Badge>
                         )}
                         {program.durationWeeks && (
-                          <Badge variant="outline" className="text-xs">{program.durationWeeks} weeks</Badge>
+                          <Badge variant="outline" className="text-caption">{program.durationWeeks} weeks</Badge>
                         )}
-                        {program.targetGender && <Badge variant="outline" className="text-xs">{program.targetGender}</Badge>}
+                        {program.targetGender && <Badge variant="outline" className="text-caption">{program.targetGender}</Badge>}
                       </CardContent>
                     </Card>
                   </Link>
