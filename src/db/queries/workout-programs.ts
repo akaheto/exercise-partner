@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, ilike, inArray, or } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
   sourceExercises,
@@ -12,11 +12,47 @@ export function listWorkoutPrograms() {
 }
 
 /** Get all programs grouped by category, for hierarchical display. */
-export async function listWorkoutProgramsByCategory() {
-  const programs = await db
-    .select()
-    .from(sourceWorkoutPrograms)
-    .orderBy(asc(sourceWorkoutPrograms.category), asc(sourceWorkoutPrograms.name));
+export interface WorkoutProgramFilters {
+  goal?: string;
+  level?: string;
+  gender?: string;
+  duration?: string;
+  days?: string;
+  search?: string;
+}
+
+export async function listWorkoutProgramsByCategory(filters?: WorkoutProgramFilters) {
+  let baseQuery = db.select().from(sourceWorkoutPrograms);
+
+  if (filters?.goal) {
+    baseQuery = baseQuery.where(eq(sourceWorkoutPrograms.mainGoal, filters.goal)) as typeof baseQuery;
+  }
+  if (filters?.level) {
+    baseQuery = baseQuery.where(eq(sourceWorkoutPrograms.trainingLevel, filters.level)) as typeof baseQuery;
+  }
+  if (filters?.gender) {
+    baseQuery = baseQuery.where(eq(sourceWorkoutPrograms.targetGender, filters.gender)) as typeof baseQuery;
+  }
+  if (filters?.duration) {
+    baseQuery = baseQuery.where(eq(sourceWorkoutPrograms.durationWeeks, parseInt(filters.duration))) as typeof baseQuery;
+  }
+  if (filters?.days) {
+    baseQuery = baseQuery.where(eq(sourceWorkoutPrograms.daysPerWeek, parseInt(filters.days))) as typeof baseQuery;
+  }
+  if (filters?.search) {
+    const searchTerm = `%${filters.search}%`;
+    baseQuery = baseQuery.where(
+      or(
+        ilike(sourceWorkoutPrograms.name, searchTerm),
+        ilike(sourceWorkoutPrograms.description, searchTerm),
+      ),
+    ) as typeof baseQuery;
+  }
+
+  const programs = await baseQuery.orderBy(
+    asc(sourceWorkoutPrograms.category),
+    asc(sourceWorkoutPrograms.name),
+  );
 
   const grouped = new Map<string, typeof programs>();
   for (const prog of programs) {
