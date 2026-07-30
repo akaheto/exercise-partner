@@ -28,7 +28,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
 
   const minutes = sessionDurationMinutes(session.startedAt, session.completedAt);
   const allSets = session.exercises.flatMap((ex) => ex.sets);
-  const totalVolume = computeVolume(allSets);
+  const totalVolume = computeVolume(allSets as Parameters<typeof computeVolume>[0]);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 md:px-6">
@@ -63,7 +63,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
 
       <div className="space-y-4">
         {session.exercises.map((ex) => {
-          const volume = computeVolume(ex.sets);
+          const volume = computeVolume(ex.sets as Parameters<typeof computeVolume>[0]);
           return (
             <Card key={ex.exerciseId}>
               <CardHeader>

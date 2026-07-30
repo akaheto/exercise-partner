@@ -1,19 +1,31 @@
 /**
  * Pure aggregation for Workout History (Epic I). Volume is the standard
  * strength-training measure — weight x reps, summed — used both for a single
- * session's total and for the weekly trend chart.
+ * session's total and for the weekly trend chart. All weights are normalized
+ * to kg for calculation (1 lb ≈ 0.453592 kg), so volumes across mixed-unit
+ * histories are numerically meaningful.
  */
 
 export interface SetForVolume {
   weight: string | number | null;
   reps: number | null;
+  weightUnit?: "kg" | "lb" | null;
+}
+
+const LB_TO_KG = 0.453592;
+
+function normalizeWeightToKg(weight: string | number | null, unit?: "kg" | "lb" | null): number | null {
+  if (weight === null) return null;
+  const numWeight = typeof weight === "string" ? Number(weight) : weight;
+  if (!Number.isFinite(numWeight)) return null;
+  return unit === "lb" ? numWeight * LB_TO_KG : numWeight;
 }
 
 export function computeVolume(sets: SetForVolume[]): number {
   return sets.reduce((sum, s) => {
-    if (s.weight === null || s.reps === null) return sum;
-    const weight = typeof s.weight === "string" ? Number(s.weight) : s.weight;
-    if (!Number.isFinite(weight)) return sum;
+    if (s.reps === null) return sum;
+    const weight = normalizeWeightToKg(s.weight, s.weightUnit);
+    if (weight === null) return sum;
     return sum + weight * s.reps;
   }, 0);
 }
@@ -63,6 +75,7 @@ export interface ExerciseSetPoint {
   date: Date;
   weight: string | number | null;
   reps: number | null;
+  weightUnit?: "kg" | "lb" | null;
 }
 
 export interface ExerciseSessionPoint {
@@ -81,7 +94,7 @@ export function groupExerciseHistoryBySession(points: ExerciseSetPoint[]): Exerc
   for (const p of points) {
     if (!bySession.has(p.sessionId)) bySession.set(p.sessionId, { date: p.date, sets: [] });
     const entry = bySession.get(p.sessionId)!;
-    entry.sets.push({ weight: p.weight, reps: p.reps });
+    entry.sets.push({ weight: p.weight, reps: p.reps, weightUnit: p.weightUnit });
     if (p.date < entry.date) entry.date = p.date;
   }
 

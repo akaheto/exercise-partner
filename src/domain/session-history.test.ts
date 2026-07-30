@@ -21,6 +21,26 @@ describe("computeVolume", () => {
   it("skips a set with a non-numeric weight string rather than producing NaN", () => {
     expect(computeVolume([{ weight: "not-a-number", reps: 10 }])).toBe(0);
   });
+
+  it("converts pounds to kilograms for volume calculation", () => {
+    const kgVolume = computeVolume([{ weight: 100, reps: 10, weightUnit: "kg" }]);
+    const lbVolume = computeVolume([{ weight: 220.46, reps: 10, weightUnit: "lb" }]);
+    expect(Math.abs(kgVolume - lbVolume) < 1).toBe(true);
+  });
+
+  it("handles mixed units across sets in the same volume calculation", () => {
+    const volume = computeVolume([
+      { weight: 100, reps: 5, weightUnit: "kg" },
+      { weight: 110.23, reps: 5, weightUnit: "lb" },
+    ]);
+    expect(Math.abs(volume - 750) < 10).toBe(true);
+  });
+
+  it("defaults to kg when weightUnit is not specified", () => {
+    const withoutUnit = computeVolume([{ weight: 100, reps: 10 }]);
+    const withKg = computeVolume([{ weight: 100, reps: 10, weightUnit: "kg" }]);
+    expect(withoutUnit).toBe(withKg);
+  });
 });
 
 describe("groupVolumeByWeek", () => {

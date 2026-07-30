@@ -40,6 +40,7 @@ export async function listSessionSummaries(profileId: string): Promise<SessionSu
       sessionId: sessionSets.sessionId,
       exerciseId: sessionSets.exerciseId,
       weight: sessionSets.weight,
+      weightUnit: sessionSets.weightUnit,
       reps: sessionSets.reps,
     })
     .from(sessionSets)
@@ -64,7 +65,7 @@ export async function listSessionSummaries(profileId: string): Promise<SessionSu
       completedAt: session.completedAt,
       exerciseCount: exerciseIds.size,
       setCount: sessionSetRows.length,
-      volume: computeVolume(sessionSetRows),
+      volume: computeVolume(sessionSetRows as Parameters<typeof computeVolume>[0]),
     };
   });
 }
@@ -151,6 +152,7 @@ export interface ExerciseHistoryPoint {
   setNumber: number;
   weight: string | null;
   reps: number | null;
+  weightUnit?: "kg" | "lb" | null;
 }
 
 /** Every logged set for one exercise across a profile's whole history,
@@ -163,13 +165,17 @@ export async function getExerciseHistory(exerciseId: string, profileId: string):
       setNumber: sessionSets.setNumber,
       weight: sessionSets.weight,
       reps: sessionSets.reps,
+      weightUnit: sessionSets.weightUnit,
     })
     .from(sessionSets)
     .innerJoin(sessions, eq(sessions.id, sessionSets.sessionId))
     .where(and(eq(sessionSets.exerciseId, exerciseId), eq(sessions.profileId, profileId)))
     .orderBy(sessionSets.completedAt);
 
-  return rows;
+  return rows.map((r) => ({
+    ...r,
+    weightUnit: (r.weightUnit === "kg" || r.weightUnit === "lb" ? r.weightUnit : null) as "kg" | "lb" | null,
+  }));
 }
 
 export interface WorkoutSessionHistoryEntry {
@@ -195,7 +201,12 @@ export async function getWorkoutSessionHistory(
   if (rows.length === 0) return [];
 
   const setRows = await db
-    .select({ sessionId: sessionSets.sessionId, weight: sessionSets.weight, reps: sessionSets.reps })
+    .select({
+      sessionId: sessionSets.sessionId,
+      weight: sessionSets.weight,
+      weightUnit: sessionSets.weightUnit,
+      reps: sessionSets.reps
+    })
     .from(sessionSets)
     .innerJoin(sessions, eq(sessions.id, sessionSets.sessionId))
     .where(and(eq(sessions.workoutId, workoutId), eq(sessions.profileId, profileId)));
@@ -211,7 +222,7 @@ export async function getWorkoutSessionHistory(
     status: session.status,
     startedAt: session.startedAt,
     completedAt: session.completedAt,
-    volume: computeVolume(bySession.get(session.id) ?? []),
+    volume: computeVolume((bySession.get(session.id) ?? []) as Parameters<typeof computeVolume>[0]),
   }));
 }
 

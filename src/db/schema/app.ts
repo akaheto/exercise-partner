@@ -56,8 +56,9 @@ export const curationStatus = pgTable("curation_status", {
  * primary keys; child rows use identity integers.
  */
 
-/** Lightweight — no credentials. The site itself is protected by a single
- * shared password (middleware); a profile just scopes data to a person. */
+/** Profile scope and PIN-based access control. The site itself is protected by
+ * a single shared password (middleware); a profile scopes data to a person and
+ * has an optional PIN (pinHash/pinSalt) for deletion confirmation. */
 export const profiles = pgTable("profiles", {
   id: uuid("id").primaryKey().defaultRandom(),
   displayName: text("display_name").notNull(),
