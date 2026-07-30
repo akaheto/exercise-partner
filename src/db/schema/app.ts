@@ -307,3 +307,18 @@ export const sessionSets = pgTable("session_sets", {
   notes: text("notes"),
   completedAt: timestamp("completed_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * Client-side errors and crashes logged for monitoring and debugging.
+ * Captures JavaScript errors, crashes, and exceptions from user sessions.
+ */
+export const clientErrors = pgTable("client_errors", {
+  id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+  profileId: uuid("profile_id").references(() => profiles.id, { onDelete: "set null" }),
+  message: text("message").notNull(),
+  stack: text("stack"),
+  url: text("url"),
+  userAgent: text("user_agent"),
+  timestamp: timestamp("timestamp", { withTimezone: true }).notNull().defaultNow(),
+  resolved: integer("resolved").notNull().default(0),
+});

@@ -1,0 +1,36 @@
+{
+  "implemented": [
+    {
+      "title": "Workout Library with faceted search",
+      "date": "2026-07-29"
+    },
+    {
+      "title": "Button-based exercise documentation",
+      "date": "2026-07-30"
+    },
+    {
+      "title": "Error tracking and monitoring",
+      "date": "2026-07-30"
+    }
+  ],
+  "planned": [
+    {
+      "title": "Photorealistic exercise images",
+      "priority": "high"
+    },
+    {
+      "title": "AI training coach via Claude API",
+      "priority": "medium"
+    }
+  ],
+  "backlog": [
+    {
+      "title": "Workout versioning",
+      "status": "blocked"
+    },
+    {
+      "title": "Tags/folders/collections",
+      "status": "deferred"
+    }
+  ]
+}

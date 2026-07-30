@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { Users } from "lucide-react";
+import Link from "next/link";
+import { Users, AlertCircle, Lightbulb, Book } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Callout } from "@/components/ui/callout";
@@ -43,6 +44,21 @@ export default async function AdminPage() {
           description="Every profile on this site, and the data belonging to it."
           actions={<AdminLogoutButton />}
         />
+
+        <div className="flex gap-2 flex-wrap">
+          <Link href="/admin/errors" className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-small font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground border border-border">
+            <AlertCircle className="size-4" />
+            Errors
+          </Link>
+          <Link href="/admin/enhancements" className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-small font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground border border-border">
+            <Lightbulb className="size-4" />
+            Enhancements
+          </Link>
+          <Link href="/admin/changelog" className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-small font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground border border-border">
+            <Book className="size-4" />
+            Changelog
+          </Link>
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
           <Card>

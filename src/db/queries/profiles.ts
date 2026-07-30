@@ -10,3 +10,8 @@ export async function getProfileById(id: string) {
   const [profile] = await db.select().from(profiles).where(eq(profiles.id, id));
   return profile ?? null;
 }
+
+export async function getProfileByName(name: string) {
+  const [profile] = await db.select().from(profiles).where(eq(profiles.displayName, name));
+  return profile ?? null;
+}
