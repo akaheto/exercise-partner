@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SITE_SESSION_COOKIE, verifySiteToken } from "@/lib/auth";
-import { ADMIN_SESSION_COOKIE, verifyAdminToken } from "@/app/admin/login/actions";
+import { ADMIN_SESSION_COOKIE, verifyAdminToken } from "@/lib/admin-auth";
 
 const PUBLIC_PREFIXES = ["/login", "/admin/login"];
 
