@@ -15,7 +15,10 @@ interface EnhancementsData {
 }
 
 async function getEnhancements(): Promise<EnhancementsData> {
-  const res = await fetch(`${process.env.VERCEL_URL || "http://localhost:3000"}/enhancements.json`);
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000";
+  const res = await fetch(`${baseUrl}/enhancements.json`);
   if (!res.ok) throw new Error("Failed to fetch enhancements");
   return res.json();
 }
