@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SITE_SESSION_COOKIE, verifySiteToken } from "@/lib/auth";
 
-const PUBLIC_PREFIXES = ["/login"];
+const PUBLIC_PREFIXES = ["/login", "/admin/login"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
