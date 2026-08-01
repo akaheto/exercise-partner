@@ -7,11 +7,15 @@ import { getActiveProfile } from "@/lib/active-profile";
 /**
  * The restricted, single-profile view: everything a person needs to manage
  * their own profile, nothing that touches anyone else's. No "All profiles"
- * switcher, no "Add a profile" form — that's /profile, which this is meant
- * to eventually replace for non-administrator users (see PROJECT_PLAN.docx).
- * There is no admin flag on a profile today; gating /profile to admins only
- * is a separate, not-yet-made decision — for now both routes coexist.
+ * switcher, no "Add a profile" form — that's /profile, which is reserved for
+ * site administrators (those with SITE_PASSWORD + ADMIN_TOKEN).
+ *
+ * Admin access is session-based via the site password and admin token, not
+ * per-profile. This keeps the authentication model simple: one shared site
+ * password (for access control between groups), one admin token (for
+ * privileged operations). Profiles themselves have no admin flag.
  */
+
 export default async function MyProfilePage() {
   const profile = await getActiveProfile();
 
