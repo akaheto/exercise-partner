@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SITE_SESSION_COOKIE, verifySiteToken } from "@/lib/auth";
+import { ADMIN_SESSION_COOKIE, verifyAdminToken } from "@/app/admin/login/actions";
 
 const PUBLIC_PREFIXES = ["/login", "/admin/login"];
 
@@ -16,9 +17,20 @@ export async function proxy(request: NextRequest) {
     return new NextResponse("Server misconfigured: SESSION_SECRET is not set", { status: 500 });
   }
 
-  const token = request.cookies.get(SITE_SESSION_COOKIE)?.value;
-  if (token && (await verifySiteToken(token, secret))) {
+  // Check for regular user session
+  const siteToken = request.cookies.get(SITE_SESSION_COOKIE)?.value;
+  if (siteToken && (await verifySiteToken(siteToken, secret))) {
     return NextResponse.next();
+  }
+
+  // Check for admin session (if accessing /admin routes)
+  if (pathname.startsWith("/admin")) {
+    const adminToken = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+    if (adminToken && verifyAdminToken(adminToken, secret)) {
+      return NextResponse.next();
+    }
+    // Redirect to admin login instead of user login
+    return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
   const loginUrl = new URL("/login", request.url);
