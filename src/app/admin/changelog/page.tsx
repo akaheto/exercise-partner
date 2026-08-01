@@ -8,10 +8,11 @@ async function getChangelog(): Promise<string> {
   return readFile(filePath, "utf-8");
 }
 
-function parseChangelog(content: string): { version: string; sections: { title: string; items: string[] }[] }[] {
+function parseChangelog(content: string): { version: string; date?: string; sections: { title: string; items: string[] }[] }[] {
   const lines = content.split("\n");
-  const versions: { version: string; sections: { title: string; items: string[] }[] }[] = [];
+  const versions: { version: string; date?: string; sections: { title: string; items: string[] }[] }[] = [];
   let currentVersion = "";
+  let currentDate = "";
   let currentSection = "";
   let currentItems: string[] = [];
 
@@ -19,19 +20,22 @@ function parseChangelog(content: string): { version: string; sections: { title: 
     if (line.startsWith("## [")) {
       if (currentVersion && currentSection && currentItems.length > 0) {
         if (!versions.find((v) => v.version === currentVersion)) {
-          versions.push({ version: currentVersion, sections: [] });
+          versions.push({ version: currentVersion, ...(currentDate && { date: currentDate }), sections: [] });
         }
         versions
           .find((v) => v.version === currentVersion)
           ?.sections.push({ title: currentSection, items: currentItems });
       }
-      currentVersion = line.replace("## [", "").replace("]", "").trim();
+      // Parse version and date: "## [Unreleased] - 2026-08-01 16:01 UTC" or "## [1.0.0] - 2026-08-01"
+      const match = line.match(/## \[([^\]]+)\](?:\s*-\s*(.+?))?$/);
+      currentVersion = match?.[1] || "";
+      currentDate = match?.[2] || "";
       currentSection = "";
       currentItems = [];
     } else if (line.startsWith("### ")) {
       if (currentSection && currentItems.length > 0) {
         if (!versions.find((v) => v.version === currentVersion)) {
-          versions.push({ version: currentVersion, sections: [] });
+          versions.push({ version: currentVersion, ...(currentDate && { date: currentDate }), sections: [] });
         }
         versions
           .find((v) => v.version === currentVersion)
@@ -46,7 +50,7 @@ function parseChangelog(content: string): { version: string; sections: { title: 
 
   if (currentVersion && currentSection && currentItems.length > 0) {
     if (!versions.find((v) => v.version === currentVersion)) {
-      versions.push({ version: currentVersion, sections: [] });
+      versions.push({ version: currentVersion, ...(currentDate && { date: currentDate }), sections: [] });
     }
     versions.find((v) => v.version === currentVersion)?.sections.push({ title: currentSection, items: currentItems });
   }
@@ -73,7 +77,12 @@ export default async function ChangelogPage() {
       <div className="space-y-8">
         {versions.map((version, idx) => (
           <section key={idx} className="space-y-4">
-            <h2 className="text-h3 font-semibold text-foreground">{version.version}</h2>
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-h3 font-semibold text-foreground">{version.version}</h2>
+              {version.date && (
+                <p className="text-small text-muted-foreground">{version.date}</p>
+              )}
+            </div>
 
             {version.sections.map((section, sIdx) => (
               <div key={sIdx} className="space-y-2 ml-4">
