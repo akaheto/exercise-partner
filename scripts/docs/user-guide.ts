@@ -37,8 +37,11 @@ export async function generateUserGuide() {
     p("The site is private. You reach it with a single shared password. Once inside, everyone has their own profile — your workouts and your training history are yours, and switching profiles switches everything over to that person."),
 
     h1("Getting in"),
-    p("Go to the site and enter the shared password. You will stay signed in on that device, so you should not have to type it every visit."),
-    p("Next, pick your profile — or create one if it is your first time. Your profile is what keeps your workouts and your training history separate from everyone else's. You can switch profiles at any time from the top right on a computer, or from the Profile tab on a phone."),
+    p("Go to the site. You will see a login screen split into two sections:"),
+    bullet("Returning users: Enter your profile name and PIN to log back in."),
+    bullet("New users: Click to go through the onboarding process to create a new profile."),
+    spacer(),
+    p("Once logged in, you will stay signed in on that device. Your profile is what keeps your workouts and your training history separate from everyone else's. You can switch profiles at any time from My Profile at the top right on a computer, or from the My Profile tab on a phone."),
 
     h2("Setting up your profile the first time"),
     p("Creating a profile walks you through four short steps:"),
@@ -89,6 +92,10 @@ export async function generateUserGuide() {
     ),
     p("What it generates opens straight into the normal builder, so you can change anything you disagree with before saving. Your equipment answers are remembered for next time."),
 
+    h1("Using packaged workout programs"),
+    p("From the Build tab, you can also browse programs from Muscle & Strength — pre-made multi-day workout plans. Pick one, choose how many days per week you want to train, and click Add to Your Workouts."),
+    p("The app creates one workout for each training day, with all the exercises pre-loaded and prescribed. You can edit, substitute or delete exercises just like a manually built workout."),
+
     h1("Doing a workout"),
     p("Press Start on any workout. The screen changes to Workout Mode — one exercise at a time, large controls, and the normal navigation hidden so nothing is in your way mid-set."),
     bullet("The instructions, video and muscle diagram for the current exercise are right there if you need a reminder."),
@@ -111,15 +118,20 @@ export async function generateUserGuide() {
     p("You can download your complete history as a spreadsheet (CSV) or a data file (JSON) — every set of every session, not a summary."),
     callout(
       "One thing to watch",
-      "Volume totals add up weights without converting between kilograms and pounds. As long as you log consistently in one unit that is fine. If you switch units partway through, any total spanning both will not mean much.",
+      "Volume totals now automatically convert kilograms and pounds so mixed-unit histories stay accurate. If you logged sets in pounds and then switch to kilograms (or vice versa), totals that span both will still be meaningful — the app will compute them correctly.",
     ),
     p("Editing a workout never changes your history. Each session records what you actually did at the time and is fixed from then on."),
 
     h1("If you look after the site"),
-    p("There is an admin page at /admin for whoever runs the site. It lists every profile with its stats and can delete one without needing that profile's PIN. It asks for the site password plus a separate admin token."),
+    p("There is an admin area at /admin for whoever runs the site. Access it with the site password and a separate admin token. The admin area has:"),
+    bullet("Profiles — a list of every profile with stats, and the ability to delete one without needing that profile's PIN."),
+    bullet("Errors — a log of any technical errors that happen on the site, with the exact time and message, so you can spot and fix problems."),
+    bullet("Enhancements — a roadmap of planned features, grouped by status."),
+    bullet("Changelog — a record of what has changed with each update."),
+    spacer(),
     callout(
       "Not yet safe to rely on",
-      "The admin page's protection is currently weak enough that anyone who already has the site password could get past it if they went looking. Since that is everyone you have shared the site with, do not treat the admin token as a real barrier between users, and do not put the site on the public internet until this is fixed. It is recorded as a known issue and is the next security job.",
+      "The admin area's protection is currently weak enough that anyone who already has the site password could get past it if they went looking. Since that is everyone you have shared the site with, do not treat the admin token as a real barrier between users, and do not put the site on the public internet until this is fixed. It is recorded as a known issue and is the next security job.",
     ),
 
     h1("Common questions"),
