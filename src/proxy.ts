@@ -26,7 +26,7 @@ export async function proxy(request: NextRequest) {
   // Check for admin session (if accessing /admin routes)
   if (pathname.startsWith("/admin")) {
     const adminToken = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-    if (adminToken && verifyAdminToken(adminToken, secret)) {
+    if (adminToken && (await verifyAdminToken(adminToken, secret))) {
       return NextResponse.next();
     }
     // Redirect to admin login instead of user login
