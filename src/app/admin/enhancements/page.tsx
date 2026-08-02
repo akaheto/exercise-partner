@@ -1,5 +1,7 @@
 import { getAdminSessionStatus } from "@/app/admin/login/actions";
 import { redirect } from "next/navigation";
+import { readFile } from "fs/promises";
+import { join } from "path";
 
 interface Enhancement {
   title: string;
@@ -15,12 +17,9 @@ interface EnhancementsData {
 }
 
 async function getEnhancements(): Promise<EnhancementsData> {
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
-  const res = await fetch(`${baseUrl}/enhancements.json`);
-  if (!res.ok) throw new Error("Failed to fetch enhancements");
-  return res.json();
+  const filePath = join(process.cwd(), "public", "enhancements.json");
+  const content = await readFile(filePath, "utf-8");
+  return JSON.parse(content);
 }
 
 export default async function EnhancementsPage() {
