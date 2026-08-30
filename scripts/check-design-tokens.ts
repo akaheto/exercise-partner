@@ -19,7 +19,7 @@
  */
 
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { join, relative, resolve, sep } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const BASELINE_PATH = join(ROOT, "scripts", "design-token-baseline.json");
@@ -102,7 +102,10 @@ function walk(dir: string, out: string[] = []): string[] {
   }
   for (const entry of entries) {
     const full = join(dir, entry);
-    const rel = relative(ROOT, full);
+    // Normalize to forward slashes: path.relative() returns OS-native
+    // separators, but EXCLUDE_DIRS is written with forward slashes, so on
+    // Windows this comparison silently never matched anything.
+    const rel = relative(ROOT, full).split(sep).join("/");
     if (EXCLUDE_DIRS.some((excluded) => rel === excluded || rel.startsWith(`${excluded}/`))) {
       continue;
     }
