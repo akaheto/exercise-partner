@@ -195,13 +195,19 @@ function extractDays(doc: Document): ParsedDay[] {
     );
     // Strip the leading "Day N -", "Workout N:" or "Monday:" label so the
     // page (which already renders "Day {dayNumber} — {focus}") doesn't show
-    // it twice, e.g. "Day 1 - Back & Biceps" -> focus "Back & Biceps".
+    // it twice, e.g. "Day 1 - Back & Biceps" -> focus "Back & Biceps". Also
+    // strip a trailing bare "Workout" — a heading like "Day 1 - Upper Body
+    // Workout" otherwise becomes "Day 1 — Upper Body Workout" on the same
+    // page, which stutters. Only the bare trailing word, not "Workout A" /
+    // "Workout 1" (a real day-variant label distinguishing repeated weeks)
+    // or "... Workout for Women" (part of the actual name, not a suffix).
     const focusText =
       text
         .replace(
           /^(?:(?:Day|Workout)\s*#?\s*\d+|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s*[-:]\s*/i,
           "",
         )
+        .replace(/\s+Workout$/i, "")
         .trim() || null;
 
     sequential += 1;
