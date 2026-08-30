@@ -5,7 +5,7 @@ All notable changes to this project are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-08-30 20:15 UTC
+## [Unreleased] - 2026-08-30 21:11 UTC
 
 ### Added
 
@@ -317,6 +317,31 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **The site has been completely unreachable to every regular user since
+  2026-07-30.** `src/app/login/actions.ts`'s `verifyProfile()` (added by
+  the "login redesign" commit `1806351`) checked a profile name + PIN but
+  never set the `site_session` cookie `src/proxy.ts`'s middleware requires
+  for every non-admin route — so a "successful" sign-in redirected to
+  `/exercises`, which immediately bounced back to `/login`. Found during a
+  requested product-wide evaluation, reproduced live (navigating straight
+  to `/onboarding` in production 307-redirected back to `/login`), and
+  confirmed against git history: commit `ae45045` (Epic C) originally
+  verified `SITE_PASSWORD` and set the cookie correctly; `1806351` deleted
+  that logic without replacing what it did. Restored `login()` to verify
+  `SITE_PASSWORD` and set `site_session`, matching the architecture in
+  `TECHNICAL_SPEC.docx` (one shared site password; PIN is only for
+  authorizing profile deletion, per Epic M3 — not a per-user sign-in
+  credential). Profile selection itself was never broken — `/`'s
+  `ProfileSelector` (Epic M2) already provides click-to-select and
+  "Add a profile," independent of this bug. Verified via
+  `npm run test:e2e` against production (`n8-screenshots.spec.ts` and
+  both `admin-auth.spec.ts` negative tests now pass). Three other e2e
+  specs (`n7-screenshots`, `pin-security`, `workout-mode`) still fail for
+  an unrelated, pre-existing reason: they create their throwaway test
+  profile via `/profile`, which Epic P restricted to admins, so it
+  silently redirects them to `/my-profile` (no create-profile form
+  there) — test debt from Epic P being in progress, not a regression
+  from this fix. See `docs/technical/lessons-learned.md`.
 - `src/db/queries/admin.ts`'s `getAllProfilesWithStats()` (the `/admin`
   dashboard) ran 3 sequential queries per profile inside a `for` loop — one
   per profile per stat, not even parallelized. Found during a product

@@ -20,6 +20,62 @@ requires an actual enforced check, not just another log entry).
 
 ## Entries
 
+### Site login completely broken for a month — no code path ever set the session cookie
+- **Date**: 2026-08-30
+- **Category**: auth / regression
+- **What happened**: `src/proxy.ts`'s middleware requires a `site_session`
+  cookie for every route except `/login` and `/admin/login`. Commit
+  `1806351` ("Implement login redesign...", 2026-07-30, built by Haiku
+  4.5) replaced the working `SITE_PASSWORD` verification + cookie-setting
+  logic with a profile-name+PIN form (`verifyProfile()`) that never sets
+  that cookie. Every route in the app — including `/onboarding`, so not
+  even a brand-new profile could be created — has redirected back to
+  `/login` for anyone who wasn't already an admin, since that commit.
+  Found during a requested product-wide evaluation, not a user report;
+  confirmed live (direct navigation to `/onboarding` in production
+  307-redirected to `/login`) and via git history (`ae45045` had the
+  correct logic; `1806351` deleted it).
+- **Root cause**: a redesign commit deleted an entire auth code path
+  (site-password verification + `site_session` cookie) without replacing
+  its function, and nothing caught it — `src/lib/auth.ts`'s
+  `signSiteToken`/`verifySiteToken` stayed unit-tested in isolation the
+  whole time (so `/code-audit` stayed green), but nothing tested that any
+  *route* actually called them. The one e2e test that would have caught
+  this (`e2e/workout-mode.spec.ts`, `page.getByLabel("Password")` on
+  `/login`) was never updated for the redesign either, so it was already
+  failing and apparently not being run/checked.
+- **Fix applied**: restored `src/app/login/actions.ts`'s `login()` to
+  verify `SITE_PASSWORD` and set `site_session`, rewritten with current
+  design-system primitives (`Card`/`Field`/`Button`) rather than the
+  pre-Epic-N raw classes the original had. Removed the profile-name+PIN
+  login form entirely — profile selection already lives on `/`
+  (`ProfileSelector`, Epic M2), which needs no separate credential per
+  the documented architecture (`TECHNICAL_SPEC.docx`: one shared site
+  password, PIN only for deletion). Verified via `npm run test:e2e`
+  against production.
+- **Promoted to enforcement?**: **yes** — this is exactly the kind of bug
+  a real test-coverage gap allows: two consecutive things had to fail
+  together (an auth code path deleted, and the one e2e test that would
+  catch it going stale/unrun) for a month-long total outage to go
+  unnoticed. Concretely: (1) `/code-audit` should be extended to run
+  `npm run test:e2e` in CI or before any deploy touching `src/proxy.ts`,
+  `src/lib/auth.ts`, or `src/app/login/**` — not just on request; (2) any
+  future change to the login/auth flow should update or add an e2e
+  assertion in the same commit, not leave one to silently rot.
+- **Related, found but not fixed**: `e2e/admin-auth.spec.ts`'s "the
+  correct site password and admin token do grant access" test uses
+  `getByRole("heading", { name: "Profiles" })`, which is a substring,
+  case-insensitive match — it now also matches the empty-state heading
+  "No profiles yet" whenever the profiles table is empty (as it currently
+  is, in production). Needs `exact: true` or a scoped locator. Separately,
+  `n7-screenshots.spec.ts`, `pin-security.spec.ts`, and
+  `workout-mode.spec.ts` all fail waiting for an "Add" button on
+  `/profile`, because Epic P (in progress) redirects non-admins to
+  `/my-profile` instead — these three specs still create their test
+  profile the pre-Epic-P way and need updating to use `/` or `/onboarding`
+  instead. Neither touched here since they're pre-existing and out of
+  scope for this fix.
+
 ### N+1 queries in the admin profile-stats dashboard
 - **Date**: 2026-08-30
 - **Category**: db-efficiency
