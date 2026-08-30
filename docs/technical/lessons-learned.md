@@ -20,6 +20,34 @@ requires an actual enforced check, not just another log entry).
 
 ## Entries
 
+### N+1 queries in the admin profile-stats dashboard
+- **Date**: 2026-08-30
+- **Category**: db-efficiency
+- **What happened**: `getAllProfilesWithStats()` in `src/db/queries/admin.ts`
+  looped over every profile and issued 3 sequential `await`ed queries per
+  profile (workout count, latest session, session count) — found during a
+  requested product-wide reliability/efficiency evaluation, not a user
+  report.
+- **Root cause**: per-row queries written inline in a `for` loop instead of
+  aggregate/grouped queries; nothing caught it because `src/db/queries/`
+  has no test coverage (query functions need a live DB, unlike the pure
+  `src/domain` layer — see `CLAUDE.md`'s architectural rules).
+- **Fix applied**: replaced with 3 grouped queries (`GROUP BY profileId`,
+  using `count()`/`max()`), run together via `Promise.all`, joined to the
+  profile list in memory.
+- **Promoted to enforcement?**: no — this is the first occurrence of this
+  category. Worth a second look if another N+1 turns up in
+  `src/db/queries/` later: at that point add a `/code-audit` or
+  `/security-scan`-style grep for `for (... of ...)` blocks containing
+  `await db.` as a mechanical check, since there's no test suite to catch
+  this class of bug otherwise.
+- **Related, not fixed**: `getProfileDetail()` in the same file has a
+  `completedSessionCount` computed via `.filter((s) => s.id)`, which is a
+  no-op (`id` is always truthy) — it's really just `sessionCount` again,
+  and `totalVolume` is hardcoded to `0` with a `// Could be calculated if
+  needed` comment. Not touched here since it wasn't part of what was
+  asked; flagging so it isn't mistaken for correct.
+
 ### Design-token exclude silently broken on Windows
 - **Date**: 2026-08-30
 - **Category**: cross-platform / tooling

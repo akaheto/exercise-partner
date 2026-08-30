@@ -5,7 +5,7 @@ All notable changes to this project are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-08-01 16:01 UTC
+## [Unreleased] - 2026-08-30 20:15 UTC
 
 ### Added
 
@@ -317,6 +317,15 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `src/db/queries/admin.ts`'s `getAllProfilesWithStats()` (the `/admin`
+  dashboard) ran 3 sequential queries per profile inside a `for` loop — one
+  per profile per stat, not even parallelized. Found during a product
+  evaluation pass, not reported by a user. Replaced with 3 grouped queries
+  total (one each for profiles, workout counts, and session counts/last-
+  activity, joined in memory by `profileId`), run in parallel via
+  `Promise.all`. Low real-world impact at this project's scale (a small
+  group of people), but a genuine N+1 that would have compounded as more
+  profiles are added.
 - `src/proxy.ts`'s matcher didn't exempt `/manifest.webmanifest`, so it was
   gated behind the site login — found while verifying the new PWA manifest
   with a real HTTP request, not assumed. Would have made "Add to Home
