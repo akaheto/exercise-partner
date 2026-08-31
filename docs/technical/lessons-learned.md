@@ -20,6 +20,48 @@ requires an actual enforced check, not just another log entry).
 
 ## Entries
 
+### Treated "there's a design comment for this" as equivalent to "this is fine"
+- **Date**: 2026-08-31
+- **Category**: process / QA methodology
+- **What happened**: asked to "walk the site" and find issues, I noticed
+  Workout Mode showed a plain block-figure muscle diagram while the
+  exercise detail page showed the real anatomical photo. I found the code
+  comment documenting this as a deliberate Epic O decision (screen space
+  during a mid-set screen) and reported it back as "not a bug, working as
+  designed" — without asking whether that tradeoff was still wanted. The
+  user pushed back: they were looking at the actual inconsistency in a
+  real workout and wanted it fixed, comment or no comment. Once corrected,
+  a second, more skeptical look at the same session's earlier work found
+  a second instance of the identical pattern: the workout generator's
+  Goal and Experience wizard steps were hardcoded rather than defaulted
+  from the profile (unlike Equipment, which correctly did), and I had
+  personally seen the mismatch live — "Guidance (Beginner • Strength)" on
+  a workout generated for "intermediate level" — and rationalized it away
+  as "probably intentional decoupling, not worth chasing" instead of
+  reading the code.
+- **Root cause**: a design rationale documented in a code comment or an
+  earlier PROJECT_PLAN entry describes a decision that was made once, not
+  a fact that's still true. Finding an explanation for a discrepancy and
+  finding out whether that explanation is still wanted are different
+  questions — I only did the first one, twice, on two unrelated features
+  in the same session.
+- **Fix applied**: Workout Mode now shows the same photo diagram as the
+  exercise detail page (`MuscleDiagram` deleted, nothing else used it).
+  `GeneratorWizard` now seeds Goal/Experience from the profile, matching
+  Equipment. Both logged above and in CHANGELOG.md.
+- **Promoted to enforcement?**: yes — when a live QA pass finds a visible
+  inconsistency between two screens (not just "is this correct" but "do
+  these two things agree with each other"), a comment explaining *why*
+  they differ is not a reason to close the finding. Explain it back to
+  the user as a decision point ("X and Y differ because of Z — still
+  want it that way?") rather than silently resolving it as "working as
+  intended." Also worth a broader pass: any other UI initial-state that
+  should read from the profile but doesn't (grep for `useState<.*>\(` in
+  components whose parent Server Component already fetches the profile
+  for something else, the way generator-wizard's Equipment step did but
+  Goal/Experience didn't) hasn't been done — this was found by re-reading
+  two specific screens I'd already looked at, not a systematic sweep.
+
 ### Site login completely broken for a month — no code path ever set the session cookie
 - **Date**: 2026-08-30
 - **Category**: auth / regression

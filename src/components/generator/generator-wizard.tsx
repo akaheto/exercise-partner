@@ -74,15 +74,19 @@ const initialState: GenerateWorkoutState = {};
 export function GeneratorWizard({
   equipmentOptions,
   initialHaveIds,
+  initialExperienceLevel,
+  initialGoal,
 }: {
   equipmentOptions: EquipmentOption[];
   initialHaveIds: string[];
+  initialExperienceLevel: ExperienceLevel;
+  initialGoal: Goal;
 }) {
   const [step, setStep] = useState(0);
-  const [goal, setGoal] = useState<Goal>("general");
+  const [goal, setGoal] = useState<Goal>(initialGoal);
   const [durationMinutes, setDurationMinutes] = useState<number>(30);
   const [focus, setFocus] = useState<Focus>("full_body");
-  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>("Intermediate");
+  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>(initialExperienceLevel);
   const [haveIds, setHaveIds] = useState<Set<string>>(new Set(initialHaveIds));
   const [state, formAction, isPending] = useActionState(generateWorkoutAction, initialState);
 

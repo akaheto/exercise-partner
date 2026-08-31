@@ -5,7 +5,7 @@ All notable changes to this project are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-08-31 05:55 UTC
+## [Unreleased] - 2026-08-31 06:01 UTC
 
 ### Added
 
@@ -328,6 +328,21 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- The workout generator's Goal and Experience wizard steps were hardcoded
+  to "General fitness" and "Intermediate" regardless of the active
+  profile's own `trainingGoal`/`experienceLevel` — unlike the Equipment
+  step, which already seeded its defaults from the profile
+  (`initialHaveIds`). A Beginner profile with a Strength goal would see
+  an Intermediate/General-fitness workout generated unless they noticed
+  and corrected both fields by hand — and even then, the generated
+  workout's own exercises could end up filtered for one difficulty while
+  each exercise's guidance panel (which does read the profile directly)
+  showed a different one, on the same screen. `GeneratorWizard` now takes
+  `initialExperienceLevel`/`initialGoal` props, seeded from the profile
+  the same way equipment already was. 3 new tests. Found on a second,
+  more skeptical pass after being asked what else had been dismissed as
+  "by design" without actually checking — see
+  docs/technical/lessons-learned.md.
 - **The site has been completely unreachable to every regular user since
   2026-07-30.** `src/app/login/actions.ts`'s `verifyProfile()` (added by
   the "login redesign" commit `1806351`) checked a profile name + PIN but

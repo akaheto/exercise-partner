@@ -24,8 +24,25 @@ const EQUIPMENT = [
   { equipmentId: "eq-2", name: "Dumbbell" },
 ];
 
-function renderWizard() {
-  return render(<GeneratorWizard equipmentOptions={EQUIPMENT} initialHaveIds={["eq-1"]} />);
+function renderWizard(
+  initialExperienceLevel: "Beginner" | "Intermediate" | "Advanced" = "Beginner",
+  initialGoal: "strength" | "hypertrophy" | "endurance" | "general" = "general",
+) {
+  return render(
+    <GeneratorWizard
+      equipmentOptions={EQUIPMENT}
+      initialHaveIds={["eq-1"]}
+      initialExperienceLevel={initialExperienceLevel}
+      initialGoal={initialGoal}
+    />,
+  );
+}
+
+function goToExperienceStep() {
+  fireEvent.click(screen.getByRole("button", { name: /General fitness/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
 }
 
 describe("GeneratorWizard", () => {
@@ -63,6 +80,41 @@ describe("GeneratorWizard", () => {
   it("disables Back on the first step", () => {
     renderWizard();
     expect(screen.getByRole("button", { name: "Back" })).toBeDisabled();
+  });
+
+  // Regression: the Experience step used to always default to "Intermediate"
+  // regardless of the active profile's own experience level, unlike the
+  // Equipment step (already seeded from initialHaveIds). A Beginner profile
+  // would silently get an Intermediate-difficulty workout unless they
+  // noticed and corrected it on this one screen.
+  it("defaults the Experience step to the profile's own level", () => {
+    renderWizard("Beginner");
+    goToExperienceStep();
+    expect(screen.getByText("Step 4 of 5: Experience")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Beginner" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("defaults to a different level when the profile is Advanced", () => {
+    renderWizard("Advanced");
+    goToExperienceStep();
+    expect(screen.getByRole("button", { name: "Advanced" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Beginner" })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  // Same class of bug as the Experience default, on the Goal step: it also
+  // used to be hardcoded to "general" regardless of the profile's own
+  // trainingGoal.
+  it("defaults the Goal step to the profile's own training goal", () => {
+    renderWizard("Beginner", "strength");
+    expect(screen.getByText("Step 1 of 5: Goal")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /General strength/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: /General fitness/ })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
   });
 
   it("swaps Next for Generate on the last step", () => {
