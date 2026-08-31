@@ -13,6 +13,15 @@ Read `PROJECT_PLAN.docx` for current status, and `TECHNICAL_SPEC.docx` plus
 `VISUAL_STYLE_GUIDE.docx` for decisions already made. Apply those decisions rather
 than re-deciding them per feature.
 
+## Active work
+
+`docs/technical/qa-audit-2026-08-31.md` is a prioritized, in-progress QA
+backlog (UX/a11y, frontend perf, backend reliability/data/security,
+structural) — read it before starting new work. Items 1–6 are approved to
+implement without further check-in; items 7–10 need a decision from the
+user first. Update its status column as items get resolved rather than
+leaving it stale.
+
 ## Commands
 
 ```
