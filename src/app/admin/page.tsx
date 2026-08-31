@@ -13,6 +13,7 @@ import {
   DataTableRow,
 } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FormattedDate } from "@/components/ui/formatted-date";
 import { PageHeader } from "@/components/ui/page-header";
 import { Stat } from "@/components/ui/stat";
 import { getAdminSessionStatus } from "@/app/admin/login/actions";
@@ -135,12 +136,14 @@ export default async function AdminPage() {
                         {profile.sessionCount}
                       </DataTableCell>
                       <DataTableCell>
-                        {profile.lastActivityDate
-                          ? profile.lastActivityDate.toLocaleDateString(undefined, DATE_FORMAT)
-                          : "No activity"}
+                        {profile.lastActivityDate ? (
+                          <FormattedDate date={profile.lastActivityDate} options={DATE_FORMAT} />
+                        ) : (
+                          "No activity"
+                        )}
                       </DataTableCell>
                       <DataTableCell align="end">
-                        {profile.createdAt.toLocaleDateString(undefined, DATE_FORMAT)}
+                        <FormattedDate date={profile.createdAt} options={DATE_FORMAT} />
                       </DataTableCell>
                       <DataTableCell align="end">
                         <ProfileDeleteButton

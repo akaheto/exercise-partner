@@ -10,6 +10,7 @@ import {
   DataTableHeader,
   DataTableRow,
 } from "@/components/ui/data-table";
+import { FormattedDate } from "@/components/ui/formatted-date";
 import { PageHeader } from "@/components/ui/page-header";
 import { Stat } from "@/components/ui/stat";
 import { formatWeight } from "@/components/history/format";
@@ -41,12 +42,12 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
 
       <PageHeader
         title={session.workoutName}
-        description={session.startedAt.toLocaleDateString(undefined, {
-          weekday: "long",
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-        })}
+        description={
+          <FormattedDate
+            date={session.startedAt}
+            options={{ weekday: "long", month: "long", day: "numeric", year: "numeric" }}
+          />
+        }
         actions={<SessionStatusBadge status={session.status} />}
         className="mb-4"
       />

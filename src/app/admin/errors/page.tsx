@@ -3,6 +3,7 @@ import { clientErrors } from "@/db/schema";
 import { getAdminSessionStatus } from "@/app/admin/login/actions";
 import { redirect } from "next/navigation";
 import { desc } from "drizzle-orm";
+import { FormattedDateTime } from "@/components/ui/formatted-date";
 
 export default async function ErrorsPage() {
   const isAdmin = await getAdminSessionStatus();
@@ -39,7 +40,7 @@ export default async function ErrorsPage() {
               {errors.map((error) => (
                 <tr key={error.id} className="border-b border-border">
                   <td className="px-4 py-2">
-                    {error.timestamp?.toLocaleDateString()} {error.timestamp?.toLocaleTimeString()}
+                    {error.timestamp && <FormattedDateTime date={error.timestamp} />}
                   </td>
                   <td className="px-4 py-2 max-w-xs truncate">{error.message}</td>
                   <td className="px-4 py-2 max-w-xs truncate text-muted-foreground">{error.url}</td>

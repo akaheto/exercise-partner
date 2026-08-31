@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormattedDate } from "@/components/ui/formatted-date";
 import type { WorkoutSessionHistoryEntry } from "@/db/queries/history";
 
 export function WorkoutSessionHistoryPanel({ sessions }: { sessions: WorkoutSessionHistoryEntry[] }) {
@@ -24,7 +25,7 @@ export function WorkoutSessionHistoryPanel({ sessions }: { sessions: WorkoutSess
                 ) : s.status === "in_progress" ? null : (
                   <XCircle className="size-4 text-muted-foreground" aria-hidden="true" />
                 )}
-                {s.startedAt.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                <FormattedDate date={s.startedAt} options={{ month: "short", day: "numeric", year: "numeric" }} />
               </Link>
               {s.volume > 0 && (
                 <span className="font-mono tabular-nums text-caption text-muted-foreground">

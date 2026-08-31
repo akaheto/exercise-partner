@@ -3,6 +3,7 @@ import { Clock, Dumbbell, History as HistoryIcon, TrendingUp, UserRound, Weight 
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FormattedDate } from "@/components/ui/formatted-date";
 import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
 import { MuscleBalancePanel } from "@/components/history/muscle-balance-panel";
@@ -113,11 +114,10 @@ export default async function HistoryPage() {
                       </CardHeader>
                       <CardContent className="flex flex-wrap items-center gap-3 text-caption text-muted-foreground">
                         <span>
-                          {s.startedAt.toLocaleDateString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
+                          <FormattedDate
+                            date={s.startedAt}
+                            options={{ month: "short", day: "numeric", year: "numeric" }}
+                          />
                         </span>
                         {minutes !== null && (
                           <span className="flex items-center gap-1">
