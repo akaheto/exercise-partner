@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { RepToggle, WeightToggle } from "@/components/session/rep-weight-toggle";
 import { VideoEmbed } from "@/components/exercise/video-embed";
-import { MuscleDiagram } from "@/components/exercise/muscle-diagram";
+import { MuscleDiagramPhoto } from "@/components/exercise/muscle-diagram-photo";
 import { splitIntoSentences } from "@/domain/text";
 import { DEFAULT_REST_SECONDS } from "@/domain/workout-duration";
 import type { SessionStep } from "@/domain/session-flow";
@@ -226,7 +226,12 @@ export function SessionRunner({
               </ul>
             </section>
           )}
-          <MuscleDiagram primaryMuscle={step.exercisePrimaryMuscle} secondaryMuscles={exercise.secondaryMuscles} />
+          <MuscleDiagramPhoto
+            exerciseId={step.exerciseId}
+            exerciseName={step.exerciseName}
+            primaryMuscle={step.exercisePrimaryMuscle}
+            secondaryMuscles={exercise.secondaryMuscles}
+          />
         </div>
       )}
     </div>

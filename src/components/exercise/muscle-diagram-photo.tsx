@@ -6,13 +6,14 @@ import { ErrorState } from "@/components/ui/error-state";
 
 /**
  * The supplied anatomical render (Epic O) — a real photographic-style body
- * map. Originally shown alongside the app's own hand-built MuscleDiagram;
- * by request, this replaced it on the exercise detail page once coverage was
- * confirmed complete (1,218/1,218). MuscleDiagram itself is not deleted — it
- * still renders in Workout Mode (src/components/session/session-runner.tsx),
- * where a full photographic plate would compete for space a mid-set screen
- * needs for logging — so the style guide's teal involvement ramp still has
- * something to colour; see VISUAL_STYLE_GUIDE.docx "Fixed-Light Plates".
+ * map. Originally shown alongside the app's own hand-built MuscleDiagram,
+ * then replaced it on the exercise detail page once coverage was confirmed
+ * complete (1,218/1,218). MuscleDiagram was kept a while longer in Workout
+ * Mode (src/components/session/session-runner.tsx), on the theory that a
+ * full photographic plate would compete for space a mid-set screen needs for
+ * logging — but by explicit request, this now renders there too, for visual
+ * consistency between the exercise detail page and Workout Mode.
+ * MuscleDiagram itself has been deleted; nothing imports it anymore.
  *
  * Always a light plate, in both themes (PROJECT_PLAN.docx item 44's chosen
  * treatment) — the alternative, an invert/hue-rotate filter, risks turning a

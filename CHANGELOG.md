@@ -5,7 +5,7 @@ All notable changes to this project are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-08-30 21:11 UTC
+## [Unreleased] - 2026-08-31 05:55 UTC
 
 ### Added
 
@@ -314,6 +314,17 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `TECHNICAL_SPEC.docx`, `VISUAL_STYLE_GUIDE.docx`, `USER_GUIDE.docx` and
   `ENHANCEMENTS.docx` into the synced Drive project folder.
 - Source spreadsheet vendored to `data/source/` so imports are reproducible.
+
+### Changed
+
+- Workout Mode now shows the same photo-based anatomical muscle diagram
+  (Epic O) as the exercise detail page, instead of the older hand-built
+  `MuscleDiagram`. The two had been left deliberately different — the
+  hand-built one kept in Workout Mode on the theory that a full
+  photographic plate would compete for space a mid-set screen needs for
+  logging — but by explicit request, consistency between the two screens
+  won out. `MuscleDiagram` had no other callers left, so it's deleted
+  rather than kept as dead code.
 
 ### Fixed
 
