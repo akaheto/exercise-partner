@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { SessionRunner } from "./session-runner";
+import { SessionRunner, type LoggedSetSummary } from "./session-runner";
 import type { SessionStep } from "@/domain/session-flow";
 
 const logSet = vi.fn();
@@ -34,10 +34,12 @@ function renderRunner({
   nextSetNumber = 1,
   defaultWeightUnit = "kg" as "kg" | "lb",
   stepOverrides = {},
+  loggedSets = [],
 }: {
   nextSetNumber?: number;
   defaultWeightUnit?: "kg" | "lb";
   stepOverrides?: Partial<SessionStep>;
+  loggedSets?: LoggedSetSummary[];
 } = {}) {
   return render(
     <SessionRunner
@@ -48,6 +50,7 @@ function renderRunner({
       nextSetNumber={nextSetNumber}
       exercise={null}
       defaultWeightUnit={defaultWeightUnit}
+      loggedSets={loggedSets}
     />,
   );
 }
@@ -190,7 +193,7 @@ describe("SessionRunner set logging", () => {
 
     await waitFor(() => {
       repsBtn = screen.getByRole("button", { name: /Reps:/ });
-      weightBtn = screen.getAllByRole("button").find((btn) => btn.textContent.includes("Weight:")) as HTMLElement;
+      weightBtn = screen.getByRole("button", { name: /Weight:/ });
       expect(repsBtn).toHaveTextContent("—");
       expect(weightBtn).toHaveTextContent("2.5kg");
     });
@@ -217,6 +220,7 @@ describe("SessionRunner set logging", () => {
         nextSetNumber={1}
         exercise={null}
         defaultWeightUnit="kg"
+        loggedSets={[]}
       />,
     );
 
@@ -224,6 +228,33 @@ describe("SessionRunner set logging", () => {
       const newWeightBtn = screen.getByRole("button", { name: /Weight:/ });
       expect(newWeightBtn).toHaveTextContent("—");
     });
+  });
+
+  it("shows previously logged sets for this exercise so far", () => {
+    renderRunner({
+      nextSetNumber: 3,
+      loggedSets: [
+        { setNumber: 1, weight: "10.00", weightUnit: "kg", reps: 8 },
+        { setNumber: 2, weight: "12.50", weightUnit: "kg", reps: 6 },
+      ],
+    });
+
+    expect(screen.getByText(/Set 1:\s*10kg\s*×\s*8/)).toBeInTheDocument();
+    expect(screen.getByText(/Set 2:\s*12.5kg\s*×\s*6/)).toBeInTheDocument();
+  });
+
+  it("shows nothing for a bodyweight set with no weight logged", () => {
+    renderRunner({
+      nextSetNumber: 2,
+      loggedSets: [{ setNumber: 1, weight: null, weightUnit: null, reps: 15 }],
+    });
+
+    expect(screen.getByText(/Set 1:\s*—\s*×\s*15/)).toBeInTheDocument();
+  });
+
+  it("shows no history block before any set has been logged", () => {
+    renderRunner({ loggedSets: [] });
+    expect(screen.queryByText(/Set 1:/)).toBeNull();
   });
 
   it("shows the rest timer after a logged set and lets it be skipped", async () => {
@@ -298,9 +329,9 @@ describe("SessionRunner touch targets", () => {
       expect(screen.getByRole("button", { name }).className).toMatch(/\bh-14\b/);
     }
 
-    const weightToggle = screen.getAllByRole("button").find((btn) => btn.textContent.includes("Weight:"));
+    const weightToggle = screen.getByRole("button", { name: /Weight:/ });
     const repsToggle = screen.getByRole("button", { name: /Reps:/ });
-    expect(weightToggle?.className).toMatch(/\b(size-14|h-14)\b/);
+    expect(weightToggle.className).toMatch(/\b(size-14|h-14)\b/);
     expect(repsToggle.className).toMatch(/\b(size-14|h-14)\b/);
 
     // 44px minimum, not the 36px dense-row size.
@@ -308,6 +339,8 @@ describe("SessionRunner touch targets", () => {
       expect(screen.getByRole("button", { name }).className).toMatch(/\b(h-11|size-11)\b/);
       expect(screen.getByRole("button", { name }).className).not.toMatch(/\b(h-9|size-9)\b/);
     }
-    expect(screen.getByRole("button", { name: /Weight unit is/ }).className).toMatch(/\bh-11\b/);
+    // The unit toggle sits directly beside Weight/Reps in the same row, so
+    // it matches their 56px Workout Mode size rather than the 44px default.
+    expect(screen.getByRole("button", { name: /Weight unit is/ }).className).toMatch(/\bsize-14\b/);
   });
 });

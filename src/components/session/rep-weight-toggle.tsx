@@ -48,7 +48,7 @@ export function RepToggle({ value, onChange, min, max, label }: RepToggleProps) 
       className="w-full font-mono text-metric"
       aria-label={`${label}: ${displayValue}. Tap to cycle through ${min}-${max} or Max.`}
     >
-      {label}: <span className="ml-1 font-semibold">{displayValue}</span>
+      {displayValue}
     </Button>
   );
 }
@@ -84,10 +84,13 @@ export function WeightToggle({ value, onChange, unit, label }: WeightToggleProps
       size="workout"
       variant="outline"
       onClick={handleClick}
-      className="w-full font-mono text-metric"
+      // min-w-0 + flex-1 (not w-full): this sits beside the unit-toggle
+      // button in a shared row (session-runner.tsx) and has to actually
+      // shrink to make room for it — every Button defaults to shrink-0.
+      className="min-w-0 flex-1 shrink font-mono text-metric"
       aria-label={`${label}: ${displayValue}. Tap to cycle weight.`}
     >
-      {label}: <span className="ml-1 font-semibold">{displayValue}</span>
+      {displayValue}
     </Button>
   );
 }

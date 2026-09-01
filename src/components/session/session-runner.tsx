@@ -12,12 +12,23 @@ import { splitIntoSentences } from "@/domain/text";
 import { DEFAULT_REST_SECONDS } from "@/domain/workout-duration";
 import type { SessionStep } from "@/domain/session-flow";
 import { abandonSession, deleteLastSet, logSet } from "@/app/session/actions";
+import { formatWeight } from "@/components/history/format";
 
 interface ExerciseDetail {
   instructions: string | null;
   videoUrl: string | null;
   sourceUrl: string | null;
   secondaryMuscles: string[];
+}
+
+/** One set already logged for the exercise currently on screen — just
+ * enough to remind the person what they did on earlier sets while they're
+ * about to log the next one. */
+export interface LoggedSetSummary {
+  setNumber: number;
+  weight: string | null;
+  weightUnit: string | null;
+  reps: number | null;
 }
 
 
@@ -36,6 +47,7 @@ export function SessionRunner({
   nextSetNumber,
   exercise,
   defaultWeightUnit,
+  loggedSets,
 }: {
   sessionId: string;
   workoutName: string;
@@ -44,6 +56,8 @@ export function SessionRunner({
   nextSetNumber: number;
   exercise: ExerciseDetail | null;
   defaultWeightUnit: "kg" | "lb";
+  /** Sets already logged for the *current* exercise, oldest first. */
+  loggedSets: LoggedSetSummary[];
 }) {
   const step: SessionStep = steps[currentStepIndex];
   const [isPending, startTransition] = useTransition();
@@ -163,6 +177,21 @@ export function SessionRunner({
         )}
       </p>
 
+      {loggedSets.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {loggedSets.map((s) => (
+            <span
+              key={s.setNumber}
+              className="rounded-full bg-muted px-3 py-1 text-small text-muted-foreground"
+            >
+              Set {s.setNumber}: {s.weight !== null ? `${formatWeight(s.weight)}${s.weightUnit ?? ""}` : "—"}
+              {" × "}
+              {s.reps ?? "—"}
+            </span>
+          ))}
+        </div>
+      )}
+
       {isResting ? (
         <Card className="mt-6">
           <CardContent className="flex flex-col items-center gap-4">
@@ -178,33 +207,40 @@ export function SessionRunner({
       ) : (
         <Card className="mt-6">
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <WeightToggle
-                  value={weight}
-                  onChange={setWeight}
-                  unit={weightUnit}
-                  label="Weight"
+            <div className="flex items-end gap-2">
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="text-caption font-medium text-muted-foreground">Weight</p>
+                <div className="flex min-w-0 gap-2">
+                  <WeightToggle
+                    value={weight}
+                    onChange={setWeight}
+                    unit={weightUnit}
+                    label="Weight"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-workout"
+                    className="shrink-0 font-mono text-small"
+                    aria-label={`Weight unit is ${weightUnit}. Switch to ${otherUnit}.`}
+                    onClick={() => setWeightUnit((u) => (u === "kg" ? "lb" : "kg"))}
+                  >
+                    {weightUnit}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="text-caption font-medium text-muted-foreground">Reps</p>
+                <RepToggle
+                  value={reps}
+                  onChange={setReps}
+                  min={step.repsMin}
+                  max={step.repsMax}
+                  label="Reps"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="font-mono"
-                  aria-label={`Weight unit is ${weightUnit}. Switch to ${otherUnit}.`}
-                  onClick={() => setWeightUnit((u) => (u === "kg" ? "lb" : "kg"))}
-                >
-                  {weightUnit}
-                </Button>
               </div>
             </div>
-
-            <RepToggle
-              value={reps}
-              onChange={setReps}
-              min={step.repsMin}
-              max={step.repsMax}
-              label="Reps"
-            />
 
             <Button
               size="workout"

@@ -5,7 +5,7 @@ All notable changes to this project are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-09-01 07:24 UTC
+## [Unreleased] - 2026-09-01 07:48 UTC
 
 ### Added
 
@@ -751,3 +751,27 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `npm run typecheck`/`lint`/`vitest` don't exercise that build path, so
   none of them caught it; only `npm run build` (and the first failed
   `vercel --prod`) did. Deleted the unused re-export and redeployed.
+
+### Changed
+
+- Workout Mode: Weight and Reps now sit side by side in one row (unit
+  toggle between them), with Log set spanning full width underneath,
+  instead of three stacked full-width rows — requested after using the
+  deployed app directly. Uncovered a real flexbox bug building this: every
+  `Button` defaults to `shrink-0` (VISUAL_STYLE_GUIDE's "don't get squished
+  in a toolbar" rule), which is exactly wrong for a button sharing a row
+  with siblings that need to compress — the two toggle buttons were
+  overlapping instead of sitting side by side until `WeightToggle` was
+  given `min-w-0 flex-1 shrink` to override it. The unit toggle (kg/lb)
+  also moved from the 44px default size to the 56px Workout Mode size,
+  since it now sits directly beside two 56px controls in the same row.
+  Verified in a real browser (via a temporary, auth-free preview route,
+  removed afterward — not left in the codebase) rather than assumed from
+  the diff, per CLAUDE.md's rule for UI changes.
+- Workout Mode now shows the sets already logged for the *current*
+  exercise (e.g. "Set 1: 10kg × 8") above the input card, so mid-workout
+  you don't have to remember what you did on earlier sets of the same
+  exercise. Reuses `session.loggedSets`, already fetched server-side for
+  progress tracking — filtered to the current exercise and passed down; no
+  new query, and it updates automatically after each `logSet` the same way
+  the rest of the screen already does.

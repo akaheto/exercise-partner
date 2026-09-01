@@ -56,6 +56,9 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
   const currentStep = steps[progress.currentStepIndex];
   const exercise = await getExerciseById(currentStep.exerciseId, profile.id);
   const secondaryMuscles = parseMuscleList(exercise?.secondaryMuscles ?? null);
+  const loggedSetsForExercise = session.loggedSets
+    .filter((s) => s.exerciseId === currentStep.exerciseId)
+    .map((s) => ({ setNumber: s.setNumber, weight: s.weight, weightUnit: s.weightUnit, reps: s.reps }));
 
   return (
     <SessionRunner
@@ -64,6 +67,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
       steps={steps}
       currentStepIndex={progress.currentStepIndex}
       nextSetNumber={progress.nextSetNumber}
+      loggedSets={loggedSetsForExercise}
       exercise={
         exercise
           ? {
