@@ -44,8 +44,6 @@ export async function startSession(workoutId: string): Promise<never> {
   redirect(`/session/${session.id}`);
 }
 
-export type { LogSetInput };
-
 export async function logSet(sessionId: string, rawInput: LogSetInput): Promise<void> {
   const { session } = await requireOwnedSession(sessionId);
   if (session.status !== "in_progress") throw new Error("Session is not in progress");
