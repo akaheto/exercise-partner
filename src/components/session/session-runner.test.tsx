@@ -196,6 +196,36 @@ describe("SessionRunner set logging", () => {
     });
   });
 
+  // Regression: advancing to the next exercise re-renders this same
+  // component instance with new props (computeSessionProgress on the
+  // server, not a remount) rather than unmounting it, so weight otherwise
+  // survived the exercise boundary — carrying, say, a 60kg squat into the
+  // very next isolation exercise's input by default.
+  it("clears the weight when the exercise changes, unlike a same-exercise set", async () => {
+    const { rerender } = renderRunner({ stepOverrides: { exerciseId: "EX-0001" } });
+
+    const weightBtn = screen.getByRole("button", { name: /Weight:/ });
+    fireEvent.click(weightBtn);
+    expect(weightBtn).toHaveTextContent("2.5kg");
+
+    rerender(
+      <SessionRunner
+        sessionId="SESSION-1"
+        workoutName="Upper Body Workout"
+        steps={[step({ exerciseId: "EX-0002", exerciseName: "Dumbbell Stiff Leg Deadlift" })]}
+        currentStepIndex={0}
+        nextSetNumber={1}
+        exercise={null}
+        defaultWeightUnit="kg"
+      />,
+    );
+
+    await waitFor(() => {
+      const newWeightBtn = screen.getByRole("button", { name: /Weight:/ });
+      expect(newWeightBtn).toHaveTextContent("—");
+    });
+  });
+
   it("shows the rest timer after a logged set and lets it be skipped", async () => {
     renderRunner();
 

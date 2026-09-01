@@ -54,6 +54,22 @@ export function SessionRunner({
   const [restUntil, setRestUntil] = useState<number | null>(null);
   const [now, setNow] = useState<number | null>(null);
 
+  // Advancing to a new exercise re-renders this same component instance with
+  // new props (currentStepIndex/step come from computeSessionProgress on the
+  // server, not a remount) rather than unmounting it, so weight otherwise
+  // survives the exercise boundary — carrying, say, a 60kg squat into the
+  // very next isolation exercise's input by default. Weight carrying between
+  // *sets* of the same exercise is intentional (see handleLogSet); across
+  // exercises it isn't. Adjusted during render (React's own recommended
+  // pattern for this — see "Adjusting state when a prop changes" in the
+  // React docs) rather than in a useEffect, which would commit the stale
+  // value for one extra frame and cause a cascading re-render.
+  const [lastExerciseId, setLastExerciseId] = useState(step.exerciseId);
+  if (step.exerciseId !== lastExerciseId) {
+    setLastExerciseId(step.exerciseId);
+    setWeight(null);
+  }
+
   useEffect(() => {
     if (restUntil === null) return;
     const interval = setInterval(() => setNow(Date.now()), 250);

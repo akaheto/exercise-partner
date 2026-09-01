@@ -5,7 +5,7 @@ All notable changes to this project are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-09-01 06:38 UTC
+## [Unreleased] - 2026-09-01 07:24 UTC
 
 ### Added
 
@@ -729,3 +729,25 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Resolution logic extracted to `src/domain/workout-guidance-context.ts`
   (pure, tested) rather than left as inline fallback logic on the edit page.
   `duplicateWorkout` carries the stored level/goal into the copy.
+- **Fixed a real bug found by using the app right after deploying it**:
+  Workout Mode's entered weight silently carried across exercise
+  boundaries, not just between sets of the same exercise — e.g. a 60kg
+  squat's weight would still be sitting in the input for the very next,
+  unrelated exercise. Root cause: advancing to a new exercise re-renders
+  the same `SessionRunner` instance with new props
+  (`currentStepIndex`/`step` come from `computeSessionProgress` on the
+  server after `logSet`'s `revalidatePath`, not a remount), so the
+  `weight` state never had a reason to clear. Weight carrying between sets
+  of the *same* exercise is intentional and unaffected. Fixed by adjusting
+  state during render when `step.exerciseId` changes (React's own
+  recommended pattern for this, rather than a `useEffect` — which the
+  project's lint config's `react-hooks/set-state-in-effect` rule correctly
+  rejected on the first attempt). One regression test.
+- Also caught, separately, that this session's own previous commit had
+  broken the production build: `export type { LogSetInput }` inside a
+  `"use server"` file (`src/app/session/actions.ts`) fails Next's Turbopack
+  Server Actions bundler, which tries to proxy every export — even a
+  type-only one that's erased before runtime — as a callable action.
+  `npm run typecheck`/`lint`/`vitest` don't exercise that build path, so
+  none of them caught it; only `npm run build` (and the first failed
+  `vercel --prod`) did. Deleted the unused re-export and redeployed.
