@@ -40,7 +40,7 @@ export async function generateEnhancements() {
         [
           "Multi-select workout building",
           "Select several exercises directly from the Exercise Library's cards and add them all to a new workout in one action, with a running duration estimate visible while selecting",
-          formatDate(),
+          "26 July 2026",
         ],
         [
           "Deterministic workout assessment",
@@ -66,6 +66,11 @@ export async function generateEnhancements() {
           "Design token lint ratchet",
           "scripts/check-design-tokens.ts counts raw colours, off-scale text and spacing against a recorded baseline that may only decrease, wired into npm run lint so style drift fails CI instead of accumulating (Epic N2)",
           "28 July 2026",
+        ],
+        [
+          "In-session set history",
+          "Workout Mode shows the sets already logged for the current exercise (e.g. \"Set 1: 10kg × 8\") above the input card while logging the next one — the narrower, same-session case of \"Previous performance inline\" below; a different session's performance on the same exercise is still not shown",
+          "1 September 2026",
         ],
       ],
       [24, 56, 20],
@@ -108,7 +113,7 @@ export async function generateEnhancements() {
         ["Rest timer alerts", "Audio cue and vibration when rest ends, working with the screen off or the app backgrounded", "A silent timer is useless once the phone is in a pocket", "Small"],
         ["Warm-up set generation", "Auto-propose warm-up ramp sets from the first working set's load", "Standard practice for compound lifts; tedious to enter by hand every session", "Small"],
         ["Estimated 1RM", "Calculate and trend estimated one-rep max from logged sets (Epley / Brzycki)", "Turns raw set logs into a progress signal without needing a max-effort test", "Small"],
-        ["Previous performance inline", "Show last session's weight and reps next to each set input during a workout", "Answers \"what did I do last time?\" without leaving Workout Mode", "Small"],
+        ["Previous session's performance inline", "Show the last time this exercise was performed — a different session, a different day — next to the input, not just this session's own earlier sets (see \"In-session set history\" under Implemented, which covers the narrower case)", "Answers \"what did I lift last time I did this exercise?\" — a bigger question than what this session alone can answer", "Small"],
       ],
       WIDTHS,
     ),

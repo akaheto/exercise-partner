@@ -5,7 +5,7 @@ All notable changes to this project are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-09-01 07:48 UTC
+## [Unreleased] - 2026-09-01 22:25 UTC
 
 ### Added
 
@@ -775,3 +775,29 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   progress tracking — filtered to the current exercise and passed down; no
   new query, and it updates automatically after each `logSet` the same way
   the rest of the screen already does.
+
+### Docs
+
+- QA audit items 9–10 (doc cleanup, no decision needed): `PROJECT_PLAN.docx`
+  had gone stale in ways that made it actively misleading, not just
+  outdated — Epic P4 ("gate /profile to the admin") was marked Not Started
+  with a whole unresolved-decision writeup, when it actually shipped weeks
+  ago (commit f53e2e9); item 37 (stray migration files) and item 41 (a
+  schema comment) both described problems already fixed in code. All three
+  corrected, and a new item 56 explains the 1,218→1,271 exercise-count gap
+  without retroactively rewriting the historical epic entries that
+  correctly describe counts as they stood at the time.
+- `public/enhancements.json` (the `/admin/enhancements` dashboard's data)
+  and `ENHANCEMENTS.docx` (the canonical source per CLAUDE.md) had drifted
+  apart — one entry overclaimed a feature (Workout Library "with faceted
+  search," which isn't built), dates were off, and this session's own new
+  "in-session set history" feature was never logged as implemented.
+  Corrected `enhancements.json` to match, added the missing
+  `ENHANCEMENTS.docx` entry, and fixed a real bug found along the way:
+  `enhancements.ts`'s first Implemented row used `formatDate()` instead of
+  a fixed date, so its "shipped" date silently became *today* on every
+  `npm run docs` run rather than staying at 26 July 2026 — replaced with
+  the real date, found via `git log`. This is a one-time sync, not a
+  structural fix — flagged as new PROJECT_PLAN item 57 (a suggestion, not
+  built) and a code comment on `src/app/admin/enhancements/page.tsx`, since
+  nothing stops the two drifting apart again the next time either changes.

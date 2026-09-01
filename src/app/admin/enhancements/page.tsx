@@ -16,6 +16,15 @@ interface EnhancementsData {
   backlog: Enhancement[];
 }
 
+/**
+ * `public/enhancements.json` is a hand-maintained summary for this
+ * dashboard — a separate file from the canonical source, `ENHANCEMENTS.docx`
+ * (generated from scripts/docs/enhancements.ts, per CLAUDE.md). The two
+ * drifted out of sync for over a month with nothing to catch it (found and
+ * corrected in a 2026-09-01 QA-audit pass — see CHANGELOG.md). There's no
+ * automated link between them; when ENHANCEMENTS.docx changes, update this
+ * file to match by hand, or this page will quietly go stale again.
+ */
 async function getEnhancements(): Promise<EnhancementsData> {
   const filePath = join(process.cwd(), "public", "enhancements.json");
   const content = await readFile(filePath, "utf-8");

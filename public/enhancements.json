@@ -1,12 +1,12 @@
 {
   "implemented": [
     {
-      "title": "Workout Library with faceted search",
+      "title": "Workout Library (browse + add to my workouts)",
       "date": "2026-07-29"
     },
     {
       "title": "Button-based exercise documentation",
-      "date": "2026-07-30"
+      "date": "2026-07-29"
     },
     {
       "title": "Error tracking and monitoring",
