@@ -32,6 +32,8 @@ export interface WorkoutForEdit {
   profileId: string;
   name: string;
   description: string | null;
+  experienceLevel: string | null;
+  trainingGoal: string | null;
   blocks: WorkoutBlockForEdit[];
 }
 
@@ -104,6 +106,8 @@ export async function getWorkoutForEdit(workoutId: string, profileId: string): P
     profileId: workout.profileId,
     name: workout.name,
     description: workout.description,
+    experienceLevel: workout.experienceLevel,
+    trainingGoal: workout.trainingGoal,
     blocks: blockOrder.map((id) => blocksById.get(id)!),
   };
 }

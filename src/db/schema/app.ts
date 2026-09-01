@@ -6,6 +6,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 import { sourceEquipment, sourceExercises } from "./source";
@@ -234,6 +235,15 @@ export const workouts = pgTable("workouts", {
   description: text("description"),
   version: integer("version").notNull().default(1),
   parentWorkoutId: uuid("parent_workout_id"),
+  /** The level/goal actually used to generate this workout's exercise
+   * prescription and guidance cues — null for a workout not created by the
+   * generator (manually built, duplicated pre-migration, or imported from
+   * the Workout Library), which falls back to the profile's current values
+   * instead (src/domain/workout-guidance-context.ts). Exists so a one-off
+   * "generate this harder than my usual level" workout stays consistent
+   * even after the profile's own default level/goal changes later. */
+  experienceLevel: text("experience_level"), // "Beginner" | "Intermediate" | "Advanced"
+  trainingGoal: text("training_goal"), // "Strength" | "Hypertrophy" | "Endurance" | "Power" | "General"
   archivedAt: timestamp("archived_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -322,3 +332,26 @@ export const clientErrors = pgTable("client_errors", {
   timestamp: timestamp("timestamp", { withTimezone: true }).notNull().defaultNow(),
   resolved: integer("resolved").notNull().default(0),
 });
+
+/**
+ * Rate-limit state for the site password and admin token logins (src/lib/
+ * login-lockout.ts). Neither credential is tied to a profile row, and the
+ * app runs on Vercel's serverless/edge runtimes where an in-memory counter
+ * wouldn't survive between invocations, so attempt counts live here instead
+ * — same shape as profiles.pin_failed_attempts/pin_locked_until, keyed by
+ * (scope, identifier) instead of a profile id.
+ */
+export const loginAttempts = pgTable(
+  "login_attempts",
+  {
+    id: integer("id").generatedAlwaysAsIdentity().primaryKey(),
+    scope: text("scope").notNull(), // "site" | "admin"
+    /** Best-effort caller identity — the client IP from x-forwarded-for, or
+     * "unknown" when absent. */
+    identifier: text("identifier").notNull(),
+    failedAttempts: integer("failed_attempts").notNull().default(0),
+    lockedUntil: timestamp("locked_until", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("login_attempts_scope_identifier_idx").on(t.scope, t.identifier)],
+);

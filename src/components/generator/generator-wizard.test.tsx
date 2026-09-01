@@ -145,4 +145,39 @@ describe("GeneratorWizard", () => {
       expect(option.className).toMatch(/\bmin-h-11\b/);
     }
   });
+
+  // Unhappy path: submitting with zero equipment selected silently produces
+  // an empty candidate pool (src/domain/generator/generate.ts) — this warns
+  // on the step itself, before the round trip to the server.
+  it("warns when no equipment is selected on the Equipment step", () => {
+    render(
+      <GeneratorWizard
+        equipmentOptions={EQUIPMENT}
+        initialHaveIds={[]}
+        initialExperienceLevel="Beginner"
+        initialGoal="general"
+      />,
+    );
+    for (let i = 0; i < 4; i++) {
+      fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    }
+    expect(screen.getByText(/Nothing selected yet/)).toBeInTheDocument();
+  });
+
+  it("does not warn once at least one equipment item is selected", () => {
+    renderWizard(); // pre-selects eq-1 via initialHaveIds
+    for (let i = 0; i < 4; i++) {
+      fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    }
+    expect(screen.queryByText(/Nothing selected yet/)).toBeNull();
+  });
+
+  it("shows the warning again after deselecting the only equipment item", () => {
+    renderWizard();
+    for (let i = 0; i < 4; i++) {
+      fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Barbell" }));
+    expect(screen.getByText(/Nothing selected yet/)).toBeInTheDocument();
+  });
 });

@@ -3,6 +3,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SITE_SESSION_COOKIE, signSiteToken, verifySitePassword } from "@/lib/auth";
+import { getClientIp } from "@/lib/client-ip";
+import { checkLoginLockout, recordLoginAttempt } from "@/lib/login-lockout-store";
 
 export interface LoginState {
   error?: string;
@@ -33,7 +35,15 @@ export async function login(_prevState: LoginState, formData: FormData): Promise
     return { error: "Site is not configured for login. Check SITE_PASSWORD and SESSION_SECRET in .env." };
   }
 
-  if (!verifySitePassword(password, sitePassword)) {
+  const ip = await getClientIp();
+  const lockout = await checkLoginLockout("site", ip);
+  if (lockout.locked) {
+    return { error: `Too many incorrect attempts. Try again in ${lockout.minutesRemaining} minute${lockout.minutesRemaining === 1 ? "" : "s"}.` };
+  }
+
+  const isCorrect = verifySitePassword(password, sitePassword);
+  await recordLoginAttempt("site", ip, isCorrect);
+  if (!isCorrect) {
     return { error: "Incorrect password." };
   }
 

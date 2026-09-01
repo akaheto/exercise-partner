@@ -10,6 +10,8 @@ import {
   signAdminToken,
   verifyAdminToken,
 } from "@/lib/admin-auth";
+import { getClientIp } from "@/lib/client-ip";
+import { checkLoginLockout, recordLoginAttempt } from "@/lib/login-lockout-store";
 
 /**
  * Reads a required secret, or throws.
@@ -45,11 +47,22 @@ export async function validateAdminAccess(
     return { success: false, error: "Admin access is not configured on this server" };
   }
 
+  const ip = await getClientIp();
+  const lockout = await checkLoginLockout("admin", ip);
+  if (lockout.locked) {
+    return {
+      success: false,
+      error: `Too many incorrect attempts. Try again in ${lockout.minutesRemaining} minute${lockout.minutesRemaining === 1 ? "" : "s"}.`,
+    };
+  }
+
   // Both compared in constant time, and the same message either way: telling
   // the caller which of the two was wrong halves the work of guessing them.
   const passwordOk = constantTimeEqual(sitePassword, expectedPassword);
   const tokenOk = constantTimeEqual(adminToken, expectedToken);
-  if (!passwordOk || !tokenOk) {
+  const isCorrect = passwordOk && tokenOk;
+  await recordLoginAttempt("admin", ip, isCorrect);
+  if (!isCorrect) {
     return { success: false, error: "Invalid credentials" };
   }
 

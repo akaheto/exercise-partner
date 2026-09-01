@@ -1,6 +1,7 @@
 import { db } from "@/db/client";
-import { profiles, sessions, workouts } from "@/db/schema";
-import { count, desc, eq, max } from "drizzle-orm";
+import { profiles, sessions, sessionSets, workouts } from "@/db/schema";
+import { computeVolume } from "@/domain/session-history";
+import { and, count, desc, eq, max } from "drizzle-orm";
 
 export interface ProfileWithStats {
   id: string;
@@ -73,29 +74,28 @@ export async function getProfileDetail(profileId: string): Promise<
     return null;
   }
 
-  const workoutCount = await db
-    .select({ id: workouts.id })
-    .from(workouts)
-    .where(eq(workouts.profileId, profileId))
-    .then((rows) => rows.length);
-
-  const sessionCount = await db
-    .select({ id: sessions.id })
-    .from(sessions)
-    .where(eq(sessions.profileId, profileId))
-    .then((rows) => rows.length);
-
-  const completedSessionCount = await db
-    .select({ id: sessions.id })
-    .from(sessions)
-    .where(eq(sessions.profileId, profileId))
-    .then((rows) => rows.filter((s) => s.id).length); // This is simplified
+  const [[workoutCountRow], [sessionCountRow], [completedSessionCountRow], volumeSets] = await Promise.all([
+    db.select({ value: count() }).from(workouts).where(eq(workouts.profileId, profileId)),
+    db.select({ value: count() }).from(sessions).where(eq(sessions.profileId, profileId)),
+    db
+      .select({ value: count() })
+      .from(sessions)
+      .where(and(eq(sessions.profileId, profileId), eq(sessions.status, "completed"))),
+    // computeVolume (src/domain/session-history.ts) normalizes kg/lb the
+    // same way the per-session history view does, so this total is
+    // consistent with what a profile sees on their own history pages.
+    db
+      .select({ weight: sessionSets.weight, reps: sessionSets.reps, weightUnit: sessionSets.weightUnit })
+      .from(sessionSets)
+      .innerJoin(sessions, eq(sessionSets.sessionId, sessions.id))
+      .where(eq(sessions.profileId, profileId)),
+  ]);
 
   return {
     profile,
-    workoutCount,
-    sessionCount,
-    completedSessionCount,
-    totalVolume: 0, // Could be calculated if needed
+    workoutCount: workoutCountRow.value,
+    sessionCount: sessionCountRow.value,
+    completedSessionCount: completedSessionCountRow.value,
+    totalVolume: computeVolume(volumeSets as Parameters<typeof computeVolume>[0]),
   };
 }

@@ -170,6 +170,12 @@ export function GeneratorWizard({
               <OptionCard key={eq.equipmentId} selected={haveIds.has(eq.equipmentId)} onClick={() => toggleEquipment(eq.equipmentId)} title={eq.name} />
             ))}
           </div>
+          {haveIds.size === 0 && (
+            <Callout tone="warning" className="mt-3">
+              Nothing selected yet — with no equipment marked, most exercises won&apos;t match. Select
+              what you actually have access to, even just your bodyweight.
+            </Callout>
+          )}
         </div>
       )}
 

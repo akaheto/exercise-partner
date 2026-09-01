@@ -16,6 +16,7 @@ import { getActiveProfileId } from "@/lib/active-profile";
 import { estimateWorkoutMinutes } from "@/domain/workout-duration";
 import { assessWorkout } from "@/domain/workout-assessment";
 import { parseMuscleList } from "@/domain/importParsing";
+import { resolveGuidanceContext } from "@/domain/workout-guidance-context";
 import { startSession } from "@/app/session/actions";
 import type { PickerExercise } from "./actions";
 
@@ -30,8 +31,7 @@ export default async function WorkoutBuilderPage({ params }: { params: Promise<{
   ]);
   if (!workout) notFound();
 
-  const userLevel = profile?.experienceLevel || "Beginner";
-  const userGoal = profile?.trainingGoal || "General";
+  const { userLevel, userGoal } = resolveGuidanceContext(workout, profile);
 
   const allExerciseIds = [...new Set(workout.blocks.flatMap((b) => b.items.map((i) => i.exerciseId)))];
   const candidateEntries = await Promise.all(

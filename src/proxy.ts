@@ -17,20 +17,22 @@ export async function proxy(request: NextRequest) {
     return new NextResponse("Server misconfigured: SESSION_SECRET is not set", { status: 500 });
   }
 
-  // Check for regular user session
-  const siteToken = request.cookies.get(SITE_SESSION_COOKIE)?.value;
-  if (siteToken && (await verifySiteToken(siteToken, secret))) {
-    return NextResponse.next();
-  }
-
-  // Check for admin session (if accessing /admin routes)
+  // /admin routes are gated by the admin session alone — checked first and
+  // exclusively, so a plain site-session holder (anyone with the one shared
+  // site password) can never reach /admin/* here even if a future admin page
+  // forgets to re-check getAdminSessionStatus() itself. The general site
+  // session check below intentionally never runs for this prefix.
   if (pathname.startsWith("/admin")) {
     const adminToken = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
     if (adminToken && (await verifyAdminToken(adminToken, secret))) {
       return NextResponse.next();
     }
-    // Redirect to admin login instead of user login
     return NextResponse.redirect(new URL("/admin/login", request.url));
+  }
+
+  const siteToken = request.cookies.get(SITE_SESSION_COOKIE)?.value;
+  if (siteToken && (await verifySiteToken(siteToken, secret))) {
+    return NextResponse.next();
   }
 
   const loginUrl = new URL("/login", request.url);

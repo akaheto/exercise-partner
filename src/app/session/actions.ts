@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/db/client";
 import { sessions, sessionSets } from "@/db/schema";
 import { getWorkoutForEdit } from "@/db/queries/workouts";
+import { logSetSchema, type LogSetInput } from "@/domain/session-log";
 import { getActiveProfileId } from "@/lib/active-profile";
 import { requireSiteSession } from "@/lib/require-site-session";
 
@@ -43,18 +44,13 @@ export async function startSession(workoutId: string): Promise<never> {
   redirect(`/session/${session.id}`);
 }
 
-export interface LogSetInput {
-  exerciseId: string;
-  setNumber: number;
-  weight: number | null;
-  weightUnit: "kg" | "lb" | null;
-  reps: number | null;
-  notes: string | null;
-}
+export type { LogSetInput };
 
-export async function logSet(sessionId: string, input: LogSetInput): Promise<void> {
+export async function logSet(sessionId: string, rawInput: LogSetInput): Promise<void> {
   const { session } = await requireOwnedSession(sessionId);
   if (session.status !== "in_progress") throw new Error("Session is not in progress");
+
+  const input = logSetSchema.parse(rawInput);
 
   await db.insert(sessionSets).values({
     sessionId,

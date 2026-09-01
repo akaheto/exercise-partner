@@ -1,3 +1,8 @@
+// Client Component because Recharts (BarChart/ResponsiveContainer below)
+// only renders in the browser. Unlike the other history charts, this file
+// has no local-timezone dependency of its own: formatWeekLabel below
+// deliberately forces timeZone: "UTC" since weekStart is a UTC-bucketed ISO
+// date, not a per-viewer moment.
 "use client";
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";

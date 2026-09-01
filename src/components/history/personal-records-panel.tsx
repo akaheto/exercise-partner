@@ -1,3 +1,7 @@
+// Client Component: the toLocaleDateString() call below must run in the
+// viewer's own timezone. Session dates rendering in UTC instead of local was
+// a real, previously-fixed bug class (see CHANGELOG.md / FormattedDate) — a
+// Server Component render would use the server's timezone instead.
 "use client";
 
 import Link from "next/link";

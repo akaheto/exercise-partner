@@ -11,7 +11,6 @@ import { fetchCandidatePool } from "@/db/queries/generator";
 import { getExerciseGuidance } from "@/db/queries/exercises";
 import { generateWorkout } from "@/domain/generator/generate";
 import { DURATION_OPTIONS, EXPERIENCE_LEVELS, FOCUS_AREAS, GOALS } from "@/domain/generator/types";
-import { getProfileById } from "@/db/queries/profiles";
 
 const FOCUS_LABELS: Record<(typeof FOCUS_AREAS)[number], string> = {
   full_body: "Full Body",
@@ -89,9 +88,13 @@ export async function generateWorkoutAction(
     return { error: "Couldn't generate a workout — no exercises matched your equipment and experience level.", warnings: result.warnings };
   }
 
-  // Fetch profile to get user's preferred experience level for guidance
-  const profile = await getProfileById(profileId);
-  const userLevel = profile?.experienceLevel || parsed.data.experienceLevel;
+  // The wizard's own choice for this generation governs the prescription
+  // and guidance cues too, not the profile's default — a one-off "generate
+  // this harder than usual" workout should stay consistently harder, not
+  // silently fall back to the profile's real level. Stored on the workout
+  // itself (below) so it stays that way even after the profile's default
+  // changes later — see src/domain/workout-guidance-context.ts.
+  const userLevel = parsed.data.experienceLevel;
 
   // Map goal names to guidance pattern training goals (lowercase to Title case)
   const goalMap: Record<typeof parsed.data.goal, string> = {
@@ -109,6 +112,8 @@ export async function generateWorkoutAction(
         profileId,
         name: `${FOCUS_LABELS[parsed.data.focus]} Workout`,
         description: `Generated for ${parsed.data.goal}, ~${parsed.data.durationMinutes} min, ${parsed.data.experienceLevel.toLowerCase()} level.`,
+        experienceLevel: userLevel,
+        trainingGoal: guidanceGoal,
       })
       .returning();
 

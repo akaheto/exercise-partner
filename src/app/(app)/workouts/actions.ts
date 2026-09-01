@@ -28,7 +28,13 @@ export async function duplicateWorkout(workoutId: string): Promise<void> {
   await db.transaction(async (tx) => {
     const [copy] = await tx
       .insert(workouts)
-      .values({ profileId, name: `Copy of ${workout.name}`, description: workout.description })
+      .values({
+        profileId,
+        name: `Copy of ${workout.name}`,
+        description: workout.description,
+        experienceLevel: workout.experienceLevel,
+        trainingGoal: workout.trainingGoal,
+      })
       .returning();
 
     for (const block of blocks) {

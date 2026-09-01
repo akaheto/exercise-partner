@@ -5,7 +5,7 @@ All notable changes to this project are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-08-31 06:01 UTC
+## [Unreleased] - 2026-09-01 06:38 UTC
 
 ### Added
 
@@ -575,11 +575,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   dropping anything hand-added there that isn't also registered on Vercel's
   side. Local dev was confirmed intact afterward by running the admin-auth
   e2e spec end to end.
-- Three `.sql` files sit directly in `drizzle/` (`0002_curation_tracking`,
-  `0003_remove_breathing_movement_pattern`, `0004_exercise_experience_guidance`)
-  rather than in `drizzle/migrations/`, and are absent from the journal.
-  Drizzle never runs them, and their indices collide with real migrations of
-  the same number. They should be deleted or archived.
+- ~~Three `.sql` files sit directly in `drizzle/`...~~ Resolved: those three
+  (`0002_curation_tracking`, `0003_remove_breathing_movement_pattern`,
+  `0004_exercise_experience_guidance`) are now in `drizzle/archive/`. A
+  fourth, undocumented one in the same shape — `0005_add_program_categories.sql`
+  — turned out to still be live and caused a real bug; see the 2026-09-01
+  Fixed entry below for the full story. It's archived now too.
 - Exercise-specific tips and common mistakes were hand-written for 20
   representative exercises only; the other ~1,198 fall back to their guidance
   pattern's generic cue. Deliberately partial rather than fabricated.
@@ -622,3 +623,109 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `next/image` is configured for a single remote host
   (`cdn.muscleandstrength.com`) — the only one in the current data. A future
   additional import source would need its host added to `next.config.ts`.
+
+### Security
+
+- Site password and admin token logins now lock out for 15 minutes after 5
+  wrong attempts, tracked per client IP in a new `login_attempts` table
+  (migration 0012) since neither credential is tied to a profile row the
+  way a PIN is, and the app's serverless/edge runtimes can't hold an
+  in-memory counter between invocations. Same pure state-transition shape
+  as PIN lockout (`src/lib/pin.ts`), kept in its own module
+  (`src/lib/login-lockout.ts`) with its own constants so tuning one policy
+  never silently changes the other.
+- Fixed a structural trap in `src/proxy.ts`: the general site-session check
+  ran before the `/admin`-specific branch, so any request to `/admin/*`
+  from a caller with only the ordinary site session (not an admin session)
+  fell through to the site check and was let in — currently harmless only
+  because every existing admin page independently re-checks
+  `getAdminSessionStatus()`, but a future admin page that forgot that
+  re-check would have been silently reachable by anyone holding the one
+  shared site password. `/admin/*` is now gated by the admin session alone,
+  checked first and exclusively.
+
+### Fixed
+
+- `logSet()` (`src/app/session/actions.ts`) had zero input validation on
+  the function that writes real, immutable performance history. Postgres's
+  `numeric` column accepts the literal `NaN` and unbounded magnitudes
+  without complaint, so weight/reps/notes are now bounds-checked by a new
+  Zod schema (`src/domain/session-log.ts`) before the insert.
+- `getProfileDetail()` (`src/db/queries/admin.ts`): `completedSessionCount`
+  was computed via `.filter((s) => s.id)` — a no-op, since `id` is always
+  truthy — making it a duplicate of `sessionCount` rather than an actual
+  completed-only count; and `totalVolume` was hardcoded to `0`. Both now
+  compute for real, `totalVolume` via the same `computeVolume` normalization
+  History and admin-profile-stats already share.
+- No top-level `error.tsx`/`global-error.tsx` existed, so an uncaught
+  exception during Server Component render (e.g. `requireOwnedSession`
+  throwing "Session not found" for a stale id) fell through to Next's
+  default unstyled error page instead of the app's own `ErrorState`
+  component. Added both, reporting to the same `/api/errors` endpoint the
+  existing client-side `ErrorBoundary` already uses.
+- **Client-side error logging (`/api/errors` → `client_errors` table,
+  `/admin/errors`) has been silently broken since migration 0011
+  (2026-08-xx) was written**, discovered while investigating why a new
+  migration wouldn't apply. 0011 bundles three statements — create
+  `client_errors`, add a `source_workout_programs.category` column, add
+  `client_errors`'s FK — but only the column addition had actually run (via
+  the undocumented stray `drizzle/0005_add_program_categories.sql`, see the
+  updated Notes entry above), and Drizzle's own migration-tracking table
+  was never told 0011 had run at all. Every real `db:migrate` attempt since
+  then silently failed closed: it tried to redo the column add, hit a
+  duplicate-column error, and rolled back the whole batch — including any
+  later migration bundled in the same run, which is what actually surfaced
+  this while adding `login_attempts` above. Repaired directly against the
+  live database: ran the two statements that were actually still missing
+  (`client_errors` table + FK), then recorded 0011 as applied with its real
+  content hash so Drizzle's bookkeeping matches reality going forward. No
+  data was dropped or altered — purely additive.
+- Migration bookkeeping is now healthy again: `npm run db:migrate` applies
+  cleanly with no manual intervention required.
+- The 4 history components that call `.toLocaleDateString()` (`exercise-
+  performance-detail.tsx`, `exercise-trend-chart.tsx`, `personal-records-
+  panel.tsx`, `volume-chart.tsx`) each now have a comment explaining why
+  they're Client Components, so a future "this could be a Server Component"
+  cleanup doesn't silently reintroduce the UTC-date bug. Turned out to be two
+  different reasons, not one: `exercise-performance-detail.tsx` and
+  `personal-records-panel.tsx` need the viewer's own timezone for real
+  session dates; the two Recharts-based ones need the client for Recharts
+  itself, and `volume-chart.tsx` specifically has no timezone dependency at
+  all — its week-bucket labels deliberately force `timeZone: "UTC"`.
+- Generator wizard's Equipment step now warns inline when nothing is
+  selected, instead of only surfacing the problem after a round trip to the
+  server produces an empty result. Confirmed "Bodyweight" is a real,
+  selectable equipment option before writing copy that names it.
+
+### Investigated, not changed
+
+- `exercise-item-guidance.tsx`'s `"use client"` looked removable (native
+  `<details>`, no hooks) but its only caller (`item-row.tsx`) is itself a
+  Client Component that imports and renders it inline rather than passing it
+  down as `children` from a Server Component. In the App Router that means
+  it stays in the client bundle regardless of its own directive — removing
+  it would be a no-op today, not a real fix.
+- The `/profile` vs `/my-profile` "admin-concept gap" the QA audit flagged
+  as needing a decision turned out to already be decided and shipped: Epic
+  P4 (commit `f53e2e9`) already gates `/profile` on `getAdminSessionStatus()`
+  and hides its nav link from non-admins. `PROJECT_PLAN.docx` just still
+  says P4 is "Not Started" — the same staleness item 9 already covers.
+
+### Fixed
+
+- Decided and fixed the generator's difficulty split (QA audit item 7): a
+  workout's exercise selection used the wizard's per-generation experience
+  level, but the sets/reps/rest actually prescribed and every coaching cue
+  shown afterward used the profile's own default level instead — silently,
+  and not just at generation time; the edit page re-derived guidance from
+  whatever the profile's *current* level and goal were on every view, so
+  even the goal (which did match at generation time) drifted the moment the
+  profile's default goal changed later. Decision: the wizard's choice should
+  win for that workout. `workouts.experience_level` / `training_goal`
+  (migration 0013, both nullable) now store what was actually used to
+  generate a workout; null for anything not created by the generator
+  (manually built, imported from the Workout Library, or duplicated before
+  this existed), which still falls back to the profile's current values.
+  Resolution logic extracted to `src/domain/workout-guidance-context.ts`
+  (pure, tested) rather than left as inline fallback logic on the edit page.
+  `duplicateWorkout` carries the stored level/goal into the copy.

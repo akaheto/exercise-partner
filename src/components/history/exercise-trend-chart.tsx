@@ -1,3 +1,8 @@
+// Client Component for two reasons: Recharts (LineChart/ResponsiveContainer
+// below) only renders in the browser, and the toLocaleDateString() call
+// below must run in the viewer's own timezone — session dates rendering in
+// UTC instead of local was a real, previously-fixed bug class (see
+// CHANGELOG.md / FormattedDate).
 "use client";
 
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";

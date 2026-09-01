@@ -11,6 +11,10 @@ const DEFAULT_SETS = 3;
 const DEFAULT_REPS_MIN = 8;
 const DEFAULT_REPS_MAX = 12;
 const DEFAULT_BLOCK_REST_SECONDS = 90;
+// The library tops out around 1,218 exercises; a caller submitting far more
+// ids than that isn't a real selection, and unbounded input here would
+// otherwise drive an unbounded per-exercise transaction below.
+const MAX_EXERCISES_PER_SELECTION = 500;
 
 /** Creates an empty draft workout for the active profile and jumps straight
  * into the builder. There's no "start from scratch" form — a workout with no
@@ -39,6 +43,9 @@ export async function createWorkoutFromSelection(exerciseIds: string[]): Promise
   const profileId = await getActiveProfileId();
   if (!profileId) redirect("/profile");
   if (exerciseIds.length === 0) redirect("/exercises");
+  if (exerciseIds.length > MAX_EXERCISES_PER_SELECTION) {
+    throw new Error(`Cannot create a workout from more than ${MAX_EXERCISES_PER_SELECTION} exercises at once`);
+  }
 
   const validRows = await db
     .select({ exerciseId: sourceExercises.exerciseId })
