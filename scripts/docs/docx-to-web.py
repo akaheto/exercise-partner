@@ -6,14 +6,17 @@ Heading1/2/3 styles, so the structure survives) and emits semantic HTML
 styled with the project's own VISUAL_STYLE_GUIDE palette.
 """
 import html
+import os
 import re
 import sys
 import zipfile
 from pathlib import Path
 
-DOCS_DIR = Path(
-    "/Users/benaheto/Library/CloudStorage/GoogleDrive-akaheto@gmail.com"
-    "/My Drive/Claude/Code/Exercise Partner"
+# Mirrors scripts/docs/shared.ts's DOCS_DIR resolution: DOCS_DIR env var wins,
+# otherwise derive from the current user's home directory rather than a
+# hardcoded one, so this works across machines/OSes.
+DOCS_DIR = Path(os.environ["DOCS_DIR"]) if os.environ.get("DOCS_DIR") else (
+    Path.home() / "Library/CloudStorage/GoogleDrive-akaheto@gmail.com/My Drive/Claude/Code/Exercise Partner"
 )
 
 DOCS = [
