@@ -286,11 +286,30 @@ async function main() {
       equipmentRequired: program.equipmentNeeded,
     });
 
-    const programDays = (daysByWorkoutId.get(program.workoutId) ?? []).sort((a, b) => a.dayNumber - b.dayNumber);
     // Exercises link to a day by title text ("Workout A"), not day number —
     // the source's own join key, not one this script invents (see the
     // per-day filter below).
     const programExercises = exercisesByWorkoutId.get(program.workoutId) ?? [];
+
+    // For a "narrative format" source page (source's own Source Consistency
+    // Notes column flags ~38 of these), the extract fabricates placeholder
+    // day-title scaffolding from the stated Days Per Week count (e.g. "Workout
+    // #1".."#5", or generic muscle-group names) alongside the one real day
+    // — titled "Workout" — that actually holds the parsed content. Both land
+    // in the Workout Days sheet with no way to tell them apart there, but the
+    // scaffolding rows never appear as any exercise row's Workout Day value,
+    // so they carry zero linked exercises. Confirmed against the raw sheets
+    // for several examples before writing this filter: the "real" day's
+    // exercises never appear anywhere else, so nothing is lost by dropping
+    // the zero-exercise rows — verified 2 September 2026 (PROJECT_PLAN.docx
+    // section 4 open items). Left unfiltered, these inflated the visible day
+    // count (a "3 day" program showing 4-6 mostly-empty day cards) and, when
+    // a scaffold row and the real row shared a day number, produced a
+    // duplicate "Day 1" for the same program.
+    const titlesWithExercises = new Set(programExercises.map((e) => e.dayTitle));
+    const programDays = (daysByWorkoutId.get(program.workoutId) ?? [])
+      .filter((d) => titlesWithExercises.has(d.dayTitle))
+      .sort((a, b) => a.dayNumber - b.dayNumber);
 
     const sourceRowHash = crypto
       .createHash("sha256")
@@ -299,6 +318,14 @@ async function main() {
 
     totalDays += programDays.length;
     totalExercises += programExercises.length;
+
+    // Derived from the real (filtered) day count rather than trusted from
+    // the source's own "Days Per Week" field: the source extract's Source
+    // Consistency Notes flag 279 programs where that field disagrees with
+    // the actual parsed day-table count, and 38 narrative-format programs
+    // where it's essentially fabricated (see above). The real day list is
+    // ground truth for what this program actually contains.
+    const realDaysPerWeek = programDays.length > 0 ? programDays.length : null;
 
     if (DRY_RUN) {
       if (isNew) created++;
@@ -320,7 +347,7 @@ async function main() {
           workoutType: program.workoutType,
           trainingLevel: program.trainingLevel,
           durationWeeks: program.durationWeeks,
-          daysPerWeek: program.daysPerWeek,
+          daysPerWeek: realDaysPerWeek,
           timePerWorkout: program.timePerWorkout,
           equipmentNeeded: program.equipmentNeeded,
           targetGender: program.targetGender,
@@ -337,7 +364,7 @@ async function main() {
             workoutType: program.workoutType,
             trainingLevel: program.trainingLevel,
             durationWeeks: program.durationWeeks,
-            daysPerWeek: program.daysPerWeek,
+            daysPerWeek: realDaysPerWeek,
             timePerWorkout: program.timePerWorkout,
             equipmentNeeded: program.equipmentNeeded,
             targetGender: program.targetGender,

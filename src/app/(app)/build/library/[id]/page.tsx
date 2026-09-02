@@ -57,8 +57,16 @@ export default async function WorkoutLibraryProgramPage({
         {program.mainGoal && <Badge variant="secondary">{program.mainGoal}</Badge>}
         {program.workoutType && <Badge variant="outline">{program.workoutType}</Badge>}
         {program.trainingLevel && <Badge variant="outline">{program.trainingLevel}</Badge>}
-        {program.daysPerWeek && <Badge variant="outline">{program.daysPerWeek} days/week</Badge>}
-        {program.durationWeeks && <Badge variant="outline">{program.durationWeeks} weeks</Badge>}
+        {/* `0 && (...)` renders a literal "0" in React, not nothing — a real
+            0-week/0-day value needs an explicit check, not a truthiness
+            shortcut. Same bug already fixed on the library list page
+            (page.tsx); this detail page never got the matching fix. */}
+        {program.daysPerWeek !== null && program.daysPerWeek > 0 && (
+          <Badge variant="outline">{program.daysPerWeek} days/week</Badge>
+        )}
+        {program.durationWeeks !== null && program.durationWeeks > 0 && (
+          <Badge variant="outline">{program.durationWeeks} weeks</Badge>
+        )}
         {program.timePerWorkout && <Badge variant="outline">{program.timePerWorkout}</Badge>}
         {program.targetGender && <Badge variant="outline">{program.targetGender}</Badge>}
       </div>
