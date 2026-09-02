@@ -11,6 +11,7 @@ import {
   sourceWorkoutProgramExercises,
   sourceWorkoutPrograms,
 } from "../src/db/schema";
+import { categorizeProgram, slugFromUrl } from "../src/domain/workout-program-conversion";
 
 /**
  * Imports packaged multi-day workout programs from muscleandstrength.com —
@@ -36,16 +37,6 @@ const DELAY_MS = 1000;
 const USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";
 
 if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
-
-function slugFromUrl(url: string): string {
-  return url
-    .split("?")[0]
-    .replace(/\/$/, "")
-    .split("/")
-    .pop()!
-    .replace(/\.html$/i, "")
-    .toLowerCase();
-}
 
 function cacheFile(programSlug: string): string {
   return path.join(CACHE_DIR, `${programSlug}.html`);
@@ -280,70 +271,6 @@ function parseIntOrNull(s: string | undefined): number | null {
   return match ? Number(match[0]) : null;
 }
 
-function categorizeProgram(name: string, meta: Record<string, string>): string {
-  const lower = name.toLowerCase();
-  const goal = (meta["Main Goal"] ?? "").toLowerCase();
-  const gender = (meta["Target Gender"] ?? "").toLowerCase();
-  const equipment = (meta["Equipment Required"] ?? "").toLowerCase();
-  const isWomenOnly = gender === "female" || (lower.includes("women") && (lower.includes("for women") || lower.includes("women's")));
-
-  // Check for equipment-specific programs first (high priority)
-  if (lower.includes("dumbbell") && lower.includes("only")) return "Dumbbell Only";
-  if (lower.includes("kettlebell")) return "Kettlebell";
-  if (lower.includes("bodyweight") || lower.includes("no equipment")) return "Bodyweight";
-  if ((lower.includes("home") || lower.includes("at home")) && !isWomenOnly) return "Home Workouts";
-  if (lower.includes("planet fitness")) return "Gym - Limited Equipment";
-
-  // Check for specialty programs
-  if (lower.includes("deload")) return "Recovery & Deload";
-  if (lower.includes("abs") || lower.includes("core")) return "Specialty - Core";
-  if (lower.includes("squat")) return "Specialty - Squat Focus";
-  if (lower.includes("deadlift")) return "Specialty - Deadlift Focus";
-  if (lower.includes("bench")) return "Specialty - Bench Press Focus";
-  if (lower.includes("hiit") || lower.includes("cardio")) return "Cardio & HIIT";
-  if (lower.includes("finisher")) return "Finisher Programs";
-
-  // Check for strength and hypertrophy
-  if (goal.includes("strength") || lower.includes("strength")) {
-    if (isWomenOnly) return "Strength Training - Women";
-    return "Strength Training";
-  }
-  if (goal.includes("hypertrophy") || lower.includes("hypertrophy") || lower.includes("mass")) {
-    if (isWomenOnly) return "Muscle Building - Women";
-    return "Muscle Building";
-  }
-  if (goal.includes("fat") || lower.includes("fat loss") || lower.includes("shred")) {
-    if (isWomenOnly) return "Fat Loss - Women";
-    return "Fat Loss";
-  }
-
-  // Check for split types
-  if (lower.includes("full body")) {
-    if (isWomenOnly) return "Full Body - Women";
-    return "Full Body";
-  }
-  if (lower.includes("upper") && lower.includes("lower")) return "Upper/Lower Split";
-  if (lower.includes("push pull leg") || lower.includes("ppl")) return "Push/Pull/Legs Split";
-  if (lower.includes("bro split")) return "Muscle Building";
-
-  // Default based on main goal
-  if (goal.includes("fat")) {
-    if (isWomenOnly) return "Fat Loss - Women";
-    return "Fat Loss";
-  }
-  if (goal.includes("strength")) {
-    if (isWomenOnly) return "Strength Training - Women";
-    return "Strength Training";
-  }
-  if (goal.includes("muscle") || goal.includes("build")) {
-    if (isWomenOnly) return "Muscle Building - Women";
-    return "Muscle Building";
-  }
-
-  // Catch-all
-  return "Mixed Programs";
-}
-
 async function loadExerciseUrlIndex(): Promise<Map<string, string>> {
   const rows = await db.select({ exerciseId: sourceExercises.exerciseId, url: sourceExercises.url }).from(sourceExercises);
   const index = new Map<string, string>();
@@ -361,7 +288,11 @@ async function importProgram(url: string, programId: string, exerciseIndex: Map<
   const meta = extractMetadata(doc);
   const name = doc.querySelector("h1")?.textContent?.trim() || meta["Name"] || slugFromUrl(url);
   const description = extractDescription(html);
-  const category = categorizeProgram(name, meta);
+  const category = categorizeProgram(name, {
+    mainGoal: meta["Main Goal"],
+    targetGender: meta["Target Gender"],
+    equipmentRequired: meta["Equipment Required"],
+  });
   const days = extractDays(doc);
 
   const totalExercises = days.reduce((n, d) => n + d.exercises.length, 0);

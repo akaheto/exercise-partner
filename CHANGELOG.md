@@ -5,7 +5,7 @@ All notable changes to this project are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-09-02 08:43 UTC
+## [Unreleased] - 2026-09-02 09:47 UTC
 
 ### Added
 
@@ -882,3 +882,83 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   names (Epic Q), not sourced from the exercise site. The other 1,218 DB
   rows all have real muscleandstrength.com URLs and matched the fresh
   extract 1:1 — no additions or removals on either side.
+
+### Added
+
+- **Workout Library grew from 36 to 613 programs**, imported from a
+  fresh, structured site extract
+  (`data/source/workouts/muscle_strength_workout_database_batch_00{1-4}.xlsx`,
+  613 programs / 1,778 days / 15,839 exercise rows, essentially the
+  entire site alphabetically) via a new script,
+  `scripts/import-workout-extract.ts` (`npm run import:workout-extract`).
+  This is a companion to the existing HTML-scrape-based
+  `scripts/import-workout-programs.ts`, not a replacement — that script
+  still owns imports where only a URL is known and the page needs
+  fetching; this one owns imports where the data is already extracted.
+  Matched the 36 existing programs by canonical URL and updated them in
+  place (existing `program_id`s preserved) rather than duplicating; a
+  program not already present got a newly allocated one.
+  `categorizeProgram`/`slugFromUrl` extracted from the old script into
+  `src/domain/workout-program-conversion.ts` (pure, tested) so both
+  import paths share one implementation rather than two heuristics
+  silently drifting apart.
+  - Fixed 3 programs that existed as metadata-only shells with zero days
+    or exercises (`WP-0022`, `WP-0027`, `WP-0035`) — now have real content
+    (3, 1 and 1 days respectively).
+  - `WP-0011` changed identity: the same URL that used to serve "8 Week
+    Beginner Fat Loss Workout for Women" now serves "Muscle & Strength's
+    30 Day Workout Plan For Women" on the real site — a genuine site
+    content change (or an original-scrape misattribution), not an
+    extraction bug; the database now matches what's actually live at
+    that URL.
+  - This source has no rest-day information (`Day Type` is uniformly
+    "Workout" across all 1,778 day rows) — re-syncing the 36 existing
+    programs from it means explicit rest-day rows they used to have are
+    gone. Doesn't change what "Add to my workouts" (Epic Q3) produces,
+    since it already skips rest days entirely; only the day-by-day browse
+    view (Epic Q2) stops listing them as their own row.
+  - Exercise-URL match rate against the existing 1,271-exercise library:
+    13,237/15,839 rows (83.6% of all rows; 97.3% of the 13,600 rows that
+    had a URL at all — the rest are narrative mentions or category-page
+    links the source itself doesn't link to a specific exercise).
+  - `exceljs` (this project's usual `.xlsx` reader) cannot parse these
+    files — their `workbook.xml` uses a namespace-prefixed root element
+    (`<x:workbook xmlns:x="...">`) instead of the default-namespace form
+    real Excel emits, confirmed by diffing the raw XML against a working
+    file, not guessed. New Python fallback,
+    `scripts/xlsx_to_json.py` (requires `openpyxl`), invoked via
+    subprocess — same pattern `scripts/docs/docx-to-web.py` already uses
+    for a similar Node-toolchain gap. Handles both Windows' `python3` App
+    Execution Alias stub (a real, confirmed failure mode on this
+    project's own dev machine, not a hypothetical) and a plain `python`
+    fallback.
+  - First import attempt used one `await` per row (~29 sequential
+    round trips per program to Neon) and was on pace for roughly 6
+    hours; rewritten to batch all of one program's days into a single
+    insert and all its exercises into another (3 round trips per program
+    regardless of size), finishing the full 613-program import in under
+    an hour.
+  - Caught and fixed a real bug from the first (killed) attempt before
+    it did more damage: the URL-construction helper prepended
+    `muscleandstrength.com/` onto a string that already contained it,
+    producing malformed doubled-domain URLs
+    (`muscleandstrength.com/muscleandstrength.com/...`) on every newly
+    inserted program, and the update path never included `url` in what
+    it wrote, so a corrected run wouldn't have self-healed already-bad
+    rows either. Deleted the 91 malformed rows the first attempt had
+    created (all newly-created that session — zero pre-existing data
+    affected, verified before deleting) and re-ran clean. Final state
+    verified directly: 613 programs, 0 broken URLs, 0 duplicate URLs, 0
+    empty programs, day/exercise counts in the database match the parsed
+    source exactly.
+  - Not addressed, flagged instead: `listWorkoutProgramsByCategory` (the
+    `/build/library` browse query) has no `LIMIT` and now returns all 613
+    programs on an unfiltered page load (previously 36) — measured at
+    241ms for the query itself, not confirmed broken, but worth deciding
+    whether it needs pagination now that the catalog is this much larger.
+  - Also noticed in passing: `/build/library` already has working
+    goal/level/gender/duration/days/search filters
+    (`src/db/queries/workout-programs.ts`) — `PROJECT_PLAN.docx`'s Epic Q4
+    ("Facet-filtering UI") still says Not Started. Another spot where
+    that document has drifted from what's actually shipped; not
+    corrected in this pass.

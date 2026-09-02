@@ -24,6 +24,8 @@
     "db:populate:exercise-overrides": "tsx scripts/populate-exercise-overrides.ts",
     "db:populate:all-exercise-overrides": "tsx scripts/populate-all-exercise-overrides.ts",
     "import:exercises": "tsx scripts/import-exercises.ts",
+    "import:workout-programs": "tsx scripts/import-workout-programs.ts",
+    "import:workout-extract": "tsx scripts/import-workout-extract.ts",
     "db:report": "tsx scripts/db-report.ts"
   },
   "dependencies": {

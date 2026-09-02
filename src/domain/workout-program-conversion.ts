@@ -77,3 +77,99 @@ export function parsePrescription(
     notes,
   };
 }
+
+/** The last path segment of a muscleandstrength.com URL, normalized — the
+ * join key used to match a workout program's linked exercises (and, at the
+ * program level, to detect the same program re-imported from a different
+ * source batch) against source_exercises.url / source_workout_programs.url,
+ * which use the identical scheme. Shared by every import path (HTML scrape
+ * in scripts/import-workout-programs.ts, structured-extract import in
+ * scripts/import-workout-extract.ts) so a slug computed one way always
+ * matches a slug computed the other. */
+export function slugFromUrl(url: string): string {
+  return url
+    .split("?")[0]
+    .replace(/\/$/, "")
+    .split("/")
+    .pop()!
+    .replace(/\.html$/i, "")
+    .toLowerCase();
+}
+
+export interface ProgramCategoryInput {
+  mainGoal?: string | null;
+  targetGender?: string | null;
+  equipmentRequired?: string | null;
+}
+
+/**
+ * Best-effort category label for a workout program, from its name and a
+ * few metadata fields — no fixed vocabulary on the source site, so this is
+ * a heuristic, not a lookup. Shared across import paths so the same
+ * program name always lands in the same category regardless of which
+ * source batch it came from — a program re-imported from a fresh extract
+ * must not silently change category just because the heuristic ran twice
+ * with two different implementations.
+ */
+export function categorizeProgram(name: string, meta: ProgramCategoryInput): string {
+  const lower = name.toLowerCase();
+  const goal = (meta.mainGoal ?? "").toLowerCase();
+  const gender = (meta.targetGender ?? "").toLowerCase();
+  const isWomenOnly = gender === "female" || (lower.includes("women") && (lower.includes("for women") || lower.includes("women's")));
+
+  // Check for equipment-specific programs first (high priority)
+  if (lower.includes("dumbbell") && lower.includes("only")) return "Dumbbell Only";
+  if (lower.includes("kettlebell")) return "Kettlebell";
+  if (lower.includes("bodyweight") || lower.includes("no equipment")) return "Bodyweight";
+  if ((lower.includes("home") || lower.includes("at home")) && !isWomenOnly) return "Home Workouts";
+  if (lower.includes("planet fitness")) return "Gym - Limited Equipment";
+
+  // Check for specialty programs
+  if (lower.includes("deload")) return "Recovery & Deload";
+  if (lower.includes("abs") || lower.includes("core")) return "Specialty - Core";
+  if (lower.includes("squat")) return "Specialty - Squat Focus";
+  if (lower.includes("deadlift")) return "Specialty - Deadlift Focus";
+  if (lower.includes("bench")) return "Specialty - Bench Press Focus";
+  if (lower.includes("hiit") || lower.includes("cardio")) return "Cardio & HIIT";
+  if (lower.includes("finisher")) return "Finisher Programs";
+
+  // Check for strength and hypertrophy
+  if (goal.includes("strength") || lower.includes("strength")) {
+    if (isWomenOnly) return "Strength Training - Women";
+    return "Strength Training";
+  }
+  if (goal.includes("hypertrophy") || lower.includes("hypertrophy") || lower.includes("mass")) {
+    if (isWomenOnly) return "Muscle Building - Women";
+    return "Muscle Building";
+  }
+  if (goal.includes("fat") || lower.includes("fat loss") || lower.includes("shred")) {
+    if (isWomenOnly) return "Fat Loss - Women";
+    return "Fat Loss";
+  }
+
+  // Check for split types
+  if (lower.includes("full body")) {
+    if (isWomenOnly) return "Full Body - Women";
+    return "Full Body";
+  }
+  if (lower.includes("upper") && lower.includes("lower")) return "Upper/Lower Split";
+  if (lower.includes("push pull leg") || lower.includes("ppl")) return "Push/Pull/Legs Split";
+  if (lower.includes("bro split")) return "Muscle Building";
+
+  // Default based on main goal
+  if (goal.includes("fat")) {
+    if (isWomenOnly) return "Fat Loss - Women";
+    return "Fat Loss";
+  }
+  if (goal.includes("strength")) {
+    if (isWomenOnly) return "Strength Training - Women";
+    return "Strength Training";
+  }
+  if (goal.includes("muscle") || goal.includes("build")) {
+    if (isWomenOnly) return "Muscle Building - Women";
+    return "Muscle Building";
+  }
+
+  // Catch-all
+  return "Mixed Programs";
+}
