@@ -104,10 +104,22 @@ export function ProfileSwitcherDialog({
           <Label htmlFor="displayName">Add a profile</Label>
           <div className="flex gap-2">
             <Input id="displayName" name="displayName" placeholder="Name" required maxLength={60} />
+            <Input
+              id="switcher-new-profile-pin"
+              name="pin"
+              type="password"
+              inputMode="numeric"
+              pattern="\d{4,6}"
+              placeholder="PIN"
+              required
+              maxLength={6}
+              className="w-24"
+            />
             <Button type="submit" disabled={isCreating} size="default">
               {isCreating ? "Adding…" : "Add"}
             </Button>
           </div>
+          <p className="text-caption text-muted-foreground">4-6 digit PIN, needed to delete this profile later.</p>
           {createState.error && (
             <p role="alert" className="text-small text-destructive">
               {createState.error}
