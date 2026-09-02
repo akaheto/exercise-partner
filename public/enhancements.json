@@ -1,36 +1,271 @@
 {
   "implemented": [
     {
-      "title": "Workout Library (browse + add to my workouts)",
-      "date": "2026-07-29"
+      "idea": "Multi-select workout building",
+      "whatItDoes": "Select several exercises directly from the Exercise Library's cards and add them all to a new workout in one action, with a running duration estimate visible while selecting",
+      "shipped": "26 July 2026"
     },
     {
-      "title": "Button-based exercise documentation",
-      "date": "2026-07-29"
+      "idea": "Deterministic workout assessment",
+      "whatItDoes": "On the workout builder: which muscles the workout trains (and which body regions it doesn't touch), a weight-selection tip inferred from the rep ranges actually prescribed, and a recovery tip based on the muscle groups hit — all rule-based, no AI call",
+      "shipped": "26 July 2026"
     },
     {
-      "title": "Error tracking and monitoring",
-      "date": "2026-07-30"
+      "idea": "Exercise content curation",
+      "whatItDoes": "Replaced the placeholder \"Varies / Not specified\" instructions and starting positions on 1,216 of 1,218 exercises with real sourced content, written into the override layer so a re-import cannot clobber it (Epic L1)",
+      "shipped": "28 July 2026"
+    },
+    {
+      "idea": "Level- and goal-aware prescriptions",
+      "whatItDoes": "Sets, reps, RPE and tempo on each exercise page adapt to the profile's experience level and training goal, via 15 canonical guidance patterns rather than per-exercise duplication (Epic L2)",
+      "shipped": "28 July 2026"
+    },
+    {
+      "idea": "Personal record detection",
+      "whatItDoes": "Moved up from \"Not Yet Implemented\" — a PR panel on /history flags the best performance per exercise",
+      "shipped": "28 July 2026"
+    },
+    {
+      "idea": "Design token lint ratchet",
+      "whatItDoes": "scripts/check-design-tokens.ts counts raw colours, off-scale text and spacing against a recorded baseline that may only decrease, wired into npm run lint so style drift fails CI instead of accumulating (Epic N2)",
+      "shipped": "28 July 2026"
+    },
+    {
+      "idea": "In-session set history",
+      "whatItDoes": "Workout Mode shows the sets already logged for the current exercise (e.g. \"Set 1: 10kg × 8\") above the input card while logging the next one — the narrower, same-session case of \"Previous performance inline\" below; a different session's performance on the same exercise is still not shown",
+      "shipped": "1 September 2026"
     }
   ],
-  "planned": [
+  "notYetImplemented": [
     {
-      "title": "Photorealistic exercise images",
-      "priority": "high"
+      "category": "Deferred to the end of the project",
+      "items": [
+        {
+          "idea": "Photorealistic exercise images",
+          "whatItDoes": "Real photography or generated images showing each exercise's start and end position, exported in full, thumbnail, and mobile sizes; thumbnails would replace the current hotlinked source images in the library card list",
+          "whyItFits": "The spreadsheet has only one static thumbnail per exercise (see TECHNICAL_SPEC.docx \"Media\" limitations) — this is the closest thing to the spec's original \"photorealistic visual\" requirement, but it's a production asset pipeline, not app code, and not worth doing more than once. Note this is still outstanding: the rendered muscle diagrams supplied on 29 July 2026 show which muscles a movement works, not how to perform it, so they do not cover this",
+          "effort": "Large"
+        },
+        {
+          "idea": "AI-powered training coach / assessment",
+          "whatItDoes": "Replace or augment the deterministic workout assessment with a Claude API call — a natural-language coach that can answer follow-up questions, or a richer assessment than fixed rules can produce",
+          "whyItFits": "Worth evaluating once there's real usage of the deterministic version to see what it actually can't do — an LLM call adds cost, latency, and a new failure mode (hallucinated advice) that a fixed rule set doesn't have",
+          "effort": "Medium"
+        }
+      ]
     },
     {
-      "title": "AI training coach via Claude API",
-      "priority": "medium"
+      "category": "Training practicality — highest value for the least work",
+      "items": [
+        {
+          "idea": "Plate calculator",
+          "whatItDoes": "Given a target barbell weight and available plates, show exactly what to load per side",
+          "whyItFits": "Removes arithmetic mid-session — one of the most-used features in commercial training apps",
+          "effort": "Small"
+        },
+        {
+          "idea": "Rest timer alerts",
+          "whatItDoes": "Audio cue and vibration when rest ends, working with the screen off or the app backgrounded",
+          "whyItFits": "A silent timer is useless once the phone is in a pocket",
+          "effort": "Small"
+        },
+        {
+          "idea": "Warm-up set generation",
+          "whatItDoes": "Auto-propose warm-up ramp sets from the first working set's load",
+          "whyItFits": "Standard practice for compound lifts; tedious to enter by hand every session",
+          "effort": "Small"
+        },
+        {
+          "idea": "Estimated 1RM",
+          "whatItDoes": "Calculate and trend estimated one-rep max from logged sets (Epley / Brzycki)",
+          "whyItFits": "Turns raw set logs into a progress signal without needing a max-effort test",
+          "effort": "Small"
+        },
+        {
+          "idea": "Previous session's performance inline",
+          "whatItDoes": "Show the last time this exercise was performed — a different session, a different day — next to the input, not just this session's own earlier sets (see \"In-session set history\" under Implemented, which covers the narrower case)",
+          "whyItFits": "Answers \"what did I lift last time I did this exercise?\" — a bigger question than what this session alone can answer",
+          "effort": "Small"
+        }
+      ]
+    },
+    {
+      "category": "Personalisation & safety",
+      "items": [
+        {
+          "idea": "Exercise exclusions",
+          "whatItDoes": "Mark exercises to never suggest, with an optional reason (injury, dislike, unavailable)",
+          "whyItFits": "The generator is only trustworthy if it respects known constraints",
+          "effort": "Small"
+        },
+        {
+          "idea": "Injury / contraindication flags",
+          "whatItDoes": "Per-profile flags (e.g. lower back, shoulder) that filter the generator's candidate pool",
+          "whyItFits": "Directly affects safety — the most consequential kind of personalisation here",
+          "effort": "Medium"
+        },
+        {
+          "idea": "Favourites",
+          "whatItDoes": "Star exercises for fast access when building workouts",
+          "whyItFits": "Most people rotate a small core set; surfacing it speeds up manual building",
+          "effort": "Small"
+        },
+        {
+          "idea": "Substitution learning",
+          "whatItDoes": "Remember which swaps the user actually makes and rank future suggestions accordingly",
+          "whyItFits": "Turns the unreviewed rule-derived relationship data into something that improves with use",
+          "effort": "Medium"
+        }
+      ]
+    },
+    {
+      "category": "Knowledge base quality",
+      "items": [
+        {
+          "idea": "Data curation UI",
+          "whatItDoes": "Review and correct fields marked \"Rule Derived — Unreviewed\", writing to the override layer",
+          "whyItFits": "1,218 exercises carry unreviewed derived data; this is how it gets better over time",
+          "effort": "Medium"
+        },
+        {
+          "idea": "Media link health check",
+          "whatItDoes": "Scheduled job verifying hotlinked videos and images still resolve, flagging dead ones",
+          "whyItFits": "All media is hotlinked, so silent link rot is a real and untracked risk",
+          "effort": "Small"
+        },
+        {
+          "idea": "Exercise aliases & synonyms",
+          "whatItDoes": "Search matches common alternative names (e.g. \"RDL\" → Romanian Deadlift)",
+          "whyItFits": "Exercise naming varies widely; exact-name search will frustrate",
+          "effort": "Small"
+        },
+        {
+          "idea": "Additional source import",
+          "whatItDoes": "Import pipeline for exercise sources beyond the original spreadsheet, with provenance per exercise",
+          "whyItFits": "Explicitly anticipated — the spreadsheet is a seed, not the ceiling",
+          "effort": "Medium"
+        },
+        {
+          "idea": "Video timestamp deep-links",
+          "whatItDoes": "Link directly to the demonstration moment rather than the video start",
+          "whyItFits": "Cuts the time between \"how does this go?\" and the answer",
+          "effort": "Small"
+        }
+      ]
+    },
+    {
+      "category": "Programming beyond single workouts",
+      "items": [
+        {
+          "idea": "Multi-week programs",
+          "whatItDoes": "Group workouts into a structured block (e.g. a 4-week progression) with a schedule",
+          "whyItFits": "The natural next unit above a single workout; most real training is programmed in blocks",
+          "effort": "Large"
+        },
+        {
+          "idea": "Training calendar",
+          "whatItDoes": "Calendar view of past and planned sessions",
+          "whyItFits": "Makes consistency and gaps visible at a glance",
+          "effort": "Medium"
+        },
+        {
+          "idea": "Muscle recovery view",
+          "whatItDoes": "Heatmap of recent volume per muscle group indicating what is fresh today",
+          "whyItFits": "Answers \"what should I train?\" from data already being collected",
+          "effort": "Medium"
+        },
+        {
+          "idea": "Repeat with progression",
+          "whatItDoes": "Duplicate last session's workout with loads advanced by a chosen rule",
+          "whyItFits": "The most common real-world workflow, currently requiring manual re-entry. Epic J2 already defines the contract this would implement (ProgressionStrategy in src/domain/progression.ts) — deliberately left unimplemented pending real usage data to know what rule is actually worth building",
+          "effort": "Medium"
+        },
+        {
+          "idea": "Workout template edit history",
+          "whatItDoes": "Browse and revert previous versions of a saved workout template itself",
+          "whyItFits": "Originally planned as G3 \"versioning\" to protect session history from template edits — turned out not to be needed for that, since Epic H's session snapshot already handles it. Would now only serve editing convenience, not integrity",
+          "effort": "Medium"
+        }
+      ]
+    },
+    {
+      "category": "Platform & convenience",
+      "items": [
+        {
+          "idea": "Offline PWA",
+          "whatItDoes": "Installable app with offline Workout Mode and deferred sync",
+          "whyItFits": "Gym signal is frequently poor; losing a logged set to a dead connection is unacceptable",
+          "effort": "Large"
+        },
+        {
+          "idea": "Voice logging",
+          "whatItDoes": "Speak \"sixty kilos, eight reps\" to log a set hands-free",
+          "whyItFits": "Hands are chalky, gloved or occupied at exactly the moment logging is needed",
+          "effort": "Medium"
+        },
+        {
+          "idea": "Printable workout sheet",
+          "whatItDoes": "Clean PDF/print view of a workout",
+          "whyItFits": "Useful when a phone is impractical or unwanted on the gym floor",
+          "effort": "Small"
+        },
+        {
+          "idea": "Workout import/export",
+          "whatItDoes": "Share a workout as a portable JSON file",
+          "whyItFits": "Lets workouts move between profiles or be backed up independently",
+          "effort": "Small"
+        },
+        {
+          "idea": "Desktop keyboard shortcuts",
+          "whatItDoes": "Full keyboard operation of the workout builder",
+          "whyItFits": "The builder is a desktop-heavy task; shortcuts make it substantially faster",
+          "effort": "Small"
+        },
+        {
+          "idea": "Body metrics tracking",
+          "whatItDoes": "Log bodyweight and measurements alongside training history",
+          "whyItFits": "Provides the context that makes strength trends interpretable",
+          "effort": "Medium"
+        },
+        {
+          "idea": "Health platform export",
+          "whatItDoes": "Export sessions to Apple Health / Google Fit",
+          "whyItFits": "Keeps this app the training system of record without isolating its data",
+          "effort": "Medium"
+        }
+      ]
     }
   ],
-  "backlog": [
+  "rejectedDeferred": [
     {
-      "title": "Workout versioning",
-      "status": "blocked"
+      "idea": "Social feed, following, leaderboards",
+      "decision": "Rejected",
+      "reasoning": "Contradicts the stated vision of a personal training ecosystem, and would turn a private, password-gated app into a service with moderation and privacy obligations"
     },
     {
-      "title": "Tags/folders/collections",
-      "status": "deferred"
+      "idea": "Nutrition and calorie tracking",
+      "decision": "Deferred",
+      "reasoning": "A large domain in its own right — its own database, its own UI, its own accuracy problems. Would double the scope without deepening the training product"
+    },
+    {
+      "idea": "Camera-based form checking",
+      "decision": "Rejected",
+      "reasoning": "Cannot be made reliable enough to be safe. Confidently telling someone their deadlift is fine when it is not is the worst failure this app could produce"
+    },
+    {
+      "idea": "Wearable heart-rate integration",
+      "decision": "Deferred",
+      "reasoning": "Introduces hardware and vendor API dependencies for value that only applies to conditioning work. Revisit if conditioning becomes a focus"
+    },
+    {
+      "idea": "Per-profile passwords",
+      "decision": "Deferred",
+      "reasoning": "The shared-password model matches a small trusted group. Revisit only if the app is ever used by people who should not see each other's data"
+    },
+    {
+      "idea": "Multi-language support",
+      "decision": "Deferred",
+      "reasoning": "No current need. Noted because retrofitting i18n is far more expensive than designing for it — worth revisiting before the UI grows large"
     }
   ]
 }

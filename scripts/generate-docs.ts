@@ -8,7 +8,7 @@ import { generateProjectPlan } from "./docs/project-plan";
 import { generateTechnicalSpec } from "./docs/technical-spec";
 import { generateVisualStyleGuide } from "./docs/visual-style-guide";
 import { generateUserGuide } from "./docs/user-guide";
-import { generateEnhancements } from "./docs/enhancements";
+import { generateEnhancements, generateEnhancementsJson } from "./docs/enhancements";
 
 const generators = [
   generateProjectPlan,
@@ -16,6 +16,7 @@ const generators = [
   generateVisualStyleGuide,
   generateUserGuide,
   generateEnhancements,
+  generateEnhancementsJson,
 ];
 
 async function main() {

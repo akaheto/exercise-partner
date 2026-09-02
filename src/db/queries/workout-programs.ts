@@ -21,6 +21,10 @@ export interface WorkoutProgramFilters {
   search?: string;
 }
 
+// Deliberately unpaginated: measured at 241ms for the full unfiltered query
+// against 613 programs (2 September 2026, PROJECT_PLAN.docx section 4 item
+// 58). Revisit with a limit/offset or virtualized list if that grows past
+// ~1s or a few thousand programs — not worth the complexity before then.
 export async function listWorkoutProgramsByCategory(filters?: WorkoutProgramFilters) {
   let baseQuery = db.select().from(sourceWorkoutPrograms);
 
