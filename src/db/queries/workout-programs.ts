@@ -1,4 +1,4 @@
-import { asc, eq, ilike, inArray, or } from "drizzle-orm";
+import { asc, eq, ilike, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
   sourceExercises,
@@ -11,42 +11,21 @@ export function listWorkoutPrograms() {
   return db.select().from(sourceWorkoutPrograms).orderBy(asc(sourceWorkoutPrograms.name));
 }
 
-/** Get all programs grouped by category, for hierarchical display. */
+/** Get all programs grouped by category, for hierarchical display.
+ * `search` matches on the program name only — a free-text search box is
+ * the library's only browse control (the earlier goal/level/gender/
+ * duration/days badge filters were removed once the catalog grew from 36
+ * to 613 programs; a name search scales far better than a wall of
+ * category badges over that many rows). */
 export interface WorkoutProgramFilters {
-  goal?: string;
-  level?: string;
-  gender?: string;
-  duration?: string;
-  days?: string;
   search?: string;
 }
 
 export async function listWorkoutProgramsByCategory(filters?: WorkoutProgramFilters) {
   let baseQuery = db.select().from(sourceWorkoutPrograms);
 
-  if (filters?.goal) {
-    baseQuery = baseQuery.where(eq(sourceWorkoutPrograms.mainGoal, filters.goal)) as typeof baseQuery;
-  }
-  if (filters?.level) {
-    baseQuery = baseQuery.where(eq(sourceWorkoutPrograms.trainingLevel, filters.level)) as typeof baseQuery;
-  }
-  if (filters?.gender) {
-    baseQuery = baseQuery.where(eq(sourceWorkoutPrograms.targetGender, filters.gender)) as typeof baseQuery;
-  }
-  if (filters?.duration) {
-    baseQuery = baseQuery.where(eq(sourceWorkoutPrograms.durationWeeks, parseInt(filters.duration))) as typeof baseQuery;
-  }
-  if (filters?.days) {
-    baseQuery = baseQuery.where(eq(sourceWorkoutPrograms.daysPerWeek, parseInt(filters.days))) as typeof baseQuery;
-  }
   if (filters?.search) {
-    const searchTerm = `%${filters.search}%`;
-    baseQuery = baseQuery.where(
-      or(
-        ilike(sourceWorkoutPrograms.name, searchTerm),
-        ilike(sourceWorkoutPrograms.description, searchTerm),
-      ),
-    ) as typeof baseQuery;
+    baseQuery = baseQuery.where(ilike(sourceWorkoutPrograms.name, `%${filters.search}%`)) as typeof baseQuery;
   }
 
   const programs = await baseQuery.orderBy(

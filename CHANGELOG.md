@@ -5,7 +5,7 @@ All notable changes to this project are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-09-02 09:47 UTC
+## [Unreleased] - 2026-09-02 10:39 UTC
 
 ### Added
 
@@ -962,3 +962,23 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     ("Facet-filtering UI") still says Not Started. Another spot where
     that document has drifted from what's actually shipped; not
     corrected in this pass.
+
+### Changed
+
+- Replaced the Workout Library's goal/level/gender/duration/days badge
+  filters with a single debounced free-text search over program names
+  (`src/components/workout-library/search-bar.tsx`), by request, now
+  that the catalog is 613 programs instead of 36 — a wall of filter
+  badges scales far worse than a search box. `listWorkoutProgramsByCategory`
+  simplified to match (name-only search, the other filter params
+  removed — nothing else called them). Verified in a real browser: typing
+  "James Bond" correctly narrows to the one matching program, an
+  unmatched search shows a real empty state instead of a blank page, and
+  clearing the box restores the full list.
+- Found and fixed a real, pre-existing bug on the same page while
+  checking it in the browser for the change above: `{program.durationWeeks
+  && (<Badge>...)}` renders a literal "0" in React when the value is
+  exactly `0` (React renders a falsy `0`, unlike `false`/`null`/
+  `undefined`) — confirmed 14 of the 613 programs have `durationWeeks: 0`
+  and were showing a bare "0" badge. Fixed for both `durationWeeks` and
+  `daysPerWeek` with an explicit `> 0` check.
