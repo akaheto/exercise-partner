@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Check, Dumbbell, Video } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useExerciseSelection } from "@/components/exercise-selection/selection-context";
+import { useIsExerciseSelected, useToggleExerciseSelection } from "@/components/exercise-selection/selection-context";
 import type { SourceExerciseRow } from "./types";
 
 /**
@@ -15,8 +15,8 @@ import type { SourceExerciseRow } from "./types";
  * target for multi-select (stops propagation so it never triggers navigation).
  */
 export function ExerciseCard({ exercise }: { exercise: SourceExerciseRow }) {
-  const { isSelected, toggle } = useExerciseSelection();
-  const selected = isSelected(exercise.exerciseId);
+  const selected = useIsExerciseSelected(exercise.exerciseId);
+  const toggle = useToggleExerciseSelection();
 
   return (
     <Link

@@ -5,7 +5,7 @@ All notable changes to this project are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-09-01 22:25 UTC
+## [Unreleased] - 2026-09-01 23:10 UTC
 
 ### Added
 
@@ -801,3 +801,48 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   structural fix — flagged as new PROJECT_PLAN item 57 (a suggestion, not
   built) and a code comment on `src/app/admin/enhancements/page.tsx`, since
   nothing stops the two drifting apart again the next time either changes.
+
+### Performance
+
+- QA audit item 14, resolved by actually profiling first rather than
+  guessing: the Exercise Library's multi-select context passed a fresh
+  object as its Context value on every toggle, so every `ExerciseCard` on
+  the page re-rendered on every toggle — not just the one that changed.
+  Measured with React's Profiler API against a real 24-card grid (the
+  page's actual PAGE_SIZE): toggling one card cost ~62ms across all 24
+  re-renders in dev mode. Rewrote the context as a plain external store
+  (`useSyncExternalStore`, one hook per concern — `useIsExerciseSelected`,
+  `useToggleExerciseSelection`, `useSelectedExercises`,
+  `useClearExerciseSelection`) so a card only re-renders when *its own*
+  entry changes. Re-measured after the fix: 1 card re-renders instead of
+  24, 8.4ms instead of 62.3ms. `SelectionBar` (the one place the whole
+  selected list is genuinely needed) is unaffected — there's only ever one
+  of it on screen. New render-isolation test that asserts on render
+  *counts*, not just resulting values, since a value-only test would have
+  passed even against the old, broken implementation.
+- Found and fixed two real bugs while building this, both only visible
+  through actually running the app rather than reading the diff: (1) two
+  of the project's stricter `react-hooks` ESLint rules
+  (`react-hooks/refs`, `react-hooks/immutability` — React Compiler-oriented
+  rules already in this repo's lint config) correctly rejected the first
+  implementation attempt's use of a lazily-initialized ref and a
+  mutated-prop render counter; fixed by using `useState`'s lazy initializer
+  instead of a ref, and a callback-based counter in the test instead of a
+  shared mutable object. (2) `useSyncExternalStore` requires a
+  `getServerSnapshot` argument for any route that gets server-rendered —
+  omitting it passed every local check (typecheck, lint, `vitest`) but
+  failed a real `npm run build` on `/build/generate`, since
+  `ExerciseSelectionProvider` lives at the (app) layout level and so
+  participates in every page's server render. Fixed by returning "nothing
+  selected" / an empty array for the server snapshot, which is always
+  correct here — selections only ever come from a browser click.
+- Verified via a temporary, auth-free preview route rendering real
+  `ExerciseCard`s wrapped in per-card `<Profiler>` instances (not left in
+  the codebase) rather than assumed from the diff, per CLAUDE.md's rule for
+  UI/perf changes — that's where the before/after render numbers above came
+  from. The `getServerSnapshot` bug was caught separately, by running a
+  real `npm run build` rather than stopping at typecheck/lint/`vitest`,
+  none of which exercise Next's server-rendering path — the same lesson
+  from this session's earlier build breakage (`session/actions.ts`),
+  now doubly reinforced: always run the actual production build before
+  calling a change done.

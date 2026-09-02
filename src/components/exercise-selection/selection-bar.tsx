@@ -5,7 +5,7 @@ import { Clock, Dumbbell, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { estimateSelectionMinutes } from "@/domain/workout-duration";
 import { createWorkoutFromSelection } from "@/app/(app)/build/actions";
-import { useExerciseSelection } from "./selection-context";
+import { useClearExerciseSelection, useSelectedExercises } from "./selection-context";
 
 /**
  * Persistent tray shown whenever exercises are selected in the library, from
@@ -17,7 +17,8 @@ import { useExerciseSelection } from "./selection-context";
  * or grouped yet — the real estimate takes over once it's in the builder.
  */
 export function SelectionBar() {
-  const { selected, clear } = useExerciseSelection();
+  const selected = useSelectedExercises();
+  const clear = useClearExerciseSelection();
   const [isPending, startTransition] = useTransition();
 
   if (selected.length === 0) return null;

@@ -15,12 +15,15 @@ than re-deciding them per feature.
 
 ## Active work
 
-`docs/technical/qa-audit-2026-08-31.md` is a prioritized, in-progress QA
-backlog (UX/a11y, frontend perf, backend reliability/data/security,
-structural) — read it before starting new work. Items 1–6 are approved to
-implement without further check-in; items 7–10 need a decision from the
-user first. Update its status column as items get resolved rather than
-leaving it stale.
+`docs/technical/qa-audit-2026-08-31.md` was a prioritized QA backlog
+(UX/a11y, frontend perf, backend reliability/data/security, structural) —
+all 14 numbered items are now resolved, fixed, or found already resolved
+(2026-09-01). Read it for context on what was found and fixed, but there's
+nothing actionable left in it; it's a closed record now, not an open
+backlog. `CHANGELOG.md` has the full detail on every fix. Two threads live
+on outside it: item 55's broader auth-architecture question, and
+PROJECT_PLAN.docx item 57's suggestion (not built) to unify
+`enhancements.json` with `ENHANCEMENTS.docx`.
 
 ## Commands
 
