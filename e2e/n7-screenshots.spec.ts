@@ -3,12 +3,17 @@ import { test, expect, type Page } from "@playwright/test";
 import postgres from "postgres";
 
 /**
- * Throwaway visual pass over the Epic N7 surfaces (/profile and /admin).
+ * Throwaway visual pass over the Epic N7 surfaces (/my-profile and /admin).
  *
  * Not an assertion suite — it exists so the design-system conversion gets the
  * same real-browser look every earlier phase got, at both the desktop and
  * 375px widths and in both themes. Phase 4 found two layout bugs this way that
  * no unit test caught.
+ *
+ * Shoots /my-profile rather than /profile: Epic P4 (2 Sept 2026) made /profile
+ * the admin-only all-profiles view, and moved a regular profile's own editor
+ * and delete-confirm UI to /my-profile, which this spec's non-admin session
+ * can actually reach.
  *
  * Creates its own profile and deletes it in afterAll. The admin table lists
  * every profile, so the owner's row is visible there; nothing is modified,
@@ -62,13 +67,14 @@ test("profile and admin surfaces render at both widths in both themes", async ({
   await expect(page).toHaveURL("/");
 
   // Own profile, so nothing below is the owner's data.
-  await page.goto("/profile");
-  await page.getByLabel("Name").fill(PROFILE_NAME);
-  await page.getByLabel("PIN").fill("1234");
-  await page.getByRole("button", { name: "Add" }).click();
+  await page.getByRole("button", { name: "Switch profile" }).click();
+  const switcherDialog = page.getByRole("dialog");
+  await switcherDialog.getByLabel("Name").fill(PROFILE_NAME);
+  await switcherDialog.getByLabel("PIN").fill("1234");
+  await switcherDialog.getByRole("button", { name: "Add" }).click();
   await expect(page.getByText(PROFILE_NAME).first()).toBeVisible();
 
-  await page.goto("/profile");
+  await page.goto("/my-profile");
   await expect(page.getByRole("radiogroup", { name: "Experience level" })).toBeVisible();
   await shoot(page, "profile");
 

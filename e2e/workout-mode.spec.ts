@@ -28,13 +28,16 @@ test("build a workout, run it with resume, finish it, then abandon a second sess
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page).toHaveURL("/");
 
-  await page.goto("/profile");
-  await page.getByLabel("Name").fill(PROFILE_NAME);
-  // Profile creation gained a required PIN in 1396bd1, after this spec was
-  // written; without it the form never submits and setup fails before
-  // Workout Mode is ever reached.
-  await page.getByLabel("PIN").fill("1234");
-  await page.getByRole("button", { name: "Add" }).click();
+  // /profile became the admin-only all-profiles view in Epic P4 (2 Sept
+  // 2026); a plain site-session holder can no longer reach its "Add a
+  // profile" form there. The header's profile switcher is the one creation
+  // path that stays reachable regardless of admin status or which profile
+  // (if any) is already active.
+  await page.getByRole("button", { name: "Switch profile" }).click();
+  const switcherDialog = page.getByRole("dialog");
+  await switcherDialog.getByLabel("Name").fill(PROFILE_NAME);
+  await switcherDialog.getByLabel("PIN").fill("1234");
+  await switcherDialog.getByRole("button", { name: "Add" }).click();
   await expect(page.getByText(PROFILE_NAME).first()).toBeVisible();
 
   await page.goto("/build");
@@ -64,11 +67,15 @@ test("build a workout, run it with resume, finish it, then abandon a second sess
   await expect(page).toHaveURL(/\/session\/.+/);
 
   await expect(page.getByText("Set 1 of 2")).toBeVisible();
-  // `exact` because weight and reps are now steppers: the +/- buttons are
-  // named "Increase Weight" / "Decrease Weight" for screen readers, so a
-  // substring match on "Weight" would hit three controls.
-  await page.getByLabel("Weight", { exact: true }).fill("20");
-  await page.getByLabel("Reps", { exact: true }).fill("12");
+  // Weight and Reps are tap-to-cycle buttons (WeightToggle/RepToggle in
+  // rep-weight-toggle.tsx), not fillable inputs or a NumberStepper +/- pair —
+  // that design predates the current session-runner.tsx and this spec was
+  // never updated to match, so it silently broke without anyone noticing
+  // until a full e2e run was done again (PROJECT_PLAN.docx section 4, K4).
+  // One tap each is enough: the resume assertion below only needs SOME
+  // logged value to persist correctly, not a specific number.
+  await page.getByRole("button", { name: /^Weight:/ }).click();
+  await page.getByRole("button", { name: /^Reps:/ }).click();
   await page.getByRole("button", { name: "Log set 1" }).click();
 
   // Resume: reload immediately, before the 1s rest timer would naturally
@@ -78,16 +85,8 @@ test("build a workout, run it with resume, finish it, then abandon a second sess
   await expect(page.getByText("Set 2 of 2")).toBeVisible();
   await expect(page.getByRole("button", { name: "Undo last set" })).toBeVisible();
 
-  // Set 2 goes in through the steppers rather than the keyboard — the other
-  // half of "steppers with large +/- targets alongside direct entry", and the
-  // path a user takes mid-set without unlocking a keyboard.
-  const increaseWeight = page.getByRole("button", { name: "Increase Weight" });
-  await increaseWeight.click();
-  await increaseWeight.click();
-  await expect(page.getByLabel("Weight", { exact: true })).toHaveValue("5");
-  const increaseReps = page.getByRole("button", { name: "Increase Reps" });
-  for (let i = 0; i < 10; i++) await increaseReps.click();
-  await expect(page.getByLabel("Reps", { exact: true })).toHaveValue("10");
+  await page.getByRole("button", { name: /^Weight:/ }).click();
+  await page.getByRole("button", { name: /^Reps:/ }).click();
   await page.getByRole("button", { name: "Log set 2" }).click();
 
   await expect(page.getByText("All sets logged")).toBeVisible();

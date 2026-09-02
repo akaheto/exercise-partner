@@ -20,7 +20,7 @@ describe("ProfileSwitcherDialog", () => {
 
   function openDialog() {
     render(<ProfileSwitcherDialog profiles={[]} activeProfile={null} />);
-    fireEvent.click(screen.getByRole("button", { name: /choose profile/i }));
+    fireEvent.click(screen.getByRole("button", { name: /switch profile/i }));
   }
 
   // Regression test: Epic M3 made createProfile() require a PIN (so the
@@ -31,8 +31,8 @@ describe("ProfileSwitcherDialog", () => {
   it("submits a pin alongside the name when adding a profile", () => {
     openDialog();
 
-    fireEvent.change(screen.getByLabelText(/add a profile/i), { target: { value: "Jamie" } });
-    fireEvent.change(screen.getByPlaceholderText("PIN"), { target: { value: "4321" } });
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Jamie" } });
+    fireEvent.change(screen.getByLabelText("PIN"), { target: { value: "4321" } });
     fireEvent.click(screen.getByRole("button", { name: /^add$/i }));
 
     expect(createProfile).toHaveBeenCalledTimes(1);
@@ -47,8 +47,8 @@ describe("ProfileSwitcherDialog", () => {
   it("does not submit when the pin is left blank", () => {
     openDialog();
 
-    fireEvent.change(screen.getByLabelText(/add a profile/i), { target: { value: "Jamie" } });
-    const pinInput = screen.getByPlaceholderText("PIN") as HTMLInputElement;
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Jamie" } });
+    const pinInput = screen.getByLabelText("PIN") as HTMLInputElement;
     expect(pinInput).toBeRequired();
   });
 });

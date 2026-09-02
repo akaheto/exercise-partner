@@ -47,13 +47,13 @@ export function ProfileSwitcherDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant="ghost" className="gap-2 px-2">
+          <Button variant="ghost" className="gap-2 px-2" aria-label="Switch profile">
             <Avatar size="sm">
               <AvatarFallback>
                 {activeProfile ? initials(activeProfile.displayName) : <UserPlus className="size-4" />}
               </AvatarFallback>
             </Avatar>
-            <span className="hidden text-small font-medium sm:inline">
+            <span className="hidden text-small font-medium sm:inline" aria-hidden="true">
               {activeProfile?.displayName ?? "Choose profile"}
             </span>
           </Button>
@@ -101,9 +101,15 @@ export function ProfileSwitcherDialog({
         {profiles.length > 0 && <Separator />}
 
         <form action={createAction} className="space-y-2">
-          <Label htmlFor="displayName">Add a profile</Label>
+          <p className="text-small font-medium text-foreground">Add a profile</p>
           <div className="flex gap-2">
-            <Input id="displayName" name="displayName" placeholder="Name" required maxLength={60} />
+            <Label htmlFor="switcher-new-profile-name" className="sr-only">
+              Name
+            </Label>
+            <Input id="switcher-new-profile-name" name="displayName" placeholder="Name" required maxLength={60} />
+            <Label htmlFor="switcher-new-profile-pin" className="sr-only">
+              PIN
+            </Label>
             <Input
               id="switcher-new-profile-pin"
               name="pin"

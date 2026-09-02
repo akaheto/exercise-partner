@@ -40,24 +40,27 @@ async function signIn(page: Page) {
   await expect(page).toHaveURL("/");
 }
 
-// /profile's own "Add a profile" card, not the home page's — the home page
-// now correctly redirects an active-but-incomplete profile straight back to
-// /onboarding (the onboarding fix), so it can't be reused to create a SECOND
-// profile once the first one is active. /profile always renders the add-form
-// regardless of onboarding state.
+// The header's profile switcher, not /profile's own "Add a profile" card —
+// Epic P4 (2 Sept 2026) made /profile the admin-only all-profiles view, so a
+// plain site-session holder can no longer reach its add-form there. The
+// switcher stays reachable regardless of admin status or which profile (if
+// any) is already active, which is exactly why /profile was originally
+// chosen for this: creating a SECOND profile once the first is active.
 async function createProfile(page: Page, name: string, pin: string) {
-  await page.goto("/profile");
-  await expect(page.getByLabel("Name")).toBeVisible({ timeout: 15_000 });
-  await page.getByLabel("Name").fill(name);
-  await page.getByLabel("PIN").fill(pin);
-  await page.getByRole("button", { name: "Add" }).click();
-  // Real ground truth: the profile shows up in the "All profiles" <ul> once
-  // the server action has committed and revalidated the page. Scoped to that
-  // list specifically — the top bar's profile-switcher trigger also shows
-  // the active profile's name and would otherwise ambiguously match too.
+  await page.getByRole("button", { name: "Switch profile" }).click();
+  const switcherDialog = page.getByRole("dialog");
+  await expect(switcherDialog.getByLabel("Name")).toBeVisible({ timeout: 15_000 });
+  await switcherDialog.getByLabel("Name").fill(name);
+  await switcherDialog.getByLabel("PIN").fill(pin);
+  await switcherDialog.getByRole("button", { name: "Add" }).click();
+  // Real ground truth: the profile shows up in the dialog's "All profiles"
+  // <ul> once the server action has committed and revalidated the page.
+  // Scoped to that list specifically — the dialog's own trigger button also
+  // shows the active profile's name and would otherwise ambiguously match.
   await expect(page.locator("ul").getByRole("button", { name })).toBeVisible({
     timeout: 10_000,
   });
+  await page.keyboard.press("Escape");
 }
 
 test("two profiles with the identical PIN get different hashes in the database", async ({
@@ -90,16 +93,22 @@ test("five wrong PIN guesses lock the profile out, even from a correct guess", a
   await signIn(page);
 
   // Profile B was left active by the previous test (creating a profile makes
-  // it active). Switch back to A via the "All profiles" list if needed — its
+  // it active). Switch back to A via the header switcher if needed — its
   // switcher button is disabled while A is already active, so this is a
   // no-op in that case rather than an error.
-  await page.goto("/profile");
+  await page.goto("/exercises");
+  await page.getByRole("button", { name: "Switch profile" }).click();
   const switchToA = page.locator("ul").getByRole("button", { name: NAME_A });
   if (await switchToA.isEnabled()) {
     await switchToA.click();
     await page.waitForLoadState("networkidle");
+  } else {
+    await page.keyboard.press("Escape");
   }
 
+  // /profile is the admin-only all-profiles view (Epic P4); a regular
+  // profile's own delete confirmation lives at /my-profile.
+  await page.goto("/my-profile");
   await page.getByRole("button", { name: /delete this profile/i }).click();
   const pinField = page.getByLabel(/enter your pin/i);
   const confirmButton = page.getByRole("button", { name: "Delete profile" });
