@@ -5,7 +5,7 @@ All notable changes to this project are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-09-01 23:10 UTC
+## [Unreleased] - 2026-09-02 08:43 UTC
 
 ### Added
 
@@ -846,3 +846,39 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   from this session's earlier build breakage (`session/actions.ts`),
   now doubly reinforced: always run the actual production build before
   calling a change done.
+
+### Data
+
+- **Corrected exercise tips for 1,151 of 1,218 exercises** — the original
+  Epic L1 curation's "tips" field was systematically wrong, not just
+  incomplete: it read as generic, templated advice ("Keep the movement
+  controlled and avoid using momentum. Prioritize form and muscle
+  engagement over load.") repeated with minor variation across many
+  unrelated exercises, rather than each exercise's actual site-specific
+  tips. Found by comparing a fresh site extract
+  (`Data/Exercises/muscle_strength_exercise_library_complete_master.xlsx`,
+  supplied 2026-09-02) against the live database: "instructions" differed
+  in text for all 1,218 exercises but at 97.5% word-overlap similarity —
+  same content, just reformatted from prose into a numbered list during
+  curation, so left alone — while "tips" differed at 99.5% *near-zero*
+  overlap, a different and much more serious class of problem. Matched by
+  canonical exercise URL rather than ID, since the fresh extract uses a
+  different ID scheme (`MNS-E0001...`) than the database's (`EX-0001...`).
+  Updated the existing global (profile_id null) `exercise_overrides` rows
+  for `field = 'tips'` directly — the same layer Epic L1 originally wrote
+  to — rather than touching `source_exercises`, so the two-layer
+  import/curation separation stays intact. 67 exercises have no tips on
+  the site at all and were left untouched rather than nulled out. 4
+  exercises' "instructions" (not just tips) also showed genuinely
+  different content, not just reformatting, on inspection — not corrected
+  in this pass since the user asked specifically for tips; worth a
+  follow-up look (Pec Foam Rolling, Incline Dumbbell Flys, Exercise Ball
+  Cable Fly, One-Arm Standing Dumbbell Extension, 2 to 1 Box Jump).
+- Along the way, explained a QA-audit item 56 open question from
+  2026-09-01: the live database has 1,271 exercises against the
+  documented 1,218 because exactly 53 rows (`EX-9001`–`EX-90xx`) have no
+  source URL at all — names like "3. Narrow Grip Low Pulley Cable Row"
+  suggest they were auto-created from unmatched Workout Library exercise
+  names (Epic Q), not sourced from the exercise site. The other 1,218 DB
+  rows all have real muscleandstrength.com URLs and matched the fresh
+  extract 1:1 — no additions or removals on either side.
