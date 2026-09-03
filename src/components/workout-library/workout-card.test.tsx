@@ -112,11 +112,17 @@ describe("WorkoutCard", () => {
   it("keeps every action at the 44px touch minimum", () => {
     render(<WorkoutCard workout={workout()} archived={false} />);
 
-    for (const name of ["Start", "Duplicate", "Archive"]) {
+    for (const name of ["Start", "Duplicate"]) {
       const button = screen.getByRole("button", { name });
       // `h-11` is Button size="default"; size="sm" would render `h-9`.
       expect(button.className).toMatch(/\bh-11\b/);
       expect(button.className).not.toMatch(/\bh-9\b/);
     }
+
+    // Archive is icon-only (size="icon"): a 44px square (`size-11`), not the
+    // labeled buttons' `h-11` — still meets the same touch-target floor.
+    const archiveButton = screen.getByRole("button", { name: "Archive" });
+    expect(archiveButton.className).toMatch(/\bsize-11\b/);
+    expect(archiveButton.className).not.toMatch(/\bsize-9\b/);
   });
 });

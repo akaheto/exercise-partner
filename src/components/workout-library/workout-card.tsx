@@ -87,11 +87,14 @@ export function WorkoutCard({ workout, archived }: { workout: WorkoutSummary; ar
           </>
         ) : (
           // Archiving is reversible, but it takes the workout off the list the
-          // user is looking at and the trigger wears a bin icon. Confirm it.
+          // user is looking at. Confirm it. Icon-only (not "Start"/
+          // "Duplicate"'s labeled style): inside a grouped program section
+          // three labeled buttons wrapped onto their own line per card,
+          // which got long fast with several days in a group.
           <ConfirmDialog
             trigger={
-              <Button variant="destructive-quiet">
-                <Trash2 aria-hidden="true" /> Archive
+              <Button variant="destructive-quiet" size="icon" aria-label="Archive">
+                <Trash2 aria-hidden="true" />
               </Button>
             }
             title={`Archive “${workout.name}”?`}
