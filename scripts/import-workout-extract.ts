@@ -123,6 +123,48 @@ function parseIntOrNull(v: unknown): number | null {
   return match ? Number(match[0]) : null;
 }
 
+/** Exact, reviewed denylist rather than a fuzzy pattern — found by scanning
+ * every distinct exercise_name_raw already in production and hand-checking
+ * each one, 2 September 2026 (PROJECT_PLAN.docx section 4). These are
+ * instructional text or table artifacts (percentage-based programming
+ * labels, a literal "Rest"/"Superset:", warm-up-complex descriptions) that
+ * the extract captured as if they were exercise rows on a handful of pages
+ * with irregular table formats. Deliberately exact-match, not a regex like
+ * `/% of 1rm/i` — that would also delete real prescriptions such as
+ * "Deadlift (60% of 1RM)" or "Warm-Up: Dumbbell Press", which name a real
+ * exercise and must be kept. */
+const GARBAGE_EXERCISE_NAMES = new Set(
+  [
+    "1. Dynamic Warm Up",
+    "100% of 1RM",
+    "105% of 1RM (If you make this, try 107.5%)",
+    "107.5% of 1RM (If you make this, try 110%)",
+    "110% of 1RM",
+    "35% of 1RM",
+    "45% of 1RM",
+    "55% of 1RM",
+    "60% of 1RM",
+    "65% of 1RM",
+    "70% of 1RM",
+    "75% of 1RM",
+    "80% of 1RM",
+    "85% of 1RM",
+    "90% of 1RM",
+    "92.5% of 1RM",
+    "95% of 1RM",
+    "Alternate sets of:",
+    "Barbell/Dumbbell",
+    "Bodyweight",
+    "Cardio",
+    "Dynamic warm-up complex",
+    "Perform the complex for one to three rounds",
+    "Rest",
+    "Superset",
+    "Superset:",
+    "Warmup - Calisthenics complex",
+  ].map((s) => s.toLowerCase()),
+);
+
 interface ProgramRecord {
   workoutId: string;
   name: string;
@@ -136,6 +178,13 @@ interface ProgramRecord {
   timePerWorkout: string | null;
   equipmentNeeded: string | null;
   targetGender: string | null;
+  /** "Summary lists N days per week; K distinct workout table titles were
+   * parsed." or "Source uses a narrative workout format; ..." or null when
+   * the source's own stated Days Per Week already matched what was parsed.
+   * Used only to decide whether a real single-day (or few-day) program
+   * should be duplicated to fill out a stated weekly frequency — the
+   * narrative-format case is explicitly excluded from that (see below). */
+  consistencyNotes: string | null;
 }
 
 interface DayRecord {
@@ -181,6 +230,7 @@ function loadAllBatches(): { programs: ProgramRecord[]; days: DayRecord[]; exerc
         timePerWorkout: str(row["Estimated Workout Duration"]),
         equipmentNeeded: str(row["Equipment Required"]),
         targetGender: str(row["Target Gender"]),
+        consistencyNotes: str(row["Source Consistency Notes"]),
       });
     }
 
@@ -197,6 +247,7 @@ function loadAllBatches(): { programs: ProgramRecord[]; days: DayRecord[]; exerc
     for (const row of sheets["Workout Exercises"] ?? []) {
       const name = str(row["Exercise Name"]);
       if (!name) continue;
+      if (GARBAGE_EXERCISE_NAMES.has(name.toLowerCase())) continue;
       // No Sets/Reps column populated is common for timed/burnout entries
       // (e.g. "20 Secs" plank/jump-rope intervals) — Duration is the only
       // place that shows up in this source. Folded into `sets` so the
@@ -316,16 +367,55 @@ async function main() {
       .update(JSON.stringify({ program, programDays, programExercises }))
       .digest("hex");
 
-    totalDays += programDays.length;
-    totalExercises += programExercises.length;
+    // Some programs are genuinely one (or a few) real day template(s) meant
+    // to be trained more often per week than there are distinct templates —
+    // e.g. a single "Full Body" day done 3x/week (Mon/Wed/Fri). The source's
+    // own stated Days Per Week is trustworthy for THIS specific case: it's
+    // flagged with "Summary lists N days per week; K distinct workout table
+    // titles were parsed" (K < N) rather than the narrative-format note,
+    // which instead flags pages with genuinely uncertain, often-blank
+    // prescriptions (confirmed by reading both note patterns' example pages
+    // directly — WP-0388 "Introduction To Bodybuilding Workout", a real,
+    // fully-prescribed single day repeated 3x/week per the page's own
+    // description, carries the first pattern; WP-0063/WP-0531, narrative
+    // dumps with no real per-day schedule, carry the second — 2 September
+    // 2026, PROJECT_PLAN.docx section 4). Cycles through the real day
+    // template(s) in order to fill out the stated count, per user request:
+    // "3 identical days should show up as day 1, 2 and 3."
+    const isNarrativeFormat = /narrative/i.test(program.consistencyNotes ?? "");
+    const shouldDuplicate =
+      !isNarrativeFormat &&
+      programDays.length >= 1 &&
+      program.daysPerWeek !== null &&
+      program.daysPerWeek > programDays.length;
 
-    // Derived from the real (filtered) day count rather than trusted from
-    // the source's own "Days Per Week" field: the source extract's Source
-    // Consistency Notes flag 279 programs where that field disagrees with
-    // the actual parsed day-table count, and 38 narrative-format programs
-    // where it's essentially fabricated (see above). The real day list is
-    // ground truth for what this program actually contains.
-    const realDaysPerWeek = programDays.length > 0 ? programDays.length : null;
+    const expandedDays: DayRecord[] = shouldDuplicate
+      ? Array.from({ length: program.daysPerWeek! }, (_, i) => {
+          const template = programDays[i % programDays.length];
+          return { workoutId: program.workoutId, dayNumber: i + 1, dayTitle: template.dayTitle };
+        })
+      : programDays;
+
+    totalDays += expandedDays.length;
+    // Not a simple multiply-by-cycle-factor: the cycle needn't divide evenly
+    // (e.g. 2 real days repeated to fill a stated 5/week), so different
+    // expanded days can carry different exercise counts. Summed per expanded
+    // day's own template title instead.
+    const exerciseCountByTitle = new Map<string | null, number>();
+    for (const ex of programExercises) {
+      exerciseCountByTitle.set(ex.dayTitle, (exerciseCountByTitle.get(ex.dayTitle) ?? 0) + 1);
+    }
+    totalExercises += expandedDays.reduce((sum, d) => sum + (exerciseCountByTitle.get(d.dayTitle) ?? 0), 0);
+
+    // Derived from the real (filtered, and where applicable duplicated) day
+    // count rather than trusted from the source's own "Days Per Week" field
+    // directly: the source extract's Source Consistency Notes flag 279
+    // programs where that field disagreed with the actual parsed day-table
+    // count, and 38 narrative-format programs where it's essentially
+    // fabricated (see above). The real day list is ground truth for what
+    // this program actually contains; duplication (above) folds the stated
+    // frequency back in for the specific case where it's trustworthy.
+    const realDaysPerWeek = expandedDays.length > 0 ? expandedDays.length : null;
 
     if (DRY_RUN) {
       if (isNew) created++;
@@ -373,7 +463,7 @@ async function main() {
         });
 
       await tx.delete(sourceWorkoutProgramDays).where(eq(sourceWorkoutProgramDays.programId, programId));
-      if (programDays.length === 0) return;
+      if (expandedDays.length === 0) return;
 
       // Bulk insert every day in one round trip, then every exercise in one
       // more — the original per-row-awaited version measured at ~35s/program
@@ -383,7 +473,7 @@ async function main() {
       const dayRows = await tx
         .insert(sourceWorkoutProgramDays)
         .values(
-          programDays.map((day) => ({
+          expandedDays.map((day) => ({
             programId,
             dayNumber: day.dayNumber,
             isRestDay: false,
@@ -392,33 +482,37 @@ async function main() {
         )
         .returning({ id: sourceWorkoutProgramDays.id, focus: sourceWorkoutProgramDays.focus });
 
-      // programDays and dayRows are the same length, in the same order —
-      // insert with an array of values preserves row order (documented
-      // Postgres/drizzle behavior, not assumed) — but keyed by focus text
-      // instead of array index anyway, since that's the source's own join
-      // key and makes no assumption about insert ordering.
-      const dayIdByTitle = new Map(dayRows.map((r) => [r.focus, r.id]));
+      // Grouped as title -> id[], not title -> id: duplicated days (above)
+      // deliberately share the same focus text across several distinct day
+      // rows (e.g. three "Legs" days), and every exercise tagged for that
+      // title needs to be copied onto each of them. For a program with no
+      // duplication, every title maps to exactly one id (confirmed zero
+      // programs have a naturally-repeated day title pre-duplication — see
+      // PROJECT_PLAN.docx section 4), so this is a no-op fan-out there.
+      const dayIdsByTitle = new Map<string | null, number[]>();
+      for (const r of dayRows) {
+        if (!dayIdsByTitle.has(r.focus)) dayIdsByTitle.set(r.focus, []);
+        dayIdsByTitle.get(r.focus)!.push(r.id);
+      }
 
-      const exerciseValues = programExercises
-        .map((ex) => {
-          const dayId = dayIdByTitle.get(ex.dayTitle ?? null);
-          if (dayId === undefined) return null; // exercise references a day this program doesn't have
-          const matchedExerciseId = ex.exerciseUrlRaw ? exerciseIndex.get(slugFromUrl(ex.exerciseUrlRaw)) ?? null : null;
-          if (!matchedExerciseId) unmatchedExerciseNames.add(ex.exerciseNameRaw);
-          else totalMatched++;
-          return {
-            programDayId: dayId,
-            position: ex.position,
-            exerciseId: matchedExerciseId,
-            exerciseNameRaw: ex.exerciseNameRaw,
-            exerciseUrlRaw: ex.exerciseUrlRaw,
-            sets: ex.sets,
-            reps: ex.reps,
-            rest: ex.rest,
-            notes: ex.notes,
-          };
-        })
-        .filter((v): v is NonNullable<typeof v> => v !== null);
+      const exerciseValues = programExercises.flatMap((ex) => {
+        const dayIds = dayIdsByTitle.get(ex.dayTitle ?? null);
+        if (!dayIds) return []; // exercise references a day this program doesn't have
+        const matchedExerciseId = ex.exerciseUrlRaw ? exerciseIndex.get(slugFromUrl(ex.exerciseUrlRaw)) ?? null : null;
+        if (!matchedExerciseId) unmatchedExerciseNames.add(ex.exerciseNameRaw);
+        else totalMatched += dayIds.length;
+        return dayIds.map((dayId) => ({
+          programDayId: dayId,
+          position: ex.position,
+          exerciseId: matchedExerciseId,
+          exerciseNameRaw: ex.exerciseNameRaw,
+          exerciseUrlRaw: ex.exerciseUrlRaw,
+          sets: ex.sets,
+          reps: ex.reps,
+          rest: ex.rest,
+          notes: ex.notes,
+        }));
+      });
 
       if (exerciseValues.length > 0) {
         await tx.insert(sourceWorkoutProgramExercises).values(exerciseValues);
