@@ -74,3 +74,19 @@ export async function unarchiveWorkout(workoutId: string): Promise<void> {
   await db.update(workouts).set({ archivedAt: null }).where(eq(workouts.id, workoutId));
   revalidatePath("/workouts");
 }
+
+/** Hard delete — only reachable for an already-archived workout, enforced
+ * here rather than trusted from the UI alone. Only removes the caller's own
+ * template (workoutBlocks/workoutItems cascade with it); never touches the
+ * Workout Library catalog it may have been added from — "Add to my
+ * workouts" creates independent rows, not a live reference, so nothing
+ * shared is affected. Any logged session history survives too:
+ * sessions.workoutId sets null on delete rather than cascading, since
+ * workoutSnapshot already has everything needed to display that history. */
+export async function deleteWorkoutPermanently(workoutId: string): Promise<void> {
+  const { workout } = await requireOwnedWorkout(workoutId);
+  if (!workout.archivedAt) throw new Error("Only an archived workout can be permanently deleted");
+
+  await db.delete(workouts).where(eq(workouts.id, workoutId));
+  revalidatePath("/workouts");
+}

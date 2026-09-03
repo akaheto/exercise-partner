@@ -49,6 +49,8 @@ export async function addWorkoutProgramToWorkouts(programId: string): Promise<vo
           profileId,
           name: `${program.name} — Day ${day.dayNumber}${day.focus ? `: ${day.focus}` : ""}`,
           description: `Imported from the Workout Library (${program.name}).`,
+          sourceProgramId: program.programId,
+          sourceProgramName: program.name,
         })
         .returning();
       createdCount += 1;

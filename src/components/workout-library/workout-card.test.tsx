@@ -6,12 +6,14 @@ import type { WorkoutSummary } from "@/db/queries/workouts";
 const archiveWorkout = vi.fn();
 const unarchiveWorkout = vi.fn();
 const duplicateWorkout = vi.fn();
+const deleteWorkoutPermanently = vi.fn();
 const startSession = vi.fn();
 
 vi.mock("@/app/(app)/workouts/actions", () => ({
   archiveWorkout: (...args: unknown[]) => archiveWorkout(...args),
   unarchiveWorkout: (...args: unknown[]) => unarchiveWorkout(...args),
   duplicateWorkout: (...args: unknown[]) => duplicateWorkout(...args),
+  deleteWorkoutPermanently: (...args: unknown[]) => deleteWorkoutPermanently(...args),
 }));
 
 vi.mock("@/app/session/actions", () => ({
@@ -27,6 +29,8 @@ function workout(overrides: Partial<WorkoutSummary> = {}): WorkoutSummary {
     updatedAt: new Date("2026-07-01"),
     exerciseCount: 6,
     estimatedMinutes: 42,
+    sourceProgramId: null,
+    sourceProgramName: null,
     ...overrides,
   };
 }
@@ -70,6 +74,28 @@ describe("WorkoutCard", () => {
     expect(screen.queryByRole("button", { name: "Archive" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Restore" }));
     await waitFor(() => expect(unarchiveWorkout).toHaveBeenCalledWith("w1"));
+  });
+
+  it("does not delete until the user confirms", async () => {
+    render(<WorkoutCard workout={workout({ archivedAt: new Date() })} archived />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete permanently" }));
+    expect(deleteWorkoutPermanently).not.toHaveBeenCalled();
+
+    expect(await screen.findByText("Permanently delete “Upper Body Workout”?")).toBeInTheDocument();
+
+    // Both the trigger and the dialog's own confirm button share the name.
+    const confirmButtons = screen.getAllByRole("button", { name: "Delete permanently" });
+    fireEvent.click(confirmButtons[confirmButtons.length - 1]);
+    await waitFor(() => expect(deleteWorkoutPermanently).toHaveBeenCalledWith("w1"));
+  });
+
+  // Unhappy path: only an archived workout gets a delete option at all —
+  // the server action itself also refuses a non-archived one, but the
+  // control shouldn't even be reachable from a live workout's card.
+  it("never shows Delete permanently on a workout that isn't archived", () => {
+    render(<WorkoutCard workout={workout()} archived={false} />);
+    expect(screen.queryByRole("button", { name: "Delete permanently" })).toBeNull();
   });
 
   it("hides Start on an archived workout and on an empty one", () => {

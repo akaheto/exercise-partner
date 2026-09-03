@@ -2,11 +2,16 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { Clock, Copy, Dumbbell, Play, RotateCcw, Trash2 } from "lucide-react";
+import { Clock, Copy, Dumbbell, Play, RotateCcw, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { archiveWorkout, duplicateWorkout, unarchiveWorkout } from "@/app/(app)/workouts/actions";
+import {
+  archiveWorkout,
+  deleteWorkoutPermanently,
+  duplicateWorkout,
+  unarchiveWorkout,
+} from "@/app/(app)/workouts/actions";
 import { startSession } from "@/app/session/actions";
 import type { WorkoutSummary } from "@/db/queries/workouts";
 
@@ -59,14 +64,27 @@ export function WorkoutCard({ workout, archived }: { workout: WorkoutSummary; ar
           <Copy aria-hidden="true" /> Duplicate
         </Button>
         {archived ? (
-          <Button
-            variant="ghost"
-            loading={isRestoring}
-            loadingLabel="Restoring the workout"
-            onClick={() => startRestore(() => unarchiveWorkout(workout.id))}
-          >
-            <RotateCcw aria-hidden="true" /> Restore
-          </Button>
+          <>
+            <Button
+              variant="ghost"
+              loading={isRestoring}
+              loadingLabel="Restoring the workout"
+              onClick={() => startRestore(() => unarchiveWorkout(workout.id))}
+            >
+              <RotateCcw aria-hidden="true" /> Restore
+            </Button>
+            <ConfirmDialog
+              trigger={
+                <Button variant="destructive-quiet">
+                  <X aria-hidden="true" /> Delete permanently
+                </Button>
+              }
+              title={`Permanently delete “${workout.name}”?`}
+              description="This only removes it from your account — the Workout Library catalog it came from (if any) is unaffected and you could add it again later. This can't be undone; logged sessions from it stay in your history."
+              confirmLabel="Delete permanently"
+              onConfirm={() => deleteWorkoutPermanently(workout.id)}
+            />
+          </>
         ) : (
           // Archiving is reversible, but it takes the workout off the list the
           // user is looking at and the trigger wears a bin icon. Confirm it.

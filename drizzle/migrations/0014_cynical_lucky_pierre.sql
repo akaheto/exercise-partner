@@ -1,0 +1,3 @@
+ALTER TABLE "workouts" ADD COLUMN "source_program_id" text;--> statement-breakpoint
+ALTER TABLE "workouts" ADD COLUMN "source_program_name" text;--> statement-breakpoint
+ALTER TABLE "workouts" ADD CONSTRAINT "workouts_source_program_id_source_workout_programs_program_id_fk" FOREIGN KEY ("source_program_id") REFERENCES "public"."source_workout_programs"("program_id") ON DELETE set null ON UPDATE no action;

@@ -120,6 +120,8 @@ export interface WorkoutSummary {
   updatedAt: Date;
   exerciseCount: number;
   estimatedMinutes: number;
+  sourceProgramId: string | null;
+  sourceProgramName: string | null;
 }
 
 /**
@@ -176,5 +178,7 @@ export async function listWorkoutSummaries(
     updatedAt: w.updatedAt,
     exerciseCount: countByWorkout.get(w.id) ?? 0,
     estimatedMinutes: estimateWorkoutMinutes([...(blocksByWorkout.get(w.id)?.values() ?? [])]),
+    sourceProgramId: w.sourceProgramId,
+    sourceProgramName: w.sourceProgramName,
   }));
 }

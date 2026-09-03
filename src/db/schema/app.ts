@@ -9,7 +9,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { sourceEquipment, sourceExercises } from "./source";
+import { sourceEquipment, sourceExercises, sourceWorkoutPrograms } from "./source";
 
 /**
  * Curation tracking: monitors progress on populating exercise content
@@ -244,6 +244,20 @@ export const workouts = pgTable("workouts", {
    * even after the profile's own default level/goal changes later. */
   experienceLevel: text("experience_level"), // "Beginner" | "Intermediate" | "Advanced"
   trainingGoal: text("training_goal"), // "Strength" | "Hypertrophy" | "Endurance" | "Power" | "General"
+  /** Set only for a workout created by "Add to my workouts" (Epic Q3) — null
+   * for anything manually built, generated, or duplicated. Used purely to
+   * group a program's several day-workouts together on /workouts; not a
+   * live reference the way the source layer's own tables are to each other.
+   * onDelete "set null" rather than cascade: if the source program is ever
+   * removed, the day-workouts it produced are the user's own data and must
+   * survive — they just stop grouping. sourceProgramName is a snapshot of
+   * the program's name at add-time (matches the session-snapshot pattern
+   * elsewhere in this app) so the group header never silently changes if a
+   * later re-import renames or corrects the source program. */
+  sourceProgramId: text("source_program_id").references(() => sourceWorkoutPrograms.programId, {
+    onDelete: "set null",
+  }),
+  sourceProgramName: text("source_program_name"),
   archivedAt: timestamp("archived_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

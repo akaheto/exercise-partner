@@ -7,9 +7,11 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
 import { WorkoutCard } from "@/components/workout-library/workout-card";
+import { WorkoutProgramGroup } from "@/components/workout-library/workout-program-group";
 import { WorkoutSearchBar } from "@/components/workout-library/workout-search-bar";
 import { listWorkoutSummaries } from "@/db/queries/workouts";
 import { getActiveProfileId } from "@/lib/active-profile";
+import { batchWorkoutDisplayRows, groupWorkoutSummaries } from "@/domain/workout-list-grouping";
 
 export default async function WorkoutsPage({
   searchParams,
@@ -102,10 +104,26 @@ export default async function WorkoutsPage({
           />
         )
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {workouts.map((w) => (
-            <WorkoutCard key={w.id} workout={w} archived={showArchived} />
-          ))}
+        <div className="flex flex-col gap-4">
+          {/* Groups (Epic Q5) get their own full-width, collapsed-by-default
+              section; runs of ungrouped workouts between them keep the
+              original dense grid rather than dropping to one per row. */}
+          {batchWorkoutDisplayRows(groupWorkoutSummaries(workouts)).map((row) =>
+            row.kind === "group" ? (
+              <WorkoutProgramGroup
+                key={row.group.sourceProgramId}
+                sourceProgramName={row.group.sourceProgramName}
+                workouts={row.group.workouts}
+                archived={showArchived}
+              />
+            ) : (
+              <div key={row.workouts[0].id} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {row.workouts.map((w) => (
+                  <WorkoutCard key={w.id} workout={w} archived={showArchived} />
+                ))}
+              </div>
+            ),
+          )}
         </div>
       )}
     </div>
