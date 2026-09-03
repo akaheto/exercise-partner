@@ -1,4 +1,4 @@
-import { asc, eq, ilike, inArray } from "drizzle-orm";
+import { and, asc, eq, ilike, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
   sourceExercises,
@@ -11,13 +11,17 @@ export function listWorkoutPrograms() {
   return db.select().from(sourceWorkoutPrograms).orderBy(asc(sourceWorkoutPrograms.name));
 }
 
-/** Get all programs grouped by category, for hierarchical display.
- * `search` matches on the program name only — a free-text search box is
- * the library's only browse control (the earlier goal/level/gender/
- * duration/days badge filters were removed once the catalog grew from 36
- * to 613 programs; a name search scales far better than a wall of
- * category badges over that many rows). */
+/** Get all programs grouped by category, for hierarchical display. The
+ * goal/level/gender/duration/days badges (collapsed behind a "Filters"
+ * disclosure on the page, not shown by default — "hide" meant collapsed,
+ * not removed) and the free-text name search are independent and combine
+ * with AND. */
 export interface WorkoutProgramFilters {
+  goal?: string;
+  level?: string;
+  gender?: string;
+  duration?: string;
+  days?: string;
   search?: string;
 }
 
@@ -26,13 +30,23 @@ export interface WorkoutProgramFilters {
 // 58). Revisit with a limit/offset or virtualized list if that grows past
 // ~1s or a few thousand programs — not worth the complexity before then.
 export async function listWorkoutProgramsByCategory(filters?: WorkoutProgramFilters) {
-  let baseQuery = db.select().from(sourceWorkoutPrograms);
-
+  const conditions = [];
+  if (filters?.goal) conditions.push(eq(sourceWorkoutPrograms.mainGoal, filters.goal));
+  if (filters?.level) conditions.push(eq(sourceWorkoutPrograms.trainingLevel, filters.level));
+  if (filters?.gender) conditions.push(eq(sourceWorkoutPrograms.targetGender, filters.gender));
+  if (filters?.duration) conditions.push(eq(sourceWorkoutPrograms.durationWeeks, Number(filters.duration)));
+  if (filters?.days) conditions.push(eq(sourceWorkoutPrograms.daysPerWeek, Number(filters.days)));
+  // AND, not a single "%a b%" substring: "chest bodyweight" should match
+  // "3 Dumbbell and Bodyweight Chest Workouts" even though the two words
+  // don't appear adjacent or in that order in the name.
   if (filters?.search) {
-    baseQuery = baseQuery.where(ilike(sourceWorkoutPrograms.name, `%${filters.search}%`)) as typeof baseQuery;
+    for (const word of filters.search.trim().split(/\s+/).filter(Boolean)) {
+      conditions.push(ilike(sourceWorkoutPrograms.name, `%${word}%`));
+    }
   }
 
-  const programs = await baseQuery.orderBy(
+  const query = db.select().from(sourceWorkoutPrograms);
+  const programs = await (conditions.length > 0 ? query.where(and(...conditions)) : query).orderBy(
     asc(sourceWorkoutPrograms.category),
     asc(sourceWorkoutPrograms.name),
   );
