@@ -34,6 +34,19 @@ describe("CurrentProfileCard", () => {
     expect(screen.getByRole("button", { name: "lb" })).toBeInTheDocument();
   });
 
+  it("keeps the weight-unit buttons at the 44px touch-target minimum", () => {
+    render(
+      <CurrentProfileCard profile={{ id: "p1", displayName: "Ben", preferredWeightUnit: "kg" }} />,
+    );
+
+    // Regression test for a real gap found in the K3 accessibility review:
+    // these buttons had shrunk to the 36px "sm" size, which VISUAL_STYLE_
+    // GUIDE.docx reserves for dense table rows/toolbars only, not a settings
+    // card's primary controls.
+    expect(screen.getByRole("button", { name: "kg" }).className).toContain("h-11");
+    expect(screen.getByRole("button", { name: "lb" }).className).toContain("h-11");
+  });
+
   it("submits the profile id as a hidden field for the weight-unit action", () => {
     const { container } = render(
       <CurrentProfileCard profile={{ id: "p1", displayName: "Ben", preferredWeightUnit: "kg" }} />,

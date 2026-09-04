@@ -19,7 +19,6 @@ export function AdminLogoutButton() {
   return (
     <Button
       variant="outline"
-      size="sm"
       onClick={handleLogout}
       disabled={isLoading}
       className="gap-2"

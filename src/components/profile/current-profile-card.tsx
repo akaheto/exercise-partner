@@ -35,7 +35,6 @@ export function CurrentProfileCard({
                 type="submit"
                 name="unit"
                 value={unit}
-                size="sm"
                 variant={profile.preferredWeightUnit === unit ? "default" : "outline"}
               >
                 {unit}
