@@ -107,7 +107,9 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
 
           {!exercise.videoAvailable && exercise.thumbnailUrl && (
             <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-muted">
-              <Image src={exercise.thumbnailUrl} alt={exercise.name} fill sizes="640px" className="object-cover" />
+              {/* unoptimized: see exercise-card.tsx — Vercel's server-side
+                  image fetch gets 403'd by this host's Cloudflare protection. */}
+              <Image src={exercise.thumbnailUrl} alt={exercise.name} fill unoptimized sizes="640px" className="object-cover" />
             </div>
           )}
 

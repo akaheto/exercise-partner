@@ -103,7 +103,9 @@ export function ExercisePickerDialog({
               >
                 <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-muted">
                   {r.thumbnailUrl ? (
-                    <Image src={r.thumbnailUrl} alt="" fill sizes="48px" className="object-cover" />
+                    // unoptimized: see exercise-card.tsx — Vercel's server-side
+                    // image fetch gets 403'd by this host's Cloudflare protection.
+                    <Image src={r.thumbnailUrl} alt="" fill unoptimized sizes="48px" className="object-cover" />
                   ) : (
                     <div className="flex size-full items-center justify-center">
                       <Dumbbell className="size-4 text-muted-foreground" />

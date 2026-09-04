@@ -30,7 +30,9 @@ function MiniExerciseCard({
     >
       <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-muted">
         {thumbnailUrl ? (
-          <Image src={thumbnailUrl} alt="" fill sizes="56px" className="object-cover" />
+          // unoptimized: see exercise-card.tsx — Vercel's server-side
+          // image fetch gets 403'd by this host's Cloudflare protection.
+          <Image src={thumbnailUrl} alt="" fill unoptimized sizes="56px" className="object-cover" />
         ) : (
           <div className="flex size-full items-center justify-center">
             <Dumbbell className="size-5 text-muted-foreground" aria-hidden="true" />

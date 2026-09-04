@@ -28,10 +28,16 @@ export function ExerciseCard({ exercise }: { exercise: SourceExerciseRow }) {
     >
       <div className="relative aspect-video w-full overflow-hidden bg-muted">
         {exercise.thumbnailUrl ? (
+          // unoptimized: skips Vercel's server-side fetch-and-resize step.
+          // cdn.muscleandstrength.com's Cloudflare protection 403s that
+          // server-side fetch (confirmed directly — OPTIMIZED_EXTERNAL_
+          // IMAGE_REQUEST_UNAUTHORIZED) while a real browser loading the
+          // same URL is unaffected, so the browser has to fetch it directly.
           <Image
             src={exercise.thumbnailUrl}
             alt=""
             fill
+            unoptimized
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
             className="object-cover transition-transform group-hover:scale-105"
           />
