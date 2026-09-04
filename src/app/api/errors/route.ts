@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { db } from "@/db/client";
 import { clientErrors } from "@/db/schema";
+import { ACTIVE_PROFILE_COOKIE } from "@/lib/active-profile";
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +13,12 @@ export async function POST(request: Request) {
     }
 
     const cookieStore = await cookies();
-    const activeProfileId = cookieStore.get("activeProfileId")?.value ?? null;
+    // Was hardcoded as "activeProfileId" (camelCase) — the real cookie is
+    // ACTIVE_PROFILE_COOKIE ("active_profile_id"), so this always read
+    // undefined and every logged error silently lost its profile
+    // association. Found while reviewing the admin errors page; the
+    // client_errors table has 0 rows so far, so nothing needs backfilling.
+    const activeProfileId = cookieStore.get(ACTIVE_PROFILE_COOKIE)?.value ?? null;
 
     await db.insert(clientErrors).values({
       profileId: activeProfileId,
