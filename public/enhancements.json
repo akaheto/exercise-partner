@@ -34,18 +34,17 @@
       "idea": "In-session set history",
       "whatItDoes": "Workout Mode shows the sets already logged for the current exercise (e.g. \"Set 1: 10kg × 8\") above the input card while logging the next one — the narrower, same-session case of \"Previous performance inline\" below; a different session's performance on the same exercise is still not shown",
       "shipped": "1 September 2026"
+    },
+    {
+      "idea": "Photorealistic exercise images",
+      "whatItDoes": "A photorealistic start/end-position photo on the exercise detail page, alongside the video — distinct from the anatomical muscle diagram, which shows which muscles a movement works, not how to perform it. Covers 1,218 of 1,271 exercises; the 53 later Workout-Library-derived exercises (no source URL to have generated a photo from) simply don't show one",
+      "shipped": "5 September 2026"
     }
   ],
   "notYetImplemented": [
     {
       "category": "Deferred to the end of the project",
       "items": [
-        {
-          "idea": "Photorealistic exercise images",
-          "whatItDoes": "Real photography or generated images showing each exercise's start and end position, exported in full, thumbnail, and mobile sizes; thumbnails would replace the current hotlinked source images in the library card list",
-          "whyItFits": "The spreadsheet has only one static thumbnail per exercise (see TECHNICAL_SPEC.docx \"Media\" limitations) — this is the closest thing to the spec's original \"photorealistic visual\" requirement, but it's a production asset pipeline, not app code, and not worth doing more than once. Note this is still outstanding: the rendered muscle diagrams supplied on 29 July 2026 show which muscles a movement works, not how to perform it, so they do not cover this",
-          "effort": "Large"
-        },
         {
           "idea": "AI-powered training coach / assessment",
           "whatItDoes": "Replace or augment the deterministic workout assessment with a Claude API call — a natural-language coach that can answer follow-up questions, or a richer assessment than fixed rules can produce",
