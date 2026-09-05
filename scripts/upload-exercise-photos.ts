@@ -1,37 +1,41 @@
 import "./load-env";
 import fs from "fs";
 import path from "path";
+import sharp from "sharp";
 import { put, list } from "@vercel/blob";
 import postgres from "postgres";
 
 /**
- * Uploads the 1,218 supplied muscle-diagram renders to Vercel Blob and
- * verifies the result — Epic O.
+ * Uploads the 1,218 supplied photorealistic exercise photos (start/end
+ * position, side by side) to their own Vercel Blob store
+ * (exercise-partner-photos) and verifies the result. This is the
+ * "Photorealistic exercise images" enhancement named in ENHANCEMENTS.docx —
+ * previously deferred to the end of the project.
  *
- * Filenames map 1:1 onto exercise names (verified separately: zero
- * unmatched, zero ambiguous, zero duplicate names in the database), but the
- * blob pathname uses exercise_id rather than the filename: it's the stable,
- * URL-safe primary key, immune to a future exercise rename, where the
- * filename has spaces, parentheses and other characters that would need
- * escaping in every URL built from it.
+ * Same matching approach as scripts/upload-muscle-diagrams.ts: filenames map
+ * 1:1 onto exercise names (verified separately — zero unmatched, zero
+ * ambiguous against the original 1,218-exercise set; the 53 later
+ * Workout-Library-derived exercises, EX-9001+, have no photo and are simply
+ * skipped, not treated as an error). The blob pathname uses exercise_id, not
+ * the filename, for the same reason as the muscle diagrams: it's stable and
+ * URL-safe where the filename has spaces, parentheses, ampersands, etc.
  *
- * Uploaded with addRandomSuffix: false so the resulting URL is fully
- * deterministic — src/lib/muscle-diagram.ts constructs it from exerciseId
- * alone, with no per-exercise database column needed.
+ * Source files are JPEG; converted to WebP on the way up (matching the
+ * muscle-diagram convention) rather than uploading JPEG as-is, both for
+ * consistency and file size.
+ *
+ * exercise-partner-photos is this project's BLOB_READ_WRITE_TOKEN store
+ * (the "primary" one, in Vercel's terms) — the muscle-diagrams store is the
+ * one that had to move to its own MUSCLE_DIAGRAMS_BLOB_TOKEN, since it was
+ * added second and Vercel's CLI always names the primary token
+ * BLOB_READ_WRITE_TOKEN with no way to customise that per store. This
+ * script relies on @vercel/blob's default env lookup rather than passing a
+ * token explicitly.
  */
 
-const SOURCE_DIR =
-  "/Users/benaheto/Library/CloudStorage/GoogleDrive-akaheto@gmail.com" +
-  "/My Drive/Claude/Code/Exercise Partner/Images/Exercise_Muscle_Group_Diagrams_1218";
-
-const BLOB_PREFIX = "muscle-diagrams";
-
-// This store's own token, kept distinct from BLOB_READ_WRITE_TOKEN once a
-// second Vercel Blob store (exercise-partner-photos) was added: Vercel's own
-// CLI always names the project's "primary" blob token exactly
-// BLOB_READ_WRITE_TOKEN with no way to customise that per store, so a second
-// store's token has to live under its own name and be passed explicitly.
-const token = process.env.MUSCLE_DIAGRAMS_BLOB_TOKEN;
+const SOURCE_DIR = "C:/Users/akahe/My Drive/Codex/Projects/2/exercise_images";
+const BLOB_PREFIX = "exercise-photos";
+const WEBP_QUALITY = 85;
 
 function normalize(name: string): string {
   return name
@@ -43,7 +47,7 @@ function normalize(name: string): string {
 
 async function main() {
   const dryRun = process.argv.includes("--dry-run");
-  if (!token) throw new Error("MUSCLE_DIAGRAMS_BLOB_TOKEN is not set");
+  if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error("BLOB_READ_WRITE_TOKEN is not set");
 
   const sql = postgres(process.env.DATABASE_URL!);
   const exercises = await sql<{ exercise_id: string; name: string }[]>`
@@ -58,14 +62,19 @@ async function main() {
     byNormalizedName.get(key)!.push(e);
   }
 
-  const files = fs.readdirSync(SOURCE_DIR).filter((f) => f.endsWith(".webp"));
+  // Only top-level .jpg files — excludes the stray "-v2.png" comparison
+  // render and the one empty leftover subfolder from generation.
+  const files = fs
+    .readdirSync(SOURCE_DIR, { withFileTypes: true })
+    .filter((f) => f.isFile() && f.name.toLowerCase().endsWith(".jpg"))
+    .map((f) => f.name);
   console.log(`${files.length} local files, ${exercises.length} exercises in the database`);
 
   const plan: { file: string; exerciseId: string; pathname: string }[] = [];
   const unmatched: string[] = [];
 
   for (const file of files) {
-    const base = path.basename(file, ".webp");
+    const base = path.basename(file, ".jpg");
     const matches = byNormalizedName.get(normalize(base));
     if (!matches || matches.length !== 1) {
       unmatched.push(file);
@@ -95,14 +104,14 @@ async function main() {
 
   for (const { file, pathname } of plan) {
     const filePath = path.join(SOURCE_DIR, file);
-    const body = fs.readFileSync(filePath);
     try {
-      await put(pathname, body, {
+      const jpeg = fs.readFileSync(filePath);
+      const webp = await sharp(jpeg).webp({ quality: WEBP_QUALITY }).toBuffer();
+      await put(pathname, webp, {
         access: "public",
         addRandomSuffix: false,
         contentType: "image/webp",
         allowOverwrite: true,
-        token,
       });
       uploaded++;
     } catch (error) {
@@ -118,14 +127,12 @@ async function main() {
   console.log(`Done. Uploaded ${uploaded}, failed ${failed}, total planned ${plan.length}.`);
 
   // Verify against the store itself, not just "no exception was thrown" —
-  // list() reads the actual current state of the blob store. Paginated:
-  // list() caps a single page at 1000, so reading only the first page
-  // under-reports on a set this size and looks like a data-loss false
-  // alarm — confirmed and fixed after the first real run of this script.
+  // paginated the same way upload-muscle-diagrams.ts learned to: list()
+  // caps a page at 1000, which under-reports on a set this size otherwise.
   const pathnames = new Set<string>();
   let cursor: string | undefined;
   do {
-    const page = await list({ prefix: `${BLOB_PREFIX}/`, cursor, limit: 1000, token });
+    const page = await list({ prefix: `${BLOB_PREFIX}/`, cursor, limit: 1000 });
     for (const b of page.blobs) pathnames.add(b.pathname);
     cursor = page.cursor;
   } while (cursor);

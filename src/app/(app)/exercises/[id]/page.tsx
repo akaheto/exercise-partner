@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import { ExercisePhoto } from "@/components/exercise/exercise-photo";
 import { GuidanceCard } from "@/components/exercise/guidance-card";
 import { MuscleDiagramPhoto } from "@/components/exercise/muscle-diagram-photo";
 import { RelatedExercises } from "@/components/exercise/related-exercises";
@@ -112,6 +113,8 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
               <Image src={exercise.thumbnailUrl} alt={exercise.name} fill unoptimized sizes="640px" className="object-cover" />
             </div>
           )}
+
+          <ExercisePhoto exerciseId={exercise.exerciseId} exerciseName={exercise.name} />
 
           {guidance && profile && (
             <GuidanceCard guidance={guidance} userLevel={profile.experienceLevel} userGoal={profile.trainingGoal} />
