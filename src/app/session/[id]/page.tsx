@@ -74,6 +74,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
               instructions: exercise.instructions,
               videoUrl: exercise.videoUrl,
               sourceUrl: exercise.url,
+              thumbnailUrl: exercise.thumbnailUrl,
               secondaryMuscles,
             }
           : null

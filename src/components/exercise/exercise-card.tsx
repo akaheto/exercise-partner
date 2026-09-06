@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { Check, Dumbbell, Video } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useIsExerciseSelected, useToggleExerciseSelection } from "@/components/exercise-selection/selection-context";
+import { ExerciseThumbnail } from "./exercise-thumbnail";
 import type { SourceExerciseRow } from "./types";
 
 /**
@@ -27,25 +27,18 @@ export function ExerciseCard({ exercise }: { exercise: SourceExerciseRow }) {
       )}
     >
       <div className="relative aspect-video w-full overflow-hidden bg-muted">
-        {exercise.thumbnailUrl ? (
-          // unoptimized: skips Vercel's server-side fetch-and-resize step.
-          // cdn.muscleandstrength.com's Cloudflare protection 403s that
-          // server-side fetch (confirmed directly — OPTIMIZED_EXTERNAL_
-          // IMAGE_REQUEST_UNAUTHORIZED) while a real browser loading the
-          // same URL is unaffected, so the browser has to fetch it directly.
-          <Image
-            src={exercise.thumbnailUrl}
-            alt=""
-            fill
-            unoptimized
-            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-            className="object-cover transition-transform group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex size-full items-center justify-center">
-            <Dumbbell className="size-8 text-muted-foreground" aria-hidden="true" />
-          </div>
-        )}
+        <ExerciseThumbnail
+          exerciseId={exercise.exerciseId}
+          thumbnailUrl={exercise.thumbnailUrl}
+          alt=""
+          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+          className="object-cover transition-transform group-hover:scale-105"
+          fallback={
+            <div className="flex size-full items-center justify-center">
+              <Dumbbell className="size-8 text-muted-foreground" aria-hidden="true" />
+            </div>
+          }
+        />
         {exercise.videoAvailable && (
           <span className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-background/90 px-2 py-1 text-caption font-medium text-foreground">
             <Video className="size-3" aria-hidden="true" /> Video

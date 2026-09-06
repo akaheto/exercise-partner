@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { RepToggle, WeightToggle } from "@/components/session/rep-weight-toggle";
 import { VideoEmbed } from "@/components/exercise/video-embed";
+import { ExerciseThumbnail } from "@/components/exercise/exercise-thumbnail";
 import { MuscleDiagramPhoto } from "@/components/exercise/muscle-diagram-photo";
 import { splitIntoSentences } from "@/domain/text";
 import { DEFAULT_REST_SECONDS } from "@/domain/workout-duration";
@@ -18,6 +19,7 @@ interface ExerciseDetail {
   instructions: string | null;
   videoUrl: string | null;
   sourceUrl: string | null;
+  thumbnailUrl: string | null;
   secondaryMuscles: string[];
 }
 
@@ -265,7 +267,16 @@ export function SessionRunner({
 
       {exercise && (
         <div className="mt-8 space-y-6">
-          <VideoEmbed videoUrl={exercise.videoUrl} sourceUrl={exercise.sourceUrl} />
+          <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-muted">
+            <ExerciseThumbnail
+              exerciseId={step.exerciseId}
+              thumbnailUrl={exercise.thumbnailUrl}
+              alt={step.exerciseName}
+              sizes="512px"
+              className="object-cover"
+              priority
+            />
+          </div>
           {instructionSentences.length > 0 && (
             <section>
               <h2 className="mb-2 text-h3 text-foreground">Instructions</h2>
@@ -284,6 +295,10 @@ export function SessionRunner({
             primaryMuscle={step.exercisePrimaryMuscle}
             secondaryMuscles={exercise.secondaryMuscles}
           />
+          {/* The photo above is the primary visual by request; the video
+              moved down here rather than competing for the top of the
+              screen — see the same reordering on the exercise detail page. */}
+          <VideoEmbed videoUrl={exercise.videoUrl} sourceUrl={exercise.sourceUrl} />
         </div>
       )}
     </div>

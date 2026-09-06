@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Dumbbell } from "lucide-react";
@@ -6,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
-import { ExercisePhoto } from "@/components/exercise/exercise-photo";
+import { ExerciseThumbnail } from "@/components/exercise/exercise-thumbnail";
 import { GuidanceCard } from "@/components/exercise/guidance-card";
 import { MuscleDiagramPhoto } from "@/components/exercise/muscle-diagram-photo";
 import { RelatedExercises } from "@/components/exercise/related-exercises";
@@ -104,17 +103,21 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
-          <VideoEmbed videoUrl={exercise.videoUrl} sourceUrl={exercise.url} />
-
-          {!exercise.videoAvailable && exercise.thumbnailUrl && (
-            <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-muted">
-              {/* unoptimized: see exercise-card.tsx — Vercel's server-side
-                  image fetch gets 403'd by this host's Cloudflare protection. */}
-              <Image src={exercise.thumbnailUrl} alt={exercise.name} fill unoptimized sizes="640px" className="object-cover" />
-            </div>
-          )}
-
-          <ExercisePhoto exerciseId={exercise.exerciseId} exerciseName={exercise.name} />
+          <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-muted">
+            <ExerciseThumbnail
+              exerciseId={exercise.exerciseId}
+              thumbnailUrl={exercise.thumbnailUrl}
+              alt={exercise.name}
+              sizes="640px"
+              className="object-cover"
+              priority
+              fallback={
+                <div className="flex size-full items-center justify-center">
+                  <Dumbbell className="size-10 text-muted-foreground" aria-hidden="true" />
+                </div>
+              }
+            />
+          </div>
 
           {guidance && profile && (
             <GuidanceCard guidance={guidance} userLevel={profile.experienceLevel} userGoal={profile.trainingGoal} />
@@ -158,6 +161,11 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
               {exercise.derivedStatus.toLowerCase()} — treat them as a starting point, not verified fact.
             </p>
           )}
+
+          {/* The photorealistic photo above is the page's primary visual by
+              request — the video moved down here, below the reference
+              content, rather than competing for the top of the page. */}
+          <VideoEmbed videoUrl={exercise.videoUrl} sourceUrl={exercise.url} />
         </div>
 
         <div className="space-y-6">

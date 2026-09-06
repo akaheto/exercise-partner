@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useTransition, type ReactElement } from "react";
-import Image from "next/image";
 import { Dumbbell, Search, SearchX } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ExerciseThumbnail } from "@/components/exercise/exercise-thumbnail";
 import {
   Dialog,
   DialogContent,
@@ -102,15 +102,18 @@ export function ExercisePickerDialog({
                 className="flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-muted disabled:opacity-50"
               >
                 <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-muted">
-                  {r.thumbnailUrl ? (
-                    // unoptimized: see exercise-card.tsx — Vercel's server-side
-                    // image fetch gets 403'd by this host's Cloudflare protection.
-                    <Image src={r.thumbnailUrl} alt="" fill unoptimized sizes="48px" className="object-cover" />
-                  ) : (
-                    <div className="flex size-full items-center justify-center">
-                      <Dumbbell className="size-4 text-muted-foreground" />
-                    </div>
-                  )}
+                  <ExerciseThumbnail
+                    exerciseId={r.exerciseId}
+                    thumbnailUrl={r.thumbnailUrl}
+                    alt=""
+                    sizes="48px"
+                    className="object-cover"
+                    fallback={
+                      <div className="flex size-full items-center justify-center">
+                        <Dumbbell className="size-4 text-muted-foreground" />
+                      </div>
+                    }
+                  />
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-body font-medium text-foreground">{r.name}</p>
